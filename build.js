@@ -7,46 +7,46 @@ const OVERPASS_API_URL = 'https://overpass-api.de/api/interpreter';
 
 async function fetchCountiesGB() {
     // Testing
-    const testCounties = {'Bedfordshire and Hertfordshire': 17623586, 'East Yorkshire and Northern Lincolnshire': 17623573, 'Devon': 17618825}
+    // const testCounties = {'Bedfordshire and Hertfordshire': 17623586, 'East Yorkshire and Northern Lincolnshire': 17623573, 'Devon': 17618825}
 
-    // Convert the object into the expected array format
-    return Object.entries(testCounties).map(([name, id]) => ({
-        name: name,
-        id: id
-    }));
+    // // Convert the object into the expected array format
+    // return Object.entries(testCounties).map(([name, id]) => ({
+    //     name: name,
+    //     id: id
+    // }));
 
-    // console.log('Fetching all counties for Great Britain...');
-    // const { default: fetch } = await import('node-fetch');
+    console.log('Fetching all counties for Great Britain...');
+    const { default: fetch } = await import('node-fetch');
 
-    // const queryTimeout = 180;
+    const queryTimeout = 180;
     
-    // // This query fetches all administrative level 6 relations within the UK
-    // // It is a small, fast query that is unlikely to time out
-    // const query = `
-    //     [out:json][timeout:${queryTimeout}];
-    //     area[name="United Kingdom"]->.uk;
-    //     rel(area.uk)["admin_level"="6"]["name"];
-    //     out body;
-    // `;
+    // This query fetches all administrative level 6 relations within the UK
+    // It is a small, fast query that is unlikely to time out
+    const query = `
+        [out:json][timeout:${queryTimeout}];
+        area[name="United Kingdom"]->.uk;
+        rel(area.uk)["admin_level"="6"]["name"];
+        out body;
+    `;
     
-    // try {
-    //     const response = await fetch(OVERPASS_API_URL, {
-    //         method: 'POST',
-    //         body: `data=${encodeURIComponent(query)}`,
-    //         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    //     });
-    //     if (!response.ok) {
-    //         throw new Error(`Overpass API response error: ${response.statusText}`);
-    //     }
-    //     const data = await response.json();
-    //     return data.elements.map(el => ({
-    //         name: el.tags.name,
-    //         id: el.id
-    //     }));
-    // } catch (error) {
-    //     console.error(`Error fetching county data for Great Britain:`, error);
-    //     return [];
-    // }
+    try {
+        const response = await fetch(OVERPASS_API_URL, {
+            method: 'POST',
+            body: `data=${encodeURIComponent(query)}`,
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        });
+        if (!response.ok) {
+            throw new Error(`Overpass API response error: ${response.statusText}`);
+        }
+        const data = await response.json();
+        return data.elements.map(el => ({
+            name: el.tags.name,
+            id: el.id
+        }));
+    } catch (error) {
+        console.error(`Error fetching county data for Great Britain:`, error);
+        return [];
+    }
 }
 
 async function fetchOsmDataForCounty(county, retries = 3) {
@@ -189,6 +189,29 @@ function validateNumbers(elements) {
   return { invalidNumbers: Array.from(invalidItemsMap.values()), totalNumbers };
 }
 
+function getFeatureHeading(item) {
+    if (item.name) {
+        return `<h3>${item.name}</h3>`;
+    }
+
+    const featureTags = ['amenity', 'shop', 'tourism', 'leisure', 'emergency', 'building', 'craft', 'aeroway', 'railway', 'healthcare', 'highway', 'military', 'man_made', 'public_transport'];
+    let featureType = null;
+    for (const tag of featureTags) {
+        if (item.allTags[tag]) {
+            featureType = item.allTags[tag];
+            break;
+        }
+    }
+
+    if (featureType) {
+        const formattedType = featureType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        return `<h3>${formattedType}</h3>`;
+    } else {
+        const formattedType = item.type.replace(/\b\w/g, c => c.toUpperCase());
+        return `<h3>OSM ${formattedType}</h3>`;
+    }
+}
+
 function generateHtmlReport(county, invalidNumbers) {
     const autofixableNumbers = invalidNumbers.filter(item => item.autoFixable);
     const manualFixNumbers = invalidNumbers.filter(item => !item.autoFixable);
@@ -236,7 +259,8 @@ function generateHtmlReport(county, invalidNumbers) {
       `;
   
       if (autofixableNumbers.length > 0) {
-        htmlContent += `<h2>Autofixable Numbers</h2><ul>`;
+        htmlContent += `<h2>Autofixable Numbers</h2>`;
+        htmlContent += `<p>These numbers appear to be valid UK numbers but are formatted incorrectly. The suggested fix assumes that they are indeed UK numbers. Not all 'auto' fixes are necessarily valid, so please do not blindly click on all the fix links without first verifying the number.</p><ul>`;
         autofixableNumbers.forEach(item => {
           const idLink = `https://www.openstreetmap.org/edit?editor=id&map=19/${item.lat}/${item.lon}&${item.type}=${item.id}`;
           const josmLink = `http://localhost:8111/load_object?objects=${item.type}${item.id}&zoom=19`;
@@ -247,31 +271,9 @@ function generateHtmlReport(county, invalidNumbers) {
               websiteHtml = `<span class="website-link"><a href="${item.website}" target="_blank">Website</a></span>`;
           }
 
-          let headingHtml = '';
-          if (item.name) {
-              headingHtml = `<h3>${item.name}</h3>`;
-          } else {
-              const featureTags = ['amenity', 'shop', 'tourism', 'leisure', 'emergency', 'building', 'craft', 'aeroway', 'railway', 'healthcare', 'highway', 'military', 'man_made', 'public_transport'];
-              let featureType = null;
-              for (const tag of featureTags) {
-                  if (item.allTags[tag]) {
-                      featureType = item.allTags[tag];
-                      break;
-                  }
-              }
-
-              if (featureType) {
-                  const formattedType = featureType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-                  headingHtml = `<h3>${formattedType}</h3>`;
-              } else {
-                  const formattedType = item.type.replace(/\b\w/g, c => c.toUpperCase());
-                  headingHtml = `<h3>OSM ${formattedType}</h3>`;
-              }
-          }
-
           htmlContent += `
             <li>
-              ${headingHtml}
+              ${getFeatureHeading(item)}
               ${websiteHtml}
               <div class="fix-buttons">
                 <a href="${idLink}" target="_blank">Edit in iD</a>
@@ -288,7 +290,8 @@ function generateHtmlReport(county, invalidNumbers) {
       }
 
       if (manualFixNumbers.length > 0) {
-        htmlContent += `<h2>Manual Fixes</h2><ul>`;
+        htmlContent += `<h2>Manual Fixes</h2>`;
+        htmlContent += `<p>These numbers are all invalid in some way; maybe they are too long or too short, or perhaps they're missing an area code. The website could be used to check for a valid number, or a survey may be necessary.</p><ul>`;
         manualFixNumbers.forEach(item => {
           const idLink = `https://www.openstreetmap.org/edit?editor=id&map=19/${item.lat}/${item.lon}&${item.type}=${item.id}`;
           const josmLink = `http://localhost:8111/load_object?objects=${item.type}${item.id}&zoom=19`;
@@ -298,31 +301,9 @@ function generateHtmlReport(county, invalidNumbers) {
               websiteHtml = `<span class="website-link"><a href="${item.website}" target="_blank">Website</a></span>`;
           }
 
-          let headingHtml = '';
-          if (item.name) {
-              headingHtml = `<h3>${item.name}</h3>`;
-          } else {
-              const featureTags = ['amenity', 'shop', 'tourism', 'leisure', 'emergency', 'building', 'craft', 'aeroway', 'railway', 'healthcare', 'highway', 'military', 'man_made', 'public_transport'];
-              let featureType = null;
-              for (const tag of featureTags) {
-                  if (item.allTags[tag]) {
-                      featureType = item.allTags[tag];
-                      break;
-                  }
-              }
-
-              if (featureType) {
-                  const formattedType = featureType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-                  headingHtml = `<h3>${formattedType}</h3>`;
-              } else {
-                  const formattedType = item.type.replace(/\b\w/g, c => c.toUpperCase());
-                  headingHtml = `<h3>OSM ${formattedType}</h3>`;
-              }
-          }
-
           htmlContent += `
             <li>
-              ${headingHtml}
+              ${getFeatureHeading(item)}
               ${websiteHtml}
               <div class="fix-buttons">
                 <a href="${idLink}" target="_blank">Edit in iD</a>
