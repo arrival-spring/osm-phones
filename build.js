@@ -201,7 +201,7 @@ function generateHtmlReport(county, invalidNumbers) {
           
           let fixHtml = '';
           if (item.autoFixable) {
-              const josmFixLink = `http://localhost:8111/load_object?objects=${item.type}${item.id}&add_tags=${item.tag}=${encodeURIComponent(item.suggestedFix)}`;
+              const josmFixLink = `http://localhost:8111/load_object?objects=${item.type}${item.id}&addtags=${item.tag}=${encodeURIComponent(item.suggestedFix)}`;
               fixHtml = `
                 <div class="fix-container">
                   <span class="number-info">Suggested Fix:</span> ${item.suggestedFix}
