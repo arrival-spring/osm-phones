@@ -135,7 +135,7 @@ function validateNumbers(elements) {
                             number: numberStr,
                             osmUrl: `https://www.openstreetmap.org/${element.type}/${element.id}`,
                             tag: tag,
-                            suggestedFix: phoneNumber ? phoneNumber.format('E.164') : null,
+                            suggestedFix: phoneNumber ? phoneNumber.format('INTERNATIONAL') : null,
                             autoFixable: !!(phoneNumber && phoneNumber.isValid()),
                             website: website,
                             lat: lat,
@@ -169,6 +169,9 @@ function validateNumbers(elements) {
 }
 
 function generateHtmlReport(county, invalidNumbers) {
+    const autofixableNumbers = invalidNumbers.filter(item => item.autoFixable);
+    const manualFixNumbers = invalidNumbers.filter(item => !item.autoFixable);
+
     let htmlContent = `
         <!DOCTYPE html>
         <html lang="en">
@@ -179,43 +182,76 @@ function generateHtmlReport(county, invalidNumbers) {
           <style>
             body { font-family: sans-serif; line-height: 1.6; padding: 20px; }
             h1 { text-align: center; }
+            h2 { margin-top: 2em; }
             .number-info { font-weight: bold; }
             .error { color: red; font-size: 0.9em; }
             .fix-buttons a { margin-right: 10px; }
             .fix-container { margin-top: 5px; }
             ul { list-style-type: none; padding: 0; }
-            li { background: #f4f4f4; margin: 10px auto; padding: 10px; border-radius: 5px; position: relative; max-width: 600px; }
-            .website-link { position: absolute; top: 10px; right: 10px; font-size: 0.9em; }
+            li { background: #f4f4f4; margin: 10px auto; padding: 10px; border-radius: 5px; max-width: 600px; }
           </style>
         </head>
         <body>
           <h1>Invalid UK Phone Numbers in ${county.name}</h1>
           <p><a href="index.html">← Back to main index</a></p>
           <p>This report identifies phone numbers in OpenStreetMap that are invalid in ${county.name}.</p>
-          <ul>
+          <script>
+            function fixWithJosm(url, event) {
+                event.preventDefault();
+                fetch(url)
+                    .then(response => {
+                        if (response.ok) {
+                            console.log('JOSM command sent successfully.');
+                        } else {
+                            console.error('Failed to send command to JOSM. Please ensure JOSM is running with Remote Control enabled.');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Could not connect to JOSM Remote Control. Please ensure JOSM is running.', error);
+                    });
+            }
+          </script>
       `;
   
-      if (invalidNumbers.length === 0) {
-        htmlContent += '<li>No invalid phone numbers found! 🎉</li>';
-      } else {
-        invalidNumbers.forEach(item => {
+      if (autofixableNumbers.length > 0) {
+        htmlContent += `<h2>Autofixable Numbers</h2><ul>`;
+        autofixableNumbers.forEach(item => {
           const idLink = `https://www.openstreetmap.org/edit?editor=id&map=19/${item.lat}/${item.lon}&${item.type}=${item.id}`;
           const josmLink = `http://localhost:8111/load_object?objects=${item.type}${item.id}&zoom=19`;
-          
-          let fixHtml = '';
-          if (item.autoFixable) {
-              const josmFixLink = `http://localhost:8111/load_object?objects=${item.type}${item.id}&addtags=${item.tag}=${encodeURIComponent(item.suggestedFix)}`;
-              fixHtml = `
-                <div class="fix-container">
-                  <span class="number-info">Suggested Fix:</span> ${item.suggestedFix}
-                  <a href="${josmFixLink}" target="_blank">Fix with JOSM</a>
-                </div>
-              `;
-          }
+          const josmFixLink = `http://localhost:8111/load_object?objects=${item.type}${item.id}&addtags=${item.tag}=${encodeURIComponent(item.suggestedFix)}`;
 
           let websiteHtml = '';
           if (item.website) {
-              websiteHtml = `<span class="website-link"><a href="${item.website}" target="_blank">Website</a></span>`;
+              websiteHtml = `<p>Website: <a href="${item.website}" target="_blank">${item.website}</a></p>`;
+          }
+
+          htmlContent += `
+            <li>
+              ${item.name ? `<h3>${item.name}</h3>` : ''}
+              ${websiteHtml}
+              <div class="fix-buttons">
+                <a href="${idLink}" target="_blank">Edit in iD</a>
+                <a href="${josmLink}" target="_blank">Open in JOSM</a>
+                <a href="#" onclick="fixWithJosm('${josmFixLink}', event)">Fix with JOSM</a>
+              </div>
+              <span class="number-info">Invalid Number:</span> ${item.number}<br>
+              <span class="number-info">OSM ID:</span> <a href="${item.osmUrl}" target="_blank">${item.type}/${item.id}</a><br>
+              ${item.error ? `<span class="error">Error:</span> ${item.error}` : ''}
+            </li>
+          `;
+        });
+        htmlContent += `</ul>`;
+      }
+
+      if (manualFixNumbers.length > 0) {
+        htmlContent += `<h2>Manual Fixes</h2><ul>`;
+        manualFixNumbers.forEach(item => {
+          const idLink = `https://www.openstreetmap.org/edit?editor=id&map=19/${item.lat}/${item.lon}&${item.type}=${item.id}`;
+          const josmLink = `http://localhost:8111/load_object?objects=${item.type}${item.id}&zoom=19`;
+
+          let websiteHtml = '';
+          if (item.website) {
+              websiteHtml = `<p>Website: <a href="${item.website}" target="_blank">${item.website}</a></p>`;
           }
 
           htmlContent += `
@@ -229,14 +265,17 @@ function generateHtmlReport(county, invalidNumbers) {
               <span class="number-info">Invalid Number:</span> ${item.number}<br>
               <span class="number-info">OSM ID:</span> <a href="${item.osmUrl}" target="_blank">${item.type}/${item.id}</a><br>
               ${item.error ? `<span class="error">Error:</span> ${item.error}` : ''}
-              ${fixHtml}
             </li>
           `;
         });
+        htmlContent += `</ul>`;
+      }
+      
+      if (invalidNumbers.length === 0) {
+        htmlContent += '<ul><li>No invalid phone numbers found! 🎉</li></ul>';
       }
   
       htmlContent += `
-          </ul>
         </body>
         </html>
       `;
