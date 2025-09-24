@@ -9,7 +9,6 @@ async function fetchUkCounties() {
     console.log('Fetching UK county administrative boundaries...');
     const { default: fetch } = await import('node-fetch');
     
-    // Query for all relations tagged as an admin_level=6 (county) within Great Britain.
     const query = `
         [out:json][timeout:180];
         area["ISO3166-1"="GB"][admin_level=2]->.uk;
@@ -43,7 +42,6 @@ async function fetchOsmDataForCounty(county) {
     console.log(`Fetching data for county: ${county.name} (ID: ${county.id})...`);
     const { default: fetch } = await import('node-fetch');
 
-    // The area ID for a relation is its ID plus 3600000000.
     const areaId = county.id + 3600000000;
     
     const overpassQuery = `
@@ -82,7 +80,6 @@ async function fetchOsmDataForCounty(county) {
 function validateNumbers(elements) {
   const invalidNumbers = [];
   elements.forEach(element => {
-    // Add a check to ensure `tags` property exists before accessing it
     if (element.tags) { 
         const tags = element.tags;
         const phoneTags = ['phone', 'contact:phone'];
@@ -162,8 +159,11 @@ function generateHtmlReport(countyName, invalidNumbers) {
         </body>
         </html>
       `;
-  
-    const fileName = `${countyName.toLowerCase().replace(/\s+/g, '-')}.html`;
+    
+    // Sanitize the filename to prevent errors with special characters
+    const safeCountyName = countyName.replace(/\s+|\//g, '-').toLowerCase();
+    const fileName = `${safeCountyName}.html`;
+
     fs.writeFileSync(path.join(PUBLIC_DIR, fileName), htmlContent);
     console.log(`Report for ${countyName} saved to ${fileName}.`);
 }
@@ -193,7 +193,9 @@ function generateIndexHtml(countyList) {
       `;
   
       sortedCounties.forEach(county => {
-          const fileName = `${county.name.toLowerCase().replace(/\s+/g, '-')}.html`;
+          // Sanitize the filename in the index.html links as well
+          const safeCountyName = county.name.replace(/\s+|\//g, '-').toLowerCase();
+          const fileName = `${safeCountyName}.html`;
           htmlContent += `<li><a href="${fileName}">${county.name}</a></li>`;
       });
   
@@ -213,10 +215,8 @@ async function main() {
     
     const ukCounties = await fetchUkCounties();
     
-    // Generate an index page first
     generateIndexHtml(ukCounties);
     
-    // Process each county and generate its own report page
     for (const county of ukCounties) {
         const elements = await fetchOsmDataForCounty(county);
         const invalidNumbers = validateNumbers(elements);
