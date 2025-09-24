@@ -143,6 +143,7 @@ function validateNumbers(elements) {
                                 lat: lat,
                                 lon: lon,
                                 name: name,
+                                allTags: tags,
                                 invalidNumbers: [],
                                 suggestedFixes: [],
                                 autoFixable: true
@@ -167,6 +168,7 @@ function validateNumbers(elements) {
                             lat: lat,
                             lon: lon,
                             name: name,
+                            allTags: tags,
                             invalidNumbers: [],
                             suggestedFixes: [],
                             autoFixable: false,
@@ -238,16 +240,30 @@ function generateHtmlReport(county, invalidNumbers) {
         autofixableNumbers.forEach(item => {
           const idLink = `https://www.openstreetmap.org/edit?editor=id&map=19/${item.lat}/${item.lon}&${item.type}=${item.id}`;
           const josmLink = `http://localhost:8111/load_object?objects=${item.type}${item.id}&zoom=19`;
-          const josmFixLink = `http://localhost:8111/load_object?objects=${item.type}${item.id}&addtags=${item.tag}=${encodeURIComponent(item.suggestedFixes[0])}`;
+          const josmFixLink = `http://localhost:8111/load_object?objects=${item.type}${item.id}&addtags=${item.tag}=${encodeURIComponent(item.suggestedFixes.join(';'))}`;
 
           let websiteHtml = '';
           if (item.website) {
               websiteHtml = `<span class="website-link"><a href="${item.website}" target="_blank">Website</a></span>`;
           }
 
+          let headingHtml = '';
+          if (item.name) {
+              headingHtml = `<h3>${item.name}</h3>`;
+          } else {
+              const featureTags = ['amenity', 'shop', 'tourism', 'leisure', 'building'];
+              const featureType = featureTags.map(tag => item.allTags[tag]).find(val => val);
+              if (featureType) {
+                  const formattedType = featureType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                  headingHtml = `<h3>${formattedType}</h3>`;
+              } else {
+                  headingHtml = `<h3>OSM ${item.type}</h3>`;
+              }
+          }
+
           htmlContent += `
             <li>
-              ${item.name ? `<h3>${item.name}</h3>` : ''}
+              ${headingHtml}
               ${websiteHtml}
               <div class="fix-buttons">
                 <a href="${idLink}" target="_blank">Edit in iD</a>
@@ -274,9 +290,23 @@ function generateHtmlReport(county, invalidNumbers) {
               websiteHtml = `<span class="website-link"><a href="${item.website}" target="_blank">Website</a></span>`;
           }
 
+          let headingHtml = '';
+          if (item.name) {
+              headingHtml = `<h3>${item.name}</h3>`;
+          } else {
+              const featureTags = ['amenity', 'shop', 'tourism', 'leisure', 'building'];
+              const featureType = featureTags.map(tag => item.allTags[tag]).find(val => val);
+              if (featureType) {
+                  const formattedType = featureType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                  headingHtml = `<h3>${formattedType}</h3>`;
+              } else {
+                  headingHtml = `<h3>OSM ${item.type}</h3>`;
+              }
+          }
+
           htmlContent += `
             <li>
-              ${item.name ? `<h3>${item.name}</h3>` : ''}
+              ${headingHtml}
               ${websiteHtml}
               <div class="fix-buttons">
                 <a href="${idLink}" target="_blank">Edit in iD</a>
@@ -317,8 +347,12 @@ function getBackgroundColor(percent) {
   return `hsl(${hue}, 70%, 75%)`;
 }
 
-function generateIndexHtml(countyStats) {
+function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers) {
     const sortedCounties = [...countyStats].sort((a, b) => a.name.localeCompare(b.name));
+    
+    const totalValidCount = totalTotalNumbers - totalInvalidCount;
+    const totalValidPercentage = totalTotalNumbers > 0 ? (totalValidCount / totalTotalNumbers) * 100 : 100;
+    
     let htmlContent = `
         <!DOCTYPE html>
         <html lang="en">
@@ -329,6 +363,14 @@ function generateIndexHtml(countyStats) {
           <style>
               body { font-family: sans-serif; line-height: 1.6; padding: 20px; }
               h1 { text-align: center; }
+              .summary {
+                  text-align: center;
+                  font-size: 1.2em;
+                  margin-bottom: 2em;
+                  padding: 15px;
+                  background: #e9ecef;
+                  border-radius: 8px;
+              }
               ul { list-style-type: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 10px; }
               li { padding: 0; border-radius: 5px; }
               li a {
@@ -346,7 +388,13 @@ function generateIndexHtml(countyStats) {
           </style>
         </head>
         <body>
-          <h1>Invalid UK Phone Numbers by County</h1>
+          <h1>Invalid UK Phone Numbers in OpenStreetMap</h1>
+          <div class="summary">
+            <p>Overall Summary</p>
+            <p><strong>Total Phone Numbers:</strong> ${totalTotalNumbers}</p>
+            <p><strong>Invalid Numbers:</strong> ${totalInvalidCount} (${totalValidPercentage.toFixed(2)}% valid)</p>
+            <p><strong>Autofixable Numbers:</strong> ${totalAutofixableCount}</p>
+          </div>
           <p>This site provides a breakdown of invalid UK phone numbers found in OpenStreetMap, separated by county.</p>
           <ul>
       `;
@@ -398,6 +446,9 @@ async function main() {
     console.log(`Processing phone numbers for ${ukCounties.length} counties.`);
     
     const countyStats = [];
+    let totalInvalidCount = 0;
+    let totalAutofixableCount = 0;
+    let totalTotalNumbers = 0;
     
     for (const county of ukCounties) {
         const elements = await fetchOsmDataForCounty(county);
@@ -412,10 +463,14 @@ async function main() {
             totalNumbers: totalNumbers
         });
         
+        totalInvalidCount += invalidNumbers.length;
+        totalAutofixableCount += autoFixableCount;
+        totalTotalNumbers += totalNumbers;
+        
         generateHtmlReport(county, invalidNumbers);
     }
     
-    generateIndexHtml(countyStats);
+    generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers);
 
     console.log('Full build process completed successfully.');
 }
