@@ -240,7 +240,7 @@ function generateHtmlReport(county, invalidNumbers) {
         autofixableNumbers.forEach(item => {
           const idLink = `https://www.openstreetmap.org/edit?editor=id&map=19/${item.lat}/${item.lon}&${item.type}=${item.id}`;
           const josmLink = `http://localhost:8111/load_object?objects=${item.type}${item.id}&zoom=19`;
-          const josmFixLink = `http://localhost:8111/load_object?objects=${item.type}${item.id}&addtags=${item.tag}=${encodeURIComponent(item.suggestedFixes.join(';'))}`;
+          const josmFixLink = `http://localhost:8111/load_object?objects=${item.type}${item.id}&addtags=${item.tag}=${encodeURIComponent(item.suggestedFixes.join('; '))}`;
 
           let websiteHtml = '';
           if (item.website) {
@@ -251,7 +251,7 @@ function generateHtmlReport(county, invalidNumbers) {
           if (item.name) {
               headingHtml = `<h3>${item.name}</h3>`;
           } else {
-              const featureTags = ['amenity', 'shop', 'tourism', 'leisure', 'building'];
+              const featureTags = ['amenity', 'shop', 'tourism', 'leisure', 'emergency', 'building', 'craft', 'aeroway', 'railway', 'healthcare', 'highway', 'military', 'man_made', 'public_transport'];
               const featureType = featureTags.map(tag => item.allTags[tag]).find(val => val);
               if (featureType) {
                   const formattedType = featureType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
