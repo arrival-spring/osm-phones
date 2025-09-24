@@ -6,38 +6,41 @@ const PUBLIC_DIR = path.join(__dirname, 'public');
 const OVERPASS_API_URL = 'https://overpass-api.de/api/interpreter';
 
 async function fetchCountiesGB() {
-    console.log('Fetching all counties for Great Britain...');
-    const { default: fetch } = await import('node-fetch');
+    // Testing
+    return {'Bedfordshire and Hertfordshire': 17623586, 'East Yorkshire and Northern Lincolnshire': 17623573, 'Devon': 17618825}
+    
+    // console.log('Fetching all counties for Great Britain...');
+    // const { default: fetch } = await import('node-fetch');
 
-    const queryTimeout = 180;
+    // const queryTimeout = 180;
     
-    // This query fetches all administrative level 6 relations within the UK
-    // It is a small, fast query that is unlikely to time out
-    const query = `
-        [out:json][timeout:${queryTimeout}];
-        area[name="United Kingdom"]->.uk;
-        rel(area.uk)["admin_level"="6"]["name"];
-        out body;
-    `;
+    // // This query fetches all administrative level 6 relations within the UK
+    // // It is a small, fast query that is unlikely to time out
+    // const query = `
+    //     [out:json][timeout:${queryTimeout}];
+    //     area[name="United Kingdom"]->.uk;
+    //     rel(area.uk)["admin_level"="6"]["name"];
+    //     out body;
+    // `;
     
-    try {
-        const response = await fetch(OVERPASS_API_URL, {
-            method: 'POST',
-            body: `data=${encodeURIComponent(query)}`,
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        });
-        if (!response.ok) {
-            throw new Error(`Overpass API response error: ${response.statusText}`);
-        }
-        const data = await response.json();
-        return data.elements.map(el => ({
-            name: el.tags.name,
-            id: el.id
-        }));
-    } catch (error) {
-        console.error(`Error fetching county data for Great Britain:`, error);
-        return [];
-    }
+    // try {
+    //     const response = await fetch(OVERPASS_API_URL, {
+    //         method: 'POST',
+    //         body: `data=${encodeURIComponent(query)}`,
+    //         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    //     });
+    //     if (!response.ok) {
+    //         throw new Error(`Overpass API response error: ${response.statusText}`);
+    //     }
+    //     const data = await response.json();
+    //     return data.elements.map(el => ({
+    //         name: el.tags.name,
+    //         id: el.id
+    //     }));
+    // } catch (error) {
+    //     console.error(`Error fetching county data for Great Britain:`, error);
+    //     return [];
+    // }
 }
 
 async function fetchOsmDataForCounty(county, retries = 3) {
@@ -58,9 +61,7 @@ async function fetchOsmDataForCounty(county, retries = 3) {
           way(area.county)["contact:phone"~".*"];
           relation(area.county)["contact:phone"~".*"];
         );
-        out body;
-        >;
-        out skel qt;
+        out body geom;
     `;
 
     try {
@@ -98,6 +99,12 @@ function validateNumbers(elements) {
     if (element.tags) { 
         const tags = element.tags;
         const phoneTags = ['phone', 'contact:phone'];
+        const websiteTags = ['website', 'contact:website'];
+
+        const website = websiteTags.map(tag => tags[tag]).find(url => url);
+        const lat = element.lat || (element.center && element.center.lat);
+        const lon = element.lon || (element.center && element.center.lon);
+
         for (const tag of phoneTags) {
           if (tags[tag]) {
             const numbers = tags[tag].split(';').map(s => s.trim());
@@ -122,7 +129,10 @@ function validateNumbers(elements) {
                             osmUrl: `https://www.openstreetmap.org/${element.type}/${element.id}`,
                             tag: tag,
                             suggestedFix: phoneNumber ? phoneNumber.format('E.164') : null,
-                            autoFixable: !!(phoneNumber && phoneNumber.isValid())
+                            autoFixable: !!(phoneNumber && phoneNumber.isValid()),
+                            website: website,
+                            lat: lat,
+                            lon: lon
                         });
                     }
                 } catch (e) {
@@ -134,7 +144,10 @@ function validateNumbers(elements) {
                         osmUrl: `https://www.openstreetmap.org/${element.type}/${element.id}`,
                         tag: tag,
                         suggestedFix: null,
-                        autoFixable: false
+                        autoFixable: false,
+                        website: website,
+                        lat: lat,
+                        lon: lon
                     });
                 }
             });
@@ -157,13 +170,13 @@ function generateHtmlReport(county, invalidNumbers) {
           <style>
             body { font-family: sans-serif; line-height: 1.6; padding: 20px; }
             h1 { text-align: center; }
-            .osm-link { float: right; font-size: 0.8em; }
             .number-info { font-weight: bold; }
             .error { color: red; font-size: 0.9em; }
             .fix-buttons a { margin-right: 10px; }
             .fix-container { margin-top: 5px; }
             ul { list-style-type: none; padding: 0; }
-            li { background: #f4f4f4; margin: 10px 0; padding: 10px; border-radius: 5px; }
+            li { background: #f4f4f4; margin: 10px 0; padding: 10px; border-radius: 5px; position: relative; }
+            .website-link { position: absolute; top: 10px; right: 10px; font-size: 0.9em; }
           </style>
         </head>
         <body>
@@ -178,7 +191,7 @@ function generateHtmlReport(county, invalidNumbers) {
       } else {
         invalidNumbers.forEach(item => {
           const idLink = `https://www.openstreetmap.org/edit?editor=id#map=19/${item.lat}/${item.lon}&${item.type}=${item.id}`;
-          const josmLink = `http://localhost:8111/open_in_josm?new_layer=true&select=${item.type}${item.id}`;
+          const josmLink = `http://localhost:8111/load_object?objects=${item.type}${item.id}&zoom=19`;
           
           let fixHtml = '';
           if (item.autoFixable) {
@@ -191,14 +204,20 @@ function generateHtmlReport(county, invalidNumbers) {
               `;
           }
 
+          let websiteHtml = '';
+          if (item.website) {
+              websiteHtml = `<span class="website-link"><a href="${item.website}" target="_blank">Website</a></span>`;
+          }
+
           htmlContent += `
             <li>
+              ${websiteHtml}
               <div class="fix-buttons">
                 <a href="${idLink}" target="_blank">Edit in iD</a>
                 <a href="${josmLink}" target="_blank">Open in JOSM</a>
               </div>
               <span class="number-info">Invalid Number:</span> ${item.number}<br>
-              <span class="number-info">OSM ID:</span> ${item.type}/${item.id}<br>
+              <span class="number-info">OSM ID:</span> <a href="${item.osmUrl}" target="_blank">${item.type}/${item.id}</a><br>
               ${item.error ? `<span class="error">Error:</span> ${item.error}` : ''}
               ${fixHtml}
             </li>
@@ -219,6 +238,12 @@ function generateHtmlReport(county, invalidNumbers) {
     console.log(`Report for ${county.name} saved to ${fileName}.`);
 }
 
+function getBackgroundColor(percent) {
+  // Use HSL to create a smooth color gradient from red to green
+  const hue = (percent / 100) * 120; // 0 (red) to 120 (green)
+  return `hsl(${hue}, 70%, 75%)`;
+}
+
 function generateIndexHtml(countyStats) {
     const sortedCounties = [...countyStats].sort((a, b) => a.name.localeCompare(b.name));
     let htmlContent = `
@@ -232,7 +257,7 @@ function generateIndexHtml(countyStats) {
               body { font-family: sans-serif; line-height: 1.6; padding: 20px; }
               h1 { text-align: center; }
               ul { list-style-type: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 10px; }
-              li { background: #f4f4f4; padding: 10px; border-radius: 5px; text-align: center; }
+              li { padding: 10px; border-radius: 5px; text-align: center; }
               a { text-decoration: none; color: #333; font-weight: bold; }
               a:hover { color: #000; text-decoration: underline; }
           </style>
@@ -248,16 +273,18 @@ function generateIndexHtml(countyStats) {
           const fileName = `${safeCountyName}.html`;
           
           let statsHtml = '';
+          const validPercentage = (county.totalNumbers > 0) ? ((county.totalNumbers - county.invalidCount) / county.totalNumbers) * 100 : 100;
+          const backgroundColor = getBackgroundColor(validPercentage);
+
           if (county.totalNumbers > 0) {
-              const validPercentage = ((county.totalNumbers - county.invalidCount) / county.totalNumbers) * 100;
               statsHtml = `
-                <p>Found **${county.invalidCount}** invalid numbers (${county.autoFixableCount} autofixable) out of **${county.totalNumbers}** total numbers (**${validPercentage.toFixed(2)}%** valid).</p>
+                <p>Found <strong>${county.invalidCount}</strong> invalid numbers (${county.autoFixableCount} autofixable) out of <strong>${county.totalNumbers}</strong> total numbers (<strong style="color: #007bff;">${validPercentage.toFixed(2)}%</strong> valid).</p>
               `;
           } else {
               statsHtml = `<p>No phone numbers found.</p>`;
           }
 
-          htmlContent += `<li><a href="${fileName}">${county.name}</a>${statsHtml}</li>`;
+          htmlContent += `<li style="background-color: ${backgroundColor};"><a href="${fileName}">${county.name}</a>${statsHtml}</li>`;
       });
   
       htmlContent += `
