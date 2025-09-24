@@ -252,12 +252,20 @@ function generateHtmlReport(county, invalidNumbers) {
               headingHtml = `<h3>${item.name}</h3>`;
           } else {
               const featureTags = ['amenity', 'shop', 'tourism', 'leisure', 'emergency', 'building', 'craft', 'aeroway', 'railway', 'healthcare', 'highway', 'military', 'man_made', 'public_transport'];
-              const featureType = featureTags.map(tag => item.allTags[tag]).find(val => val);
+              let featureType = null;
+              for (const tag of featureTags) {
+                  if (item.allTags[tag]) {
+                      featureType = item.allTags[tag];
+                      break;
+                  }
+              }
+
               if (featureType) {
                   const formattedType = featureType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
                   headingHtml = `<h3>${formattedType}</h3>`;
               } else {
-                  headingHtml = `<h3>OSM ${item.type}</h3>`;
+                  const formattedType = item.type.replace(/\b\w/g, c => c.toUpperCase());
+                  headingHtml = `<h3>OSM ${formattedType}</h3>`;
               }
           }
 
@@ -294,13 +302,21 @@ function generateHtmlReport(county, invalidNumbers) {
           if (item.name) {
               headingHtml = `<h3>${item.name}</h3>`;
           } else {
-              const featureTags = ['amenity', 'shop', 'tourism', 'leisure', 'building'];
-              const featureType = featureTags.map(tag => item.allTags[tag]).find(val => val);
+              const featureTags = ['amenity', 'shop', 'tourism', 'leisure', 'emergency', 'building', 'craft', 'aeroway', 'railway', 'healthcare', 'highway', 'military', 'man_made', 'public_transport'];
+              let featureType = null;
+              for (const tag of featureTags) {
+                  if (item.allTags[tag]) {
+                      featureType = item.allTags[tag];
+                      break;
+                  }
+              }
+
               if (featureType) {
                   const formattedType = featureType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
                   headingHtml = `<h3>${formattedType}</h3>`;
               } else {
-                  headingHtml = `<h3>OSM ${item.type}</h3>`;
+                  const formattedType = item.type.replace(/\b\w/g, c => c.toUpperCase());
+                  headingHtml = `<h3>OSM ${formattedType}</h3>`;
               }
           }
 
