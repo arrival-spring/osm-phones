@@ -5,14 +5,25 @@ const { parsePhoneNumber } = require('libphonenumber-js');
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const OVERPASS_API_URL = 'https://overpass-api.de/api/interpreter';
 
-async function fetchUkCounties() {
-    console.log('Fetching UK county administrative boundaries...');
+// Use the pre-calculated area IDs for England, Scotland, and Wales
+const ukRegions = [
+    { name: 'England', id: 3600062142 },
+    { name: 'Scotland', id: 3600062143 },
+    { name: 'Wales', id: 3600062144 }
+];
+
+async function fetchCountiesByRegion(region) {
+    console.log(`Fetching counties for ${region.name}...`);
     const { default: fetch } = await import('node-fetch');
+
+    // The Overpass API timeout for this request.
+    const queryTimeout = 180;
     
+    // Query for all relations tagged as admin_level=6 (county) within the region's area.
     const query = `
-        [out:json][timeout:180];
-        area["ISO3166-1"="GB"][admin_level=2]->.uk;
-        rel(area.uk)["admin_level"="6"]["name"];
+        [out:json][timeout:${queryTimeout}];
+        area(${region.id})->.region;
+        rel(area.region)["admin_level"="6"]["name"];
         out body;
     `;
     
@@ -26,26 +37,25 @@ async function fetchUkCounties() {
             throw new Error(`Overpass API response error: ${response.statusText}`);
         }
         const data = await response.json();
-        const relations = data.elements.map(el => ({
+        return data.elements.map(el => ({
             name: el.tags.name,
             id: el.id
         }));
-        console.log(`Found ${relations.length} UK counties.`);
-        return relations;
     } catch (error) {
-        console.error('Error fetching county data:', error);
+        console.error(`Error fetching county data for ${region.name}:`, error);
         return [];
     }
 }
 
-async function fetchOsmDataForCounty(county) {
+async function fetchOsmDataForCounty(county, retries = 3) {
     console.log(`Fetching data for county: ${county.name} (ID: ${county.id})...`);
     const { default: fetch } = await import('node-fetch');
 
     const areaId = county.id + 3600000000;
+    const queryTimeout = 600; // Increased timeout for larger queries
     
     const overpassQuery = `
-        [out:json][timeout:360];
+        [out:json][timeout:${queryTimeout}];
         area(${areaId})->.county;
         (
           node(area.county)["phone"~".*"];
@@ -66,6 +76,16 @@ async function fetchOsmDataForCounty(county) {
             body: `data=${encodeURIComponent(overpassQuery)}`,
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         });
+        
+        if (response.status === 429 || response.status === 504) { // 429: Too Many Requests, 504: Gateway Timeout
+            if (retries > 0) {
+                const retryAfter = response.headers.get('Retry-After') || 60;
+                console.warn(`Received ${response.status}. Retrying in ${retryAfter} seconds...`);
+                await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+                return await fetchOsmDataForCounty(county, retries - 1);
+            }
+        }
+        
         if (!response.ok) {
             throw new Error(`Overpass API response error: ${response.statusText}`);
         }
@@ -79,6 +99,8 @@ async function fetchOsmDataForCounty(county) {
 
 function validateNumbers(elements) {
   const invalidNumbers = [];
+  let totalNumbers = 0;
+
   elements.forEach(element => {
     if (element.tags) { 
         const tags = element.tags;
@@ -87,41 +109,43 @@ function validateNumbers(elements) {
           if (tags[tag]) {
             const numbers = tags[tag].split(';').map(s => s.trim());
             numbers.forEach(numberStr => {
-              try {
-                const phoneNumber = parsePhoneNumber(numberStr, 'GB');
-                if (phoneNumber && !phoneNumber.isValid()) {
-                  invalidNumbers.push({
-                    type: element.type,
-                    id: element.id,
-                    number: numberStr,
-                    osmUrl: `https://www.openstreetmap.org/${element.type}/${element.id}`
-                  });
+                totalNumbers++;
+                try {
+                    const phoneNumber = parsePhoneNumber(numberStr, 'GB');
+                    if (!phoneNumber || !phoneNumber.isValid()) {
+                      invalidNumbers.push({
+                        type: element.type,
+                        id: element.id,
+                        number: numberStr,
+                        osmUrl: `https://www.openstreetmap.org/${element.type}/${element.id}`
+                      });
+                    }
+                } catch (e) {
+                    invalidNumbers.push({
+                      type: element.type,
+                      id: element.id,
+                      number: numberStr,
+                      error: e.message,
+                      osmUrl: `https://www.openstreetmap.org/${element.type}/${element.id}`
+                    });
                 }
-              } catch (e) {
-                invalidNumbers.push({
-                  type: element.type,
-                  id: element.id,
-                  number: numberStr,
-                  error: e.message,
-                  osmUrl: `https://www.openstreetmap.org/${element.type}/${element.id}`
-                });
-              }
             });
           }
         }
     }
   });
-  return invalidNumbers;
+
+  return { invalidNumbers, totalNumbers };
 }
 
-function generateHtmlReport(countyName, invalidNumbers) {
+function generateHtmlReport(county, invalidNumbers) {
     let htmlContent = `
         <!DOCTYPE html>
         <html lang="en">
         <head>
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Invalid Phone Numbers in ${countyName}</title>
+          <title>Invalid Phone Numbers in ${county.name}</title>
           <style>
             body { font-family: sans-serif; line-height: 1.6; padding: 20px; }
             h1 { text-align: center; }
@@ -133,9 +157,9 @@ function generateHtmlReport(countyName, invalidNumbers) {
           </style>
         </head>
         <body>
-          <h1>Invalid UK Phone Numbers in ${countyName}</h1>
+          <h1>Invalid UK Phone Numbers in ${county.name}</h1>
           <p><a href="index.html">← Back to main index</a></p>
-          <p>This report identifies phone numbers in OpenStreetMap that are invalid in ${countyName}.</p>
+          <p>This report identifies phone numbers in OpenStreetMap that are invalid in ${county.name}.</p>
           <ul>
       `;
   
@@ -160,16 +184,15 @@ function generateHtmlReport(countyName, invalidNumbers) {
         </html>
       `;
     
-    // Sanitize the filename to prevent errors with special characters
-    const safeCountyName = countyName.replace(/\s+|\//g, '-').toLowerCase();
+    const safeCountyName = county.name.replace(/\s+|\//g, '-').toLowerCase();
     const fileName = `${safeCountyName}.html`;
 
     fs.writeFileSync(path.join(PUBLIC_DIR, fileName), htmlContent);
-    console.log(`Report for ${countyName} saved to ${fileName}.`);
+    console.log(`Report for ${county.name} saved to ${fileName}.`);
 }
 
-function generateIndexHtml(countyList) {
-    const sortedCounties = [...countyList].sort((a, b) => a.name.localeCompare(b.name));
+function generateIndexHtml(countyStats) {
+    const sortedCounties = [...countyStats].sort((a, b) => a.name.localeCompare(b.name));
     let htmlContent = `
         <!DOCTYPE html>
         <html lang="en">
@@ -180,7 +203,7 @@ function generateIndexHtml(countyList) {
           <style>
               body { font-family: sans-serif; line-height: 1.6; padding: 20px; }
               h1 { text-align: center; }
-              ul { list-style-type: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+              ul { list-style-type: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 10px; }
               li { background: #f4f4f4; padding: 10px; border-radius: 5px; text-align: center; }
               a { text-decoration: none; color: #333; font-weight: bold; }
               a:hover { color: #000; text-decoration: underline; }
@@ -193,10 +216,18 @@ function generateIndexHtml(countyList) {
       `;
   
       sortedCounties.forEach(county => {
-          // Sanitize the filename in the index.html links as well
           const safeCountyName = county.name.replace(/\s+|\//g, '-').toLowerCase();
           const fileName = `${safeCountyName}.html`;
-          htmlContent += `<li><a href="${fileName}">${county.name}</a></li>`;
+          
+          let statsHtml = '';
+          if (county.totalNumbers > 0) {
+              const validPercentage = ((county.totalNumbers - county.invalidCount) / county.totalNumbers) * 100;
+              statsHtml = `<p>Found ${county.invalidCount} invalid numbers out of ${county.totalNumbers} total numbers (${validPercentage.toFixed(2)}% valid).</p>`;
+          } else {
+              statsHtml = `<p>No phone numbers found.</p>`;
+          }
+
+          htmlContent += `<li><a href="${fileName}">${county.name}</a>${statsHtml}</li>`;
       });
   
       htmlContent += `
@@ -213,16 +244,34 @@ async function main() {
         fs.mkdirSync(PUBLIC_DIR);
     }
     
-    const ukCounties = await fetchUkCounties();
+    // --- TESTING MODE ---
+    // Comment out the `ukCounties` line below and uncomment the `allCounties` line to run for all counties.
+    const ukCounties = [ { name: "Aberdeen City", id: 396825 } ];
+    // const allCounties = [];
+    // for (const region of ukRegions) {
+    //     const counties = await fetchCountiesByRegion(region);
+    //     allCounties.push(...counties);
+    // }
+    // --------------------
     
-    generateIndexHtml(ukCounties);
+    // We'll use this array to build the index page
+    const countyStats = [];
     
     for (const county of ukCounties) {
         const elements = await fetchOsmDataForCounty(county);
-        const invalidNumbers = validateNumbers(elements);
-        generateHtmlReport(county.name, invalidNumbers);
+        const { invalidNumbers, totalNumbers } = validateNumbers(elements);
+        
+        countyStats.push({
+            name: county.name,
+            invalidCount: invalidNumbers.length,
+            totalNumbers: totalNumbers
+        });
+        
+        generateHtmlReport(county, invalidNumbers);
     }
     
+    generateIndexHtml(countyStats);
+
     console.log('Build process completed.');
 }
 
