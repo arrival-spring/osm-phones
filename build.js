@@ -98,7 +98,7 @@ async function fetchOsmDataForCounty(county, retries = 3) {
 }
 
 function validateNumbers(elements) {
-  const invalidNumbers = [];
+  const invalidItemsMap = new Map();
   let totalNumbers = 0;
 
   elements.forEach(element => {
@@ -111,7 +111,10 @@ function validateNumbers(elements) {
         const lat = element.lat || (element.center && element.center.lat);
         const lon = element.lon || (element.center && element.center.lon);
         const name = tags.name;
+        const key = `${element.type}-${element.id}`;
 
+        let foundInvalidNumber = false;
+        
         for (const tag of phoneTags) {
           if (tags[tag]) {
             const numbers = tags[tag].split(';').map(s => s.trim());
@@ -129,35 +132,51 @@ function validateNumbers(elements) {
                     const isInvalid = normalizedOriginal !== normalizedParsed;
                     
                     if (isInvalid) {
-                        invalidNumbers.push({
+                        foundInvalidNumber = true;
+                        if (!invalidItemsMap.has(key)) {
+                            invalidItemsMap.set(key, {
+                                type: element.type,
+                                id: element.id,
+                                osmUrl: `https://www.openstreetmap.org/${element.type}/${element.id}`,
+                                tag: tag,
+                                website: website,
+                                lat: lat,
+                                lon: lon,
+                                name: name,
+                                invalidNumbers: [],
+                                suggestedFixes: [],
+                                autoFixable: true
+                            });
+                        }
+                        const item = invalidItemsMap.get(key);
+                        item.invalidNumbers.push(numberStr);
+                        item.suggestedFixes.push(phoneNumber ? phoneNumber.format('INTERNATIONAL') : 'No fix available');
+                        if (!phoneNumber || !phoneNumber.isValid()) {
+                            item.autoFixable = false;
+                        }
+                    }
+                } catch (e) {
+                    foundInvalidNumber = true;
+                    if (!invalidItemsMap.has(key)) {
+                        invalidItemsMap.set(key, {
                             type: element.type,
                             id: element.id,
-                            number: numberStr,
                             osmUrl: `https://www.openstreetmap.org/${element.type}/${element.id}`,
                             tag: tag,
-                            suggestedFix: phoneNumber ? phoneNumber.format('INTERNATIONAL') : null,
-                            autoFixable: !!(phoneNumber && phoneNumber.isValid()),
                             website: website,
                             lat: lat,
                             lon: lon,
-                            name: name
+                            name: name,
+                            invalidNumbers: [],
+                            suggestedFixes: [],
+                            autoFixable: false,
+                            error: e.message
                         });
                     }
-                } catch (e) {
-                    invalidNumbers.push({
-                        type: element.type,
-                        id: element.id,
-                        number: numberStr,
-                        error: e.message,
-                        osmUrl: `https://www.openstreetmap.org/${element.type}/${element.id}`,
-                        tag: tag,
-                        suggestedFix: null,
-                        autoFixable: false,
-                        website: website,
-                        lat: lat,
-                        lon: lon,
-                        name: name
-                    });
+                    const item = invalidItemsMap.get(key);
+                    item.invalidNumbers.push(numberStr);
+                    item.suggestedFixes.push('No fix available');
+                    item.autoFixable = false;
                 }
             });
           }
@@ -165,7 +184,7 @@ function validateNumbers(elements) {
     }
   });
 
-  return { invalidNumbers, totalNumbers };
+  return { invalidNumbers: Array.from(invalidItemsMap.values()), totalNumbers };
 }
 
 function generateHtmlReport(county, invalidNumbers) {
@@ -188,7 +207,8 @@ function generateHtmlReport(county, invalidNumbers) {
             .fix-buttons a { margin-right: 10px; }
             .fix-container { margin-top: 5px; }
             ul { list-style-type: none; padding: 0; }
-            li { background: #f4f4f4; margin: 10px auto; padding: 10px; border-radius: 5px; max-width: 600px; }
+            li { background: #f4f4f4; margin: 10px auto; padding: 10px; border-radius: 5px; position: relative; max-width: 600px; }
+            .website-link { position: absolute; top: 10px; right: 10px; font-size: 0.9em; }
           </style>
         </head>
         <body>
@@ -218,11 +238,11 @@ function generateHtmlReport(county, invalidNumbers) {
         autofixableNumbers.forEach(item => {
           const idLink = `https://www.openstreetmap.org/edit?editor=id&map=19/${item.lat}/${item.lon}&${item.type}=${item.id}`;
           const josmLink = `http://localhost:8111/load_object?objects=${item.type}${item.id}&zoom=19`;
-          const josmFixLink = `http://localhost:8111/load_object?objects=${item.type}${item.id}&addtags=${item.tag}=${encodeURIComponent(item.suggestedFix)}`;
+          const josmFixLink = `http://localhost:8111/load_object?objects=${item.type}${item.id}&addtags=${item.tag}=${encodeURIComponent(item.suggestedFixes[0])}`;
 
           let websiteHtml = '';
           if (item.website) {
-              websiteHtml = `<p>Website: <a href="${item.website}" target="_blank">${item.website}</a></p>`;
+              websiteHtml = `<span class="website-link"><a href="${item.website}" target="_blank">Website</a></span>`;
           }
 
           htmlContent += `
@@ -234,9 +254,9 @@ function generateHtmlReport(county, invalidNumbers) {
                 <a href="${josmLink}" target="_blank">Open in JOSM</a>
                 <a href="#" onclick="fixWithJosm('${josmFixLink}', event)">Fix with JOSM</a>
               </div>
-              <span class="number-info">Invalid Number:</span> ${item.number}<br>
+              <span class="number-info">Invalid Number(s):</span> ${item.invalidNumbers.join('; ')}<br>
+              <span class="number-info">Suggested Fix(es):</span> ${item.suggestedFixes.join('; ')}<br>
               <span class="number-info">OSM ID:</span> <a href="${item.osmUrl}" target="_blank">${item.type}/${item.id}</a><br>
-              ${item.error ? `<span class="error">Error:</span> ${item.error}` : ''}
             </li>
           `;
         });
@@ -251,7 +271,7 @@ function generateHtmlReport(county, invalidNumbers) {
 
           let websiteHtml = '';
           if (item.website) {
-              websiteHtml = `<p>Website: <a href="${item.website}" target="_blank">${item.website}</a></p>`;
+              websiteHtml = `<span class="website-link"><a href="${item.website}" target="_blank">Website</a></span>`;
           }
 
           htmlContent += `
@@ -262,7 +282,7 @@ function generateHtmlReport(county, invalidNumbers) {
                 <a href="${idLink}" target="_blank">Edit in iD</a>
                 <a href="${josmLink}" target="_blank">Open in JOSM</a>
               </div>
-              <span class="number-info">Invalid Number:</span> ${item.number}<br>
+              <span class="number-info">Invalid Number(s):</span> ${item.invalidNumbers.join('; ')}<br>
               <span class="number-info">OSM ID:</span> <a href="${item.osmUrl}" target="_blank">${item.type}/${item.id}</a><br>
               ${item.error ? `<span class="error">Error:</span> ${item.error}` : ''}
             </li>
