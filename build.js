@@ -5,22 +5,18 @@ const { parsePhoneNumber } = require('libphonenumber-js');
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const OVERPASS_API_URL = 'https://overpass-api.de/api/interpreter';
 
-const ukRegions = [
-    { name: 'England', id: 3600062142 },
-    { name: 'Scotland', id: 3600062143 },
-    { name: 'Wales', id: 3600062144 }
-];
-
-async function fetchCountiesByRegion(region) {
-    console.log(`Fetching counties for ${region.name}...`);
+async function fetchCountiesGB() {
+    console.log('Fetching all counties for Great Britain...');
     const { default: fetch } = await import('node-fetch');
 
     const queryTimeout = 180;
     
+    // This query fetches all administrative level 6 relations within the UK
+    // It is a small, fast query that is unlikely to time out
     const query = `
         [out:json][timeout:${queryTimeout}];
-        area(${region.id})->.region;
-        rel(area.region)["admin_level"="6"]["name"];
+        area[name="United Kingdom"]->.uk;
+        rel(area.uk)["admin_level"="6"]["name"];
         out body;
     `;
     
@@ -39,7 +35,7 @@ async function fetchCountiesByRegion(region) {
             id: el.id
         }));
     } catch (error) {
-        console.error(`Error fetching county data for ${region.name}:`, error);
+        console.error(`Error fetching county data for Great Britain:`, error);
         return [];
     }
 }
@@ -280,11 +276,7 @@ async function main() {
     
     console.log('Starting full build process...');
 
-    const ukCounties = [];
-    for (const region of ukRegions) {
-        const counties = await fetchCountiesByRegion(region);
-        ukCounties.push(...counties);
-    }
+    const ukCounties = await fetchCountiesGB();
     
     console.log(`Processing phone numbers for ${ukCounties.length} counties.`);
     
@@ -294,7 +286,6 @@ async function main() {
         const elements = await fetchOsmDataForCounty(county);
         const { invalidNumbers, totalNumbers } = validateNumbers(elements);
         
-        // Count how many of the invalid numbers are auto-fixable
         const autoFixableCount = invalidNumbers.filter(item => item.autoFixable).length;
 
         countyStats.push({
