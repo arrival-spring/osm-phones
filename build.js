@@ -7,7 +7,13 @@ const OVERPASS_API_URL = 'https://overpass-api.de/api/interpreter';
 
 async function fetchCountiesGB() {
     // Testing
-    return {'Bedfordshire and Hertfordshire': 17623586, 'East Yorkshire and Northern Lincolnshire': 17623573, 'Devon': 17618825}
+    const testCounties = {'Bedfordshire and Hertfordshire': 17623586, 'East Yorkshire and Northern Lincolnshire': 17623573, 'Devon': 17618825}
+
+    // Convert the object into the expected array format
+    return Object.entries(testCounties).map(([name, id]) => ({
+        name: name,
+        id: id
+    }));
     
     // console.log('Fetching all counties for Great Britain...');
     // const { default: fetch } = await import('node-fetch');
