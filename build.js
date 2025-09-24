@@ -196,7 +196,7 @@ function generateHtmlReport(county, invalidNumbers) {
         htmlContent += '<li>No invalid phone numbers found! 🎉</li>';
       } else {
         invalidNumbers.forEach(item => {
-          const idLink = `https://www.openstreetmap.org/edit?editor=id#map=19/${item.lat}/${item.lon}&${item.type}=${item.id}`;
+          const idLink = `https://www.openstreetmap.org/edit?editor=id&map=19/${item.lat}/${item.lon}&${item.type}=${item.id}`;
           const josmLink = `http://localhost:8111/load_object?objects=${item.type}${item.id}&zoom=19`;
           
           let fixHtml = '';
