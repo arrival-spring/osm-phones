@@ -5,50 +5,50 @@ const { parsePhoneNumber } = require('libphonenumber-js');
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const OVERPASS_API_URL = 'https://overpass-api.de/api/interpreter';
 
-// Use a static list of UK counties to ensure the build process always has data to work with.
-const ukCounties = [
-    { name: 'Bedfordshire', id: 3601550993 },
-    { name: 'Berkshire', id: 3601550992 },
-    { name: 'Buckinghamshire', id: 3601550991 },
-    { name: 'Cambridgeshire', id: 3601550990 },
-    { name: 'Cheshire', id: 3600062409 },
-    { name: 'Cornwall', id: 3601550989 },
-    { name: 'Cumbria', id: 3600062411 },
-    { name: 'Derbyshire', id: 3600062412 },
-    { name: 'Devon', id: 3601550988 },
-    { name: 'Dorset', id: 3601550987 },
-    { name: 'Durham', id: 3600062413 },
-    { name: 'East Sussex', id: 3601550986 },
-    { name: 'Essex', id: 3601550985 },
-    { name: 'Gloucestershire', id: 3601550984 },
-    { name: 'Hampshire', id: 3601550983 },
-    { name: 'Hertfordshire', id: 3601550982 },
-    { name: 'Kent', id: 3601550981 },
-    { name: 'Lancashire', id: 3600062417 },
-    { name: 'Leicestershire', id: 3601550980 },
-    { name: 'Lincolnshire', id: 3600062416 },
-    { name: 'Norfolk', id: 3601550979 },
-    { name: 'Northamptonshire', id: 3601550978 },
-    { name: 'Northumberland', id: 3600062415 },
-    { name: 'Nottinghamshire', id: 3600062418 },
-    { name: 'Oxfordshire', id: 3601550977 },
-    { name: 'Shropshire', id: 3600062419 },
-    { name: 'Somerset', id: 3601550976 },
-    { name: 'Staffordshire', id: 3600062420 },
-    { name: 'Suffolk', id: 3601550975 },
-    { name: 'Surrey', id: 3601550974 },
-    { name: 'Warwickshire', id: 3601550973 },
-    { name: 'West Sussex', id: 3601550972 },
-    { name: 'Wiltshire', id: 3601550971 },
-    { name: 'Worcestershire', id: 3601550970 },
-    { name: 'Yorkshire', id: 3601550969 },
+const ukRegions = [
+    { name: 'England', id: 3600062142 },
+    { name: 'Scotland', id: 3600062143 },
+    { name: 'Wales', id: 3600062144 }
 ];
+
+async function fetchCountiesByRegion(region) {
+    console.log(`Fetching counties for ${region.name}...`);
+    const { default: fetch } = await import('node-fetch');
+
+    const queryTimeout = 180;
+    
+    const query = `
+        [out:json][timeout:${queryTimeout}];
+        area(${region.id})->.region;
+        rel(area.region)["admin_level"="6"]["name"];
+        out body;
+    `;
+    
+    try {
+        const response = await fetch(OVERPASS_API_URL, {
+            method: 'POST',
+            body: `data=${encodeURIComponent(query)}`,
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        });
+        if (!response.ok) {
+            throw new Error(`Overpass API response error: ${response.statusText}`);
+        }
+        const data = await response.json();
+        return data.elements.map(el => ({
+            name: el.tags.name,
+            id: el.id
+        }));
+    } catch (error) {
+        console.error(`Error fetching county data for ${region.name}:`, error);
+        return [];
+    }
+}
 
 async function fetchOsmDataForCounty(county, retries = 3) {
     console.log(`Fetching data for county: ${county.name} (ID: ${county.id})...`);
     const { default: fetch } = await import('node-fetch');
 
-    const areaId = county.id;
+    const areaId = county.id + 3600000000;
     const queryTimeout = 600;
     
     const overpassQuery = `
@@ -242,6 +242,13 @@ async function main() {
     }
     
     console.log('Starting full build process...');
+
+    const ukCounties = [];
+    for (const region of ukRegions) {
+        const counties = await fetchCountiesByRegion(region);
+        ukCounties.push(...counties);
+    }
+    
     console.log(`Processing phone numbers for ${ukCounties.length} counties.`);
     
     const countyStats = [];
