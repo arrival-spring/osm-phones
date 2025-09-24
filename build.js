@@ -14,7 +14,7 @@ async function fetchCountiesGB() {
         name: name,
         id: id
     }));
-    
+
     // console.log('Fetching all counties for Great Britain...');
     // const { default: fetch } = await import('node-fetch');
 
@@ -110,6 +110,7 @@ function validateNumbers(elements) {
         const website = websiteTags.map(tag => tags[tag]).find(url => url);
         const lat = element.lat || (element.center && element.center.lat);
         const lon = element.lon || (element.center && element.center.lon);
+        const name = tags.name;
 
         for (const tag of phoneTags) {
           if (tags[tag]) {
@@ -138,7 +139,8 @@ function validateNumbers(elements) {
                             autoFixable: !!(phoneNumber && phoneNumber.isValid()),
                             website: website,
                             lat: lat,
-                            lon: lon
+                            lon: lon,
+                            name: name
                         });
                     }
                 } catch (e) {
@@ -153,7 +155,8 @@ function validateNumbers(elements) {
                         autoFixable: false,
                         website: website,
                         lat: lat,
-                        lon: lon
+                        lon: lon,
+                        name: name
                     });
                 }
             });
@@ -181,7 +184,7 @@ function generateHtmlReport(county, invalidNumbers) {
             .fix-buttons a { margin-right: 10px; }
             .fix-container { margin-top: 5px; }
             ul { list-style-type: none; padding: 0; }
-            li { background: #f4f4f4; margin: 10px 0; padding: 10px; border-radius: 5px; position: relative; }
+            li { background: #f4f4f4; margin: 10px auto; padding: 10px; border-radius: 5px; position: relative; max-width: 600px; }
             .website-link { position: absolute; top: 10px; right: 10px; font-size: 0.9em; }
           </style>
         </head>
@@ -217,6 +220,7 @@ function generateHtmlReport(county, invalidNumbers) {
 
           htmlContent += `
             <li>
+              ${item.name ? `<h3>${item.name}</h3>` : ''}
               ${websiteHtml}
               <div class="fix-buttons">
                 <a href="${idLink}" target="_blank">Edit in iD</a>
@@ -245,8 +249,12 @@ function generateHtmlReport(county, invalidNumbers) {
 }
 
 function getBackgroundColor(percent) {
-  // Use HSL to create a smooth color gradient from red to green
-  const hue = (percent / 100) * 120; // 0 (red) to 120 (green)
+  if (percent < 98) {
+    // Red for anything below 98%
+    return `hsl(0, 70%, 75%)`;
+  }
+  // Scale green from 98% to 100%
+  const hue = ((percent - 98) / 2) * 120;
   return `hsl(${hue}, 70%, 75%)`;
 }
 
@@ -263,9 +271,19 @@ function generateIndexHtml(countyStats) {
               body { font-family: sans-serif; line-height: 1.6; padding: 20px; }
               h1 { text-align: center; }
               ul { list-style-type: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 10px; }
-              li { padding: 10px; border-radius: 5px; text-align: center; }
-              a { text-decoration: none; color: #333; font-weight: bold; }
-              a:hover { color: #000; text-decoration: underline; }
+              li { padding: 0; border-radius: 5px; }
+              li a {
+                  display: block;
+                  padding: 10px;
+                  text-decoration: none;
+                  color: inherit;
+                  font-weight: bold;
+                  transition: background-color 0.3s ease;
+              }
+              li a:hover {
+                  background-color: rgba(0,0,0,0.1);
+                  text-decoration: underline;
+              }
           </style>
         </head>
         <body>
@@ -290,7 +308,14 @@ function generateIndexHtml(countyStats) {
               statsHtml = `<p>No phone numbers found.</p>`;
           }
 
-          htmlContent += `<li style="background-color: ${backgroundColor};"><a href="${fileName}">${county.name}</a>${statsHtml}</li>`;
+          htmlContent += `
+            <li style="background-color: ${backgroundColor};">
+              <a href="${fileName}">
+                <h3 style="margin-top: 0; text-align: center;">${county.name}</h3>
+                ${statsHtml}
+              </a>
+            </li>
+          `;
       });
   
       htmlContent += `
