@@ -241,19 +241,15 @@ async function main() {
         fs.mkdirSync(PUBLIC_DIR);
     }
     
-    // --- TESTING MODE ---
-    // Uncomment the line below to run for a single county for quick testing.
-    // const ukCounties = [ { name: "Aberdeen City", id: 396825 } ];
-    // --------------------
-    
-    // --- FULL BUILD ---
-    // This fetches all counties by region, which is more reliable.
+    console.log('Starting full build process...');
+
     const ukCounties = [];
     for (const region of ukRegions) {
         const counties = await fetchCountiesByRegion(region);
         ukCounties.push(...counties);
     }
-    // ------------------
+    
+    console.log(`Processing phone numbers for ${ukCounties.length} counties.`);
     
     const countyStats = [];
     
@@ -272,7 +268,7 @@ async function main() {
     
     generateIndexHtml(countyStats);
 
-    console.log('Build process completed.');
+    console.log('Full build process completed successfully.');
 }
 
 main();
