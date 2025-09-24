@@ -1,6 +1,5 @@
 const fs = require('fs');
 const path = require('path');
-const fetch = require('node-fetch');
 const { parsePhoneNumber } = require('libphonenumber-js');
 
 const PUBLIC_DIR = path.join(__dirname, 'public');
@@ -25,6 +24,9 @@ out skel qt;
 
 async function fetchOsmData() {
   console.log('Fetching data from Overpass API...');
+  // Dynamically import node-fetch to avoid the CommonJS/ESM conflict
+  const { default: fetch } = await import('node-fetch');
+
   try {
     const response = await fetch(OVERPASS_API_URL, {
       method: 'POST',
