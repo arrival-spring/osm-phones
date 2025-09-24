@@ -6,9 +6,9 @@ const PUBLIC_DIR = path.join(__dirname, 'public');
 const OVERPASS_API_URL = 'https://overpass-api.de/api/interpreter';
 
 const ukRegions = [
-    //{ name: 'England', id: 3600062142 },
+    { name: 'England', id: 3600062142 },
     { name: 'Scotland', id: 3600062143 },
-    //{ name: 'Wales', id: 3600062144 }
+    { name: 'Wales', id: 3600062144 }
 ];
 
 async function fetchCountiesByRegion(region) {
