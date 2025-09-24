@@ -82,40 +82,42 @@ async function fetchOsmDataForCounty(county) {
 function validateNumbers(elements) {
   const invalidNumbers = [];
   elements.forEach(element => {
-    const tags = element.tags;
-    const phoneTags = ['phone', 'contact:phone'];
-    for (const tag of phoneTags) {
-      if (tags[tag]) {
-        const numbers = tags[tag].split(';').map(s => s.trim());
-        numbers.forEach(numberStr => {
-          try {
-            const phoneNumber = parsePhoneNumber(numberStr, 'GB');
-            if (phoneNumber && !phoneNumber.isValid()) {
-              invalidNumbers.push({
-                type: element.type,
-                id: element.id,
-                number: numberStr,
-                osmUrl: `https://www.openstreetmap.org/${element.type}/${element.id}`
-              });
-            }
-          } catch (e) {
-            invalidNumbers.push({
-              type: element.type,
-              id: element.id,
-              number: numberStr,
-              error: e.message,
-              osmUrl: `https://www.openstreetmap.org/${element.type}/${element.id}`
+    // Add a check to ensure `tags` property exists before accessing it
+    if (element.tags) { 
+        const tags = element.tags;
+        const phoneTags = ['phone', 'contact:phone'];
+        for (const tag of phoneTags) {
+          if (tags[tag]) {
+            const numbers = tags[tag].split(';').map(s => s.trim());
+            numbers.forEach(numberStr => {
+              try {
+                const phoneNumber = parsePhoneNumber(numberStr, 'GB');
+                if (phoneNumber && !phoneNumber.isValid()) {
+                  invalidNumbers.push({
+                    type: element.type,
+                    id: element.id,
+                    number: numberStr,
+                    osmUrl: `https://www.openstreetmap.org/${element.type}/${element.id}`
+                  });
+                }
+              } catch (e) {
+                invalidNumbers.push({
+                  type: element.type,
+                  id: element.id,
+                  number: numberStr,
+                  error: e.message,
+                  osmUrl: `https://www.openstreetmap.org/${element.type}/${element.id}`
+                });
+              }
             });
           }
-        });
-      }
+        }
     }
   });
   return invalidNumbers;
 }
 
 function generateHtmlReport(countyName, invalidNumbers) {
-    // ... (This function remains the same as before)
     let htmlContent = `
         <!DOCTYPE html>
         <html lang="en">
@@ -167,7 +169,6 @@ function generateHtmlReport(countyName, invalidNumbers) {
 }
 
 function generateIndexHtml(countyList) {
-    // ... (This function remains the same as before)
     const sortedCounties = [...countyList].sort((a, b) => a.name.localeCompare(b.name));
     let htmlContent = `
         <!DOCTYPE html>
