@@ -5,7 +5,6 @@ const { parsePhoneNumber } = require('libphonenumber-js');
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const OVERPASS_API_URL = 'https://overpass-api.de/api/interpreter';
 
-// Use the pre-calculated area IDs for England, Scotland, and Wales
 const ukRegions = [
     //{ name: 'England', id: 3600062142 },
     { name: 'Scotland', id: 3600062143 },
@@ -16,10 +15,8 @@ async function fetchCountiesByRegion(region) {
     console.log(`Fetching counties for ${region.name}...`);
     const { default: fetch } = await import('node-fetch');
 
-    // The Overpass API timeout for this request.
     const queryTimeout = 180;
     
-    // Query for all relations tagged as admin_level=6 (county) within the region's area.
     const query = `
         [out:json][timeout:${queryTimeout}];
         area(${region.id})->.region;
@@ -52,7 +49,7 @@ async function fetchOsmDataForCounty(county, retries = 3) {
     const { default: fetch } = await import('node-fetch');
 
     const areaId = county.id + 3600000000;
-    const queryTimeout = 600; // Increased timeout for larger queries
+    const queryTimeout = 600;
     
     const overpassQuery = `
         [out:json][timeout:${queryTimeout}];
@@ -77,7 +74,7 @@ async function fetchOsmDataForCounty(county, retries = 3) {
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         });
         
-        if (response.status === 429 || response.status === 504) { // 429: Too Many Requests, 504: Gateway Timeout
+        if (response.status === 429 || response.status === 504) {
             if (retries > 0) {
                 const retryAfter = response.headers.get('Retry-After') || 60;
                 console.warn(`Received ${response.status}. Retrying in ${retryAfter} seconds...`);
@@ -244,13 +241,20 @@ async function main() {
         fs.mkdirSync(PUBLIC_DIR);
     }
     
-    const allCounties = [];
+    // --- TESTING MODE ---
+    // Uncomment the line below to run for a single county for quick testing.
+    // const ukCounties = [ { name: "Aberdeen City", id: 396825 } ];
+    // --------------------
+    
+    // --- FULL BUILD ---
+    // This fetches all counties by region, which is more reliable.
+    const ukCounties = [];
     for (const region of ukRegions) {
         const counties = await fetchCountiesByRegion(region);
-        allCounties.push(...counties);
+        ukCounties.push(...counties);
     }
+    // ------------------
     
-    // We'll use this array to build the index page
     const countyStats = [];
     
     for (const county of ukCounties) {
