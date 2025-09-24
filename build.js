@@ -7,9 +7,9 @@ const OVERPASS_API_URL = 'https://overpass-api.de/api/interpreter';
 
 // Use the pre-calculated area IDs for England, Scotland, and Wales
 const ukRegions = [
-    { name: 'England', id: 3600062142 },
+    //{ name: 'England', id: 3600062142 },
     { name: 'Scotland', id: 3600062143 },
-    { name: 'Wales', id: 3600062144 }
+    //{ name: 'Wales', id: 3600062144 }
 ];
 
 async function fetchCountiesByRegion(region) {
@@ -244,15 +244,11 @@ async function main() {
         fs.mkdirSync(PUBLIC_DIR);
     }
     
-    // --- TESTING MODE ---
-    // Comment out the `ukCounties` line below and uncomment the `allCounties` line to run for all counties.
-    const ukCounties = [ { name: "Aberdeen City", id: 396825 } ];
-    // const allCounties = [];
-    // for (const region of ukRegions) {
-    //     const counties = await fetchCountiesByRegion(region);
-    //     allCounties.push(...counties);
-    // }
-    // --------------------
+    const allCounties = [];
+    for (const region of ukRegions) {
+        const counties = await fetchCountiesByRegion(region);
+        allCounties.push(...counties);
+    }
     
     // We'll use this array to build the index page
     const countyStats = [];
