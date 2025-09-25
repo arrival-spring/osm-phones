@@ -7,47 +7,47 @@ const OVERPASS_API_URL = 'https://overpass-api.de/api/interpreter';
 
 async function fetchCountiesGB() {
     // Testing ---------------
-    const testCounties = {'Bedfordshire and Hertfordshire': 17623586, 'East Yorkshire and Northern Lincolnshire': 17623573, 'Devon': 17618825, 'Blackpool': 148603}
+    // const testCounties = {'Bedfordshire and Hertfordshire': 17623586, 'East Yorkshire and Northern Lincolnshire': 17623573, 'Devon': 17618825, 'Blackpool': 148603}
 
-    // Convert the object into the expected array format
-    return Object.entries(testCounties).map(([name, id]) => ({
-        name: name,
-        id: id
-    }));
+    // // Convert the object into the expected array format
+    // return Object.entries(testCounties).map(([name, id]) => ({
+    //     name: name,
+    //     id: id
+    // }));
     // -----------------------
 
-    // console.log('Fetching all counties for Great Britain...');
-    // const { default: fetch } = await import('node-fetch');
+    console.log('Fetching all counties for Great Britain...');
+    const { default: fetch } = await import('node-fetch');
 
-    // const queryTimeout = 180;
+    const queryTimeout = 180;
     
-    // // This query fetches all administrative level 6 relations within the UK
-    // // It is a small, fast query that is unlikely to time out
-    // const query = `
-    //     [out:json][timeout:${queryTimeout}];
-    //     area[name="United Kingdom"]->.uk;
-    //     rel(area.uk)["admin_level"="6"]["name"];
-    //     out body;
-    // `;
+    // This query fetches all administrative level 6 relations within the UK
+    // It is a small, fast query that is unlikely to time out
+    const query = `
+        [out:json][timeout:${queryTimeout}];
+        area[name="United Kingdom"]->.uk;
+        rel(area.uk)["admin_level"="6"]["name"];
+        out body;
+    `;
     
-    // try {
-    //     const response = await fetch(OVERPASS_API_URL, {
-    //         method: 'POST',
-    //         body: `data=${encodeURIComponent(query)}`,
-    //         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    //     });
-    //     if (!response.ok) {
-    //         throw new Error(`Overpass API response error: ${response.statusText}`);
-    //     }
-    //     const data = await response.json();
-    //     return data.elements.map(el => ({
-    //         name: el.tags.name,
-    //         id: el.id
-    //     }));
-    // } catch (error) {
-    //     console.error(`Error fetching county data for Great Britain:`, error);
-    //     return [];
-    // }
+    try {
+        const response = await fetch(OVERPASS_API_URL, {
+            method: 'POST',
+            body: `data=${encodeURIComponent(query)}`,
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        });
+        if (!response.ok) {
+            throw new Error(`Overpass API response error: ${response.statusText}`);
+        }
+        const data = await response.json();
+        return data.elements.map(el => ({
+            name: el.tags.name,
+            id: el.id
+        }));
+    } catch (error) {
+        console.error(`Error fetching county data for Great Britain:`, error);
+        return [];
+    }
 }
 
 async function fetchOsmDataForCounty(county, retries = 3) {
