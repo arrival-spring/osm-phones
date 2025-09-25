@@ -225,11 +225,13 @@ function createStatsBox(total, invalid, fixable) {
             </div>
             <div>
                 <p class="text-4xl font-extrabold text-blue-700">${invalid.toLocaleString()}</p>
-                <p class="text-sm text-gray-500">Total Invalid Numbers<br>${totalPercentage.toLocaleString()}% of total</p>
+                <p class="text-gray-500">Total Invalid Numbers</p>
+                <p class="text-sm text-gray-400">${totalPercentage.toLocaleString()}% of total</p>
             </div>
             <div>
                 <p class="text-4xl font-extrabold text-green-700">${fixable.toLocaleString()}</p>
-                <p class="text-sm text-gray-500">Potentially Fixable<br>(${fixablePercentage.toLocaleString()}% of invalid)</p>
+                <p class="text-gray-500">Potentially Fixable</p>
+                <p class="text-sm text-gray-400">${fixablePercentage.toLocaleString()}% of invalid</p>
             </div>
             
         </div>
