@@ -113,7 +113,7 @@ async function fetchOsmDataForDivision(division, retries = 3) {
         if (response.status === 429 || response.status === 504) {
             if (retries > 0) {
                 const retryAfter = response.headers.get('Retry-After') || 60;
-                console.warn(`Received ${response.status}. Retrying in ${retryAfter} seconds...`);
+                console.warn(`Received ${response.status}. Retrying in ${retryAfter} seconds... (${retries} retries left)`);
                 await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
                 return await fetchOsmDataForDivision(division, retries - 1);
             }
@@ -435,7 +435,7 @@ function generateHtmlReport(countryName, division, invalidNumbers, totalNumbers,
 function generateMainIndexHtml(countryStats, dataTimestamp) {
     const listContent = countryStats.map(country => {
         const safeCountryName = safeName(country.name);
-        const countryPageName = path.join(PUBLIC_DIR, safeCountryName);
+        const countryPageName = path.join(PUBLIC_DIR, `${safeCountryName}.html`);
         const percentage = country.totalNumbers > 0 ? (country.invalidCount / country.totalNumbers) * 100 : 0;
         const validPercentage = Math.max(0, Math.min(100, percentage));
         
@@ -449,7 +449,7 @@ function generateMainIndexHtml(countryStats, dataTimestamp) {
         const backgroundColor = getBackgroundColor(validPercentage);
 
         return `
-            <a href="${countryPageName}.html" class="bg-white rounded-xl shadow-lg p-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 transition-transform transform hover:scale-105">
+            <a href="${countryPageName}" class="bg-white rounded-xl shadow-lg p-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 transition-transform transform hover:scale-105">
                 <div class="flex-grow flex items-center space-x-4">
                     <div class="h-12 w-12 rounded-full flex-shrink-0" style="background-color: ${backgroundColor};"></div>
                     <div class="flex-grow">
@@ -665,7 +665,7 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
     </body>
     </html>
     `;
-    pageFileName = path.join(PUBLIC_DIR, safeName(countryName))
+    pageFileName = path.join(PUBLIC_DIR, `${safeName(countryName)}.html`)
     fs.writeFileSync(pageFileName, htmlContent);
     console.log(`Report for ${countryName} generated at ${pageFileName}.`);
 }
