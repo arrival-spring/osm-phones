@@ -5,24 +5,46 @@ const { parsePhoneNumber } = require('libphonenumber-js');
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const OVERPASS_API_URL = 'https://overpass-api.de/api/interpreter';
 
-const NATIONS = {
-    'England': 3600058447,
-    'Scotland': 3600058446,
-    'Wales': 3600058437,
-    'Northern Ireland': 3600156393
+const COUNTRIES = {
+    'United Kingdom': {
+        name: 'United Kingdom',
+        page: 'uk.html',
+        subdivisions: {
+            'England':          3600058447,
+            'Scotland':         3600058446,
+            'Wales':            3600058437,
+            'Northern Ireland': 3600156393
+        },
+        countryCode: 'GB'
+    },
+    'South Africa': {
+        name: 'South Africa',
+        page: 'south-africa.html',
+        subdivisions: {
+            'Eastern Cape':  3604782250,
+            'Free State':    3600092417,
+            'Gauteng':       3600349344,
+            'KwaZulu-Natal': 3600349390,
+            'Limpopo':       3600349547,
+            'Mpumalanga':    3600349556,
+            'North West':    3600349519,
+            'Northern Cape': 3600086720,
+            'Western Cape':  3600080501,
+        },
+        countryCode: 'ZA'
+    }
 };
 
-async function fetchCountiesUK(nationAreaId, nationName, retries=3) {
-    console.log(`Fetching all counties for ${nationName}...`);
+async function fetchAdminLevel6(divisionAreaId, divisionName, retries=3) {
+    console.log(`Fetching all subdivisions for ${divisionName}...`);
     const { default: fetch } = await import('node-fetch');
 
     const queryTimeout = 180;
     
-    // This query fetches all administrative level 6 relations within the region
     const query = `
         [out:json][timeout:${queryTimeout}];
-        area(${nationAreaId})->.nation;
-        rel(area.nation)["admin_level"="6"]["name"];
+        area(${divisionAreaId})->.division;
+        rel(area.division)["admin_level"="6"]["name"];
         out body;
     `;
 
@@ -35,168 +57,125 @@ async function fetchCountiesUK(nationAreaId, nationName, retries=3) {
         
         if (response.status === 429 || response.status === 504) {
             if (retries > 0) {
-                const retryAfter = response.headers.get('Retry-After') || 60;
-                console.warn(`Received ${response.status}. Retrying in ${retryAfter} seconds...`);
-                await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
-                return await fetchCountiesUK(nationAreaId, nationName, retries - 1);
+                console.warn(`Overpass API rate limit or gateway timeout hit. Retrying in 10 seconds... (${retries} retries left)`);
+                await new Promise(resolve => setTimeout(resolve, 10000));
+                return fetchAdminLevel6(divisionAreaId, divisionName, retries - 1);
+            } else {
+                throw new Error(`Overpass API response error: ${response.statusText}`);
             }
         }
         
         if (!response.ok) {
             throw new Error(`Overpass API response error: ${response.statusText}`);
         }
+
         const data = await response.json();
-        return data.elements.map(el => ({
+        const subdivisions = data.elements.map(el => ({
             name: el.tags.name,
             id: el.id
         }));
+
+        const uniqueSubdivisions = [...new Map(subdivisions.map(item => [item.name, item])).values()];
+        return uniqueSubdivisions;
     } catch (error) {
-        console.error(`Error fetching county data for nation ${nationName} (ID: ${nationAreaId}):`, error);
+        console.error(`Error fetching subdivisions for ${divisionName}:`, error);
         return [];
     }
 }
 
-async function fetchOsmDataForCounty(county, retries = 3) {
-    console.log(`Fetching data for county: ${county.name} (ID: ${county.id})...`);
-    const { default: fetch } = await import('node-fetch');
-
-    const areaId = county.id + 3600000000;
-    const queryTimeout = 600;
-    
-    const overpassQuery = `
-        [out:json][timeout:${queryTimeout}];
-        area(${areaId})->.county;
-        (
-          node(area.county)["phone"~".*"];
-          way(area.county)["phone"~".*"];
-          relation(area.county)["phone"~".*"];
-          node(area.county)["contact:phone"~".*"];
-          way(area.county)["contact:phone"~".*"];
-          relation(area.county)["contact:phone"~".*"];
-        );
-        out body geom;
-    `;
-
-    try {
-        const response = await fetch(OVERPASS_API_URL, {
-            method: 'POST',
-            body: `data=${encodeURIComponent(overpassQuery)}`,
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        });
-        
-        if (response.status === 429 || response.status === 504) {
-            if (retries > 0) {
-                const retryAfter = response.headers.get('Retry-After') || 60;
-                console.warn(`Received ${response.status}. Retrying in ${retryAfter} seconds...`);
-                await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
-                return await fetchOsmDataForCounty(county, retries - 1);
-            }
-        }
-        
-        if (!response.ok) {
-            throw new Error(`Overpass API response error: ${response.statusText}`);
-        }
-        const data = await response.json();
-        return data.elements;
-    } catch (error) {
-        console.error(`Error fetching OSM data for ${county.name}:`, error);
-        return [];
-    }
-}
-
-function validateNumbers(elements) {
+function validateNumbers(elements, countryCode) {
     const invalidItemsMap = new Map();
     let totalNumbers = 0;
-  
-    elements.forEach(element => {
-      if (element.tags) { 
-          const tags = element.tags;
-          const phoneTags = ['phone', 'contact:phone'];
-          const websiteTags = ['website', 'contact:website'];
-  
-          const website = websiteTags.map(tag => tags[tag]).find(url => url);
-          const lat = element.lat || (element.center && element.center.lat);
-          const lon = element.lon || (element.center && element.center.lon);
-          const name = tags.name;
-          const key = `${element.type}-${element.id}`;
-  
-          let foundInvalidNumber = false;
-          
-          for (const tag of phoneTags) {
-            if (tags[tag]) {
-              const numbers = tags[tag].split(';').map(s => s.trim());
-              numbers.forEach(numberStr => {
-                  totalNumbers++;
-                  try {
-                      const phoneNumber = parsePhoneNumber(numberStr, 'GB');
-                      
-                      const normalizedOriginal = numberStr.replace(/\s/g, '');
-                      let normalizedParsed = '';
-                      if (phoneNumber && phoneNumber.isValid()) {
-                          normalizedParsed = phoneNumber.number.replace(/\s/g, '');
-                      }
-                      
-                      const isInvalid = normalizedOriginal !== normalizedParsed;
-                      
-                      if (isInvalid) {
-                          foundInvalidNumber = true;
-                          if (!invalidItemsMap.has(key)) {
-                              invalidItemsMap.set(key, {
-                                  type: element.type,
-                                  id: element.id,
-                                  osmUrl: `https://www.openstreetmap.org/${element.type}/${element.id}`,
-                                  tag: tag,
-                                  website: website,
-                                  lat: lat,
-                                  lon: lon,
-                                  name: name,
-                                  allTags: tags,
-                                  invalidNumbers: [],
-                                  suggestedFixes: [],
-                                  autoFixable: true
-                              });
-                          }
-                          const item = invalidItemsMap.get(key);
-                          item.invalidNumbers.push(numberStr);
-                          item.suggestedFixes.push(phoneNumber ? phoneNumber.format('INTERNATIONAL') : 'No fix available');
-                          if (!phoneNumber || !phoneNumber.isValid()) {
-                              item.autoFixable = false;
-                          }
-                      }
-                  } catch (e) {
-                      foundInvalidNumber = true;
-                      if (!invalidItemsMap.has(key)) {
-                          invalidItemsMap.set(key, {
-                              type: element.type,
-                              id: element.id,
-                              osmUrl: `https://www.openstreetmap.org/${element.type}/${element.id}`,
-                              tag: tag,
-                              website: website,
-                              lat: lat,
-                              lon: lon,
-                              name: name,
-                              allTags: tags,
-                              invalidNumbers: [],
-                              suggestedFixes: [],
-                              autoFixable: false,
-                              error: e.message
-                          });
-                      }
-                      const item = invalidItemsMap.get(key);
-                      item.invalidNumbers.push(numberStr);
-                      item.suggestedFixes.push('No fix available');
-                      item.autoFixable = false;
-                  }
-              });
-            }
-          }
-      }
-    });
-  
-    return { invalidNumbers: Array.from(invalidItemsMap.values()), totalNumbers };
-  }
 
-  function getFeatureTypeName(item) {
+    elements.forEach(element => {
+        if (element.tags) { 
+            const tags = element.tags;
+            const phoneTags = ['phone', 'contact:phone'];
+            const websiteTags = ['website', 'contact:website'];
+    
+            const website = websiteTags.map(tag => tags[tag]).find(url => url);
+            const lat = element.lat || (element.center && element.center.lat);
+            const lon = element.lon || (element.center && element.center.lon);
+            const name = tags.name;
+            const key = `${element.type}-${element.id}`;
+    
+            let foundInvalidNumber = false;
+            
+            for (const tag of phoneTags) {
+              if (tags[tag]) {
+                const numbers = tags[tag].split(';').map(s => s.trim());
+                numbers.forEach(numberStr => {
+                    totalNumbers++;
+                    try {
+                        const phoneNumber = parsePhoneNumber(numberStr, countryCode);
+                        
+                        const normalizedOriginal = numberStr.replace(/\s/g, '');
+                        let normalizedParsed = '';
+                        if (phoneNumber && phoneNumber.isValid()) {
+                            normalizedParsed = phoneNumber.number.replace(/\s/g, '');
+                        }
+                        
+                        const isInvalid = normalizedOriginal !== normalizedParsed;
+                        
+                        if (isInvalid) {
+                            foundInvalidNumber = true;
+                            if (!invalidItemsMap.has(key)) {
+                                invalidItemsMap.set(key, {
+                                    type: element.type,
+                                    id: element.id,
+                                    osmUrl: `https://www.openstreetmap.org/${element.type}/${element.id}`,
+                                    tag: tag,
+                                    website: website,
+                                    lat: lat,
+                                    lon: lon,
+                                    name: name,
+                                    allTags: tags,
+                                    invalidNumbers: [],
+                                    suggestedFixes: [],
+                                    autoFixable: true
+                                });
+                            }
+                            const item = invalidItemsMap.get(key);
+                            item.invalidNumbers.push(numberStr);
+                            item.suggestedFixes.push(phoneNumber ? phoneNumber.format('INTERNATIONAL') : 'No fix available');
+                            if (!phoneNumber || !phoneNumber.isValid()) {
+                                item.autoFixable = false;
+                            }
+                        }
+                    } catch (e) {
+                        foundInvalidNumber = true;
+                        if (!invalidItemsMap.has(key)) {
+                            invalidItemsMap.set(key, {
+                                type: element.type,
+                                id: element.id,
+                                osmUrl: `https://www.openstreetmap.org/${element.type}/${element.id}`,
+                                tag: tag,
+                                website: website,
+                                lat: lat,
+                                lon: lon,
+                                name: name,
+                                allTags: tags,
+                                invalidNumbers: [],
+                                suggestedFixes: [],
+                                autoFixable: false,
+                                error: e.message
+                            });
+                        }
+                        const item = invalidItemsMap.get(key);
+                        item.invalidNumbers.push(numberStr);
+                        item.suggestedFixes.push('No fix available');
+                        item.autoFixable = false;
+                    }
+                });
+              }
+            }
+        }
+      });
+    
+    return { invalidNumbers: Array.from(invalidItemsMap.values()), totalNumbers };
+}
+
+function getFeatureTypeName(item) {
     if (item.name) {
         return `${item.name}`;
     }
@@ -219,57 +198,53 @@ function validateNumbers(elements) {
     }
 }
 
-function createStatsBox(total, invalid, fixable) {
-    const totalPercentage = total > 0 ? ((invalid / total) * 100).toFixed(2) : '0.00';
-    const fixablePercentage = invalid > 0 ? ((fixable / invalid) * 100).toFixed(2) : '0.00';
+async function fetchOsmDataForDivision(division, retries = 3) {
+    console.log(`Fetching data for division: ${division.name} (ID: ${division.id})...`);
+    const { default: fetch } = await import('node-fetch');
 
-    return `
-        <div class="bg-white rounded-xl shadow-lg p-8 grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
-            <div>
-                <p class="text-4xl font-extrabold text-gray-800">${total.toLocaleString()}</p>
-                <p class="text-sm text-gray-500">Numbers Checked</p>
-            </div>
-            <div>
-                <p class="text-4xl font-extrabold text-blue-700">${invalid.toLocaleString()}</p>
-                <p class="text-gray-500">Invalid Numbers</p>
-                <p class="text-sm text-gray-400">${totalPercentage.toLocaleString()}% of total</p>
-            </div>
-            <div>
-                <p class="text-4xl font-extrabold text-green-700">${fixable.toLocaleString()}</p>
-                <p class="text-gray-500">Potentially Fixable</p>
-                <p class="text-sm text-gray-400">${fixablePercentage.toLocaleString()}% of invalid</p>
-            </div>
-            
-        </div>
-    `;
-}
-
-function createFooter(dataTimestamp) {
-    // Formatting the date and time
-    const formattedDate = dataTimestamp.toLocaleDateString('en-GB', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
-    const formattedTime = dataTimestamp.toLocaleTimeString('en-GB', {
-        hour: '2-digit',
-        minute: '2-digit'
-    });
+    const areaId = division.id + 3600000000;
+    const queryTimeout = 600;
     
-    // Calculating hours ago
-    const now = new Date();
-    const millisecondsAgo = now - dataTimestamp;
-    const hoursAgo = Math.floor(millisecondsAgo / (1000 * 60 * 60));
+    const overpassQuery = `
+        [out:json][timeout:${queryTimeout}];
+        area(${areaId})->.division;
+        (
+          nwr(area.division)["phone"~".*"];
+          nwr(area.division)["contact:phone"~".*"];
+        );
+        out body geom;
+    `;
 
-    return `
-    <p class="text-sm text-gray-500 mt-2">Data sourced on ${formattedDate} at ${formattedTime} UTC (${hoursAgo} hours ago)</p>
-    <p class="text-sm text-gray-500 mt-2">Got a suggestion or an issue? <a href="https://github.com/arrival-spring/osm-phones/" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:text-blue-700 underline transition-colors">Let me know on GitHub</a>.</p>
-    `
+    try {
+        const response = await fetch(OVERPASS_API_URL, {
+            method: 'POST',
+            body: `data=${encodeURIComponent(overpassQuery)}`,
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        });
+        
+        if (response.status === 429 || response.status === 504) {
+            if (retries > 0) {
+                const retryAfter = response.headers.get('Retry-After') || 60;
+                console.warn(`Received ${response.status}. Retrying in ${retryAfter} seconds...`);
+                await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+                return await fetchOsmDataForDivision(division, retries - 1);
+            }
+        }
+        
+        if (!response.ok) {
+            throw new Error(`Overpass API response error: ${response.statusText}`);
+        }
+        const data = await response.json();
+        return data.elements;
+    } catch (error) {
+        console.error(`Error fetching OSM data for ${division.name}:`, error);
+        return [];
+    }
 }
 
-function generateHtmlReport(county, invalidNumbers, totalNumbers, dataTimestamp) {
-    const safeCountyName = county.name.replace(/\s+|\//g, '-').toLowerCase();
-    const filePath = path.join(PUBLIC_DIR, `${safeCountyName}.html`);
+function generateHtmlReport(division, invalidNumbers, totalNumbers, dataTimestamp) {
+    const safeDivisionName = division.name.replace(/\s+|\//g, '-').toLowerCase();
+    const filePath = path.join(PUBLIC_DIR, `${safeDivisionName}.html`);
 
     const autofixableNumbers = invalidNumbers.filter(item => item.autoFixable);
     const manualFixNumbers = invalidNumbers.filter(item => !item.autoFixable);
@@ -340,7 +315,7 @@ function generateHtmlReport(county, invalidNumbers, totalNumbers, dataTimestamp)
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Phone Number Report for ${county.name}</title>
+        <title>Phone Number Report for ${division.name}</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -354,15 +329,15 @@ function generateHtmlReport(county, invalidNumbers, totalNumbers, dataTimestamp)
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline-block align-middle mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                     </svg>
-                    <span class="align-middle">Back to county list</span>
+                    <span class="align-middle">Back to country page</span>
                 </a>
                 <h1 class="text-4xl font-extrabold text-gray-900">Phone Number Report</h1>
-                <h2 class="text-2xl font-semibold text-gray-700 mt-2">${county.name}</h2>
+                <h2 class="text-2xl font-semibold text-gray-700 mt-2">${division.name}</h2>
             </header>
             ${createStatsBox(totalNumbers, invalidNumbers.length, autofixableNumbers.length)}
             <div class="text-center">
                 <h2 class="text-2xl font-semibold text-gray-900">Fixable numbers</h2>
-                <p class="text-sm text-gray-500 mt-2">These numbers appear to be valid UK numbers but are formatted incorrectly. The suggested fix assumes that they are indeed UK numbers. Not all 'auto' fixes are necessarily valid, so please do not blindly click on all the fix links without first verifying the number.</p>
+                <p class="text-sm text-gray-500 mt-2">These numbers appear to be valid numbers but are formatted incorrectly. The suggested fix assumes that they are indeed numbers for this country. Not all 'auto' fixes are necessarily valid, so please do not blindly click on all the fix links without first verifying the number.</p>
             </div>
             <ul class="space-y-4">
                 ${fixableListContent}
@@ -398,14 +373,83 @@ function generateHtmlReport(county, invalidNumbers, totalNumbers, dataTimestamp)
     </html>
     `;
     fs.writeFileSync(filePath, htmlContent);
-    console.log(`Generated report for ${county.name} at ${filePath}`);
+    console.log(`Generated report for ${division.name} at ${filePath}`);
 }
 
-function generateIndexHtml(groupedCountyStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, dataTimestamp) {
+function generateMainIndexHtml(countryStats, dataTimestamp) {
+    const listContent = countryStats.map(country => {
+        const percentage = country.totalNumbers > 0 ? (country.invalidCount / country.totalNumbers) * 100 : 0;
+        const validPercentage = Math.max(0, Math.min(100, percentage));
+        
+        function getBackgroundColor(percent) {
+            if (percent > 2) {
+                return `hsl(0, 70%, 50%)`;
+            }
+            const hue = ((2 - percent) / 2) * 120;
+            return `hsl(${hue}, 70%, 50%)`;
+        }
+        const backgroundColor = getBackgroundColor(validPercentage);
+
+        return `
+            <a href="${country.page}" class="bg-white rounded-xl shadow-lg p-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 transition-transform transform hover:scale-105">
+                <div class="flex-grow flex items-center space-x-4">
+                    <div class="h-12 w-12 rounded-full flex-shrink-0" style="background-color: ${backgroundColor};"></div>
+                    <div class="flex-grow">
+                        <h3 class="text-xl font-bold text-gray-900">${country.name}</h3>
+                        <p class="text-sm text-gray-500">${country.invalidCount} invalid numbers out of ${country.totalNumbers}</p>
+                    </div>
+                </div>
+                <div class="text-center sm:text-right">
+                    <p class="text-2xl font-bold text-gray-800">${validPercentage.toFixed(2)}<span class="text-base font-normal">%</span></p>
+                    <p class="text-xs text-gray-500">of total</p>
+                </div>
+            </a>
+        `;
+    }).join('');
+
+    const htmlContent = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>OSM Phone Number Validation Reports</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+            body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        </style>
+    </head>
+    <body class="p-8">
+        <div class="max-w-5xl mx-auto space-y-8">
+            <header class="text-center space-y-2">
+                <h1 class="text-4xl font-extrabold text-gray-900">OSM Phone Number Validation</h1>
+                <p class="text-sm text-gray-500">A report on invalid phone numbers in OpenStreetMap data for various countries.</p>
+            </header>
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex flex-col sm:flex-row justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900">Country Reports</h2>
+                </div>
+                <div class="space-y-4">
+                    ${listContent}
+                </div>
+            </div>
+            <div class="bg-white rounded-xl shadow-lg p-2 text-center">
+                ${createFooter(dataTimestamp)}
+            </div>
+        </div>
+    </body>
+    </html>
+    `;
+    fs.writeFileSync(path.join(PUBLIC_DIR, 'index.html'), htmlContent);
+    console.log('Main index.html generated.');
+}
+
+function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, dataTimestamp, pageFileName) {
     const renderListScript = `
         <script>
-            const groupedCountyStats = ${JSON.stringify(groupedCountyStats)};
-            const listContainer = document.getElementById('county-list');
+            const groupedDivisionStats = ${JSON.stringify(groupedDivisionStats)};
+            const listContainer = document.getElementById('division-list');
             const sortButtons = document.querySelectorAll('.sort-btn');
             const hideEmptyCheckbox = document.getElementById('hide-empty');
             let currentSort = 'percentage';
@@ -425,15 +469,14 @@ function generateIndexHtml(groupedCountyStats, totalInvalidCount, totalAutofixab
             function renderList() {
                 listContainer.innerHTML = '';
                 
-                for (const nationName in groupedCountyStats) {
-                    let sortedData = [...groupedCountyStats[nationName]];
+                for (const divisionName in groupedDivisionStats) {
+                    let sortedData = [...groupedDivisionStats[divisionName]];
                     
                     if (hideEmptyCheckbox.checked) {
-                        sortedData = sortedData.filter(county => county.invalidCount > 0);
+                        sortedData = sortedData.filter(division => division.invalidCount > 0);
                     }
                     
                     if (sortedData.length > 0) {
-                        // Sort within each nation
                         sortedData.sort((a, b) => {
                             if (currentSort === 'percentage') {
                                 const percentageA = a.totalNumbers > 0 ? (a.invalidCount / a.totalNumbers) : 0;
@@ -446,17 +489,17 @@ function generateIndexHtml(groupedCountyStats, totalInvalidCount, totalAutofixab
                             }
                         });
 
-                        const nationHeader = document.createElement('h2');
-                        nationHeader.className = 'text-2xl font-bold text-gray-900 mt-8 mb-4';
-                        nationHeader.textContent = nationName;
-                        listContainer.appendChild(nationHeader);
+                        const divisionHeader = document.createElement('h2');
+                        divisionHeader.className = 'text-2xl font-bold text-gray-900 mt-8 mb-4';
+                        divisionHeader.textContent = divisionName;
+                        listContainer.appendChild(divisionHeader);
                         
                         const ul = document.createElement('ul');
                         ul.className = 'space-y-4';
 
-                        sortedData.forEach(county => {
-                            const safeCountyName = county.name.replace(/\\s+|\\//g, '-').toLowerCase();
-                            const percentage = county.totalNumbers > 0 ? (county.invalidCount / county.totalNumbers) * 100 : 0;
+                        sortedData.forEach(division => {
+                            const safeDivisionName = division.name.replace(/\\s+|\\//g, '-').toLowerCase();
+                            const percentage = division.totalNumbers > 0 ? (division.invalidCount / division.totalNumbers) * 100 : 0;
                             const validPercentage = Math.max(0, Math.min(100, percentage));
 
                             function getBackgroundColor(percent) {
@@ -471,11 +514,11 @@ function generateIndexHtml(groupedCountyStats, totalInvalidCount, totalAutofixab
                             const li = document.createElement('li');
                             li.className = 'bg-white rounded-xl shadow-lg p-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 transition-transform transform hover:scale-105';
                             li.innerHTML = \`
-                                <a href="\${safeCountyName}.html" class="flex-grow flex items-center space-x-4">
+                                <a href="\${safeDivisionName}.html" class="flex-grow flex items-center space-x-4">
                                     <div class="h-12 w-12 rounded-full flex-shrink-0" style="background-color: \${backgroundColor};"></div>
                                     <div class="flex-grow">
-                                        <h3 class="text-xl font-bold text-gray-900">\${county.name}</h3>
-                                        <p class="text-sm text-gray-500">\${county.invalidCount} invalid numbers out of \${county.totalNumbers}</p>
+                                        <h3 class="text-xl font-bold text-gray-900">\${division.name}</h3>
+                                        <p class="text-sm text-gray-500">\${division.invalidCount} invalid numbers out of \${division.totalNumbers}</p>
                                     </div>
                                 </a>
                                 <div class="text-center sm:text-right">
@@ -492,7 +535,7 @@ function generateIndexHtml(groupedCountyStats, totalInvalidCount, totalAutofixab
                 if (listContainer.innerHTML === '') {
                     const li = document.createElement('li');
                     li.className = 'bg-white rounded-xl shadow-lg p-6 text-center text-gray-500';
-                    li.textContent = 'No counties with invalid numbers found.';
+                    li.textContent = 'No subdivisions with invalid numbers found.';
                     listContainer.appendChild(li);
                 }
                 updateButtonStyles();
@@ -517,7 +560,7 @@ function generateIndexHtml(groupedCountyStats, totalInvalidCount, totalAutofixab
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>OSM Phone Number Validation Report</title>
+        <title>OSM Phone Number Validation Report - ${countryName}</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -528,16 +571,16 @@ function generateIndexHtml(groupedCountyStats, totalInvalidCount, totalAutofixab
         <div class="max-w-5xl mx-auto space-y-8">
             <header class="text-center space-y-2">
                 <h1 class="text-4xl font-extrabold text-gray-900">OSM Phone Number Validation</h1>
-                <p class="text-sm text-gray-500">A report on invalid phone numbers in OpenStreetMap data for the United Kingdom.</p>
+                <p class="text-sm text-gray-500">A report on invalid phone numbers in OpenStreetMap data for ${countryName}.</p>
             </header>
             ${createStatsBox(totalTotalNumbers, totalInvalidCount, totalAutofixableCount)}
             <div class="bg-white rounded-xl shadow-lg p-6">
                 <div class="flex flex-col sm:flex-row justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold text-gray-900">County Reports</h2>
+                    <h2 class="text-2xl font-bold text-gray-900">Divisional Reports</h2>
                     <div class="flex items-center space-x-4 mt-4 sm:mt-0">
                         <div class="flex items-center">
                             <input type="checkbox" id="hide-empty" checked class="h-4 w-4 rounded text-blue-600 focus:ring-blue-500 border-gray-300">
-                            <label for="hide-empty" class="ml-2 text-sm font-medium text-gray-700">Hide counties with no issues</label>
+                            <label for="hide-empty" class="ml-2 text-sm font-medium text-gray-700">Hide divisions with no issues</label>
                         </div>
                         <div class="flex items-center space-x-2">
                             <span class="mr-2 text-sm font-medium text-gray-700">Sort by:</span>
@@ -547,7 +590,7 @@ function generateIndexHtml(groupedCountyStats, totalInvalidCount, totalAutofixab
                         </div>
                     </div>
                 </div>
-                <div id="county-list" class="space-y-4">
+                <div id="division-list" class="space-y-4">
                 </div>
             </div>
             <div class="bg-white rounded-xl shadow-lg p-2 text-center">
@@ -558,8 +601,8 @@ function generateIndexHtml(groupedCountyStats, totalInvalidCount, totalAutofixab
     </body>
     </html>
     `;
-    fs.writeFileSync(path.join(PUBLIC_DIR, 'index.html'), htmlContent);
-    console.log('Main index.html generated.');
+    fs.writeFileSync(path.join(PUBLIC_DIR, pageFileName), htmlContent);
+    console.log(`Report for ${countryName} generated at ${pageFileName}.`);
 }
 
 async function main() {
@@ -570,69 +613,120 @@ async function main() {
     console.log('Starting full build process...');
 
     const dataTimestamp = new Date();
+    const countryStats = [];
 
-    const countyStats = [];
-    const groupedCountyStats = {};
-
-    let totalInvalidCount = 0;
-    let totalAutofixableCount = 0;
-    let totalTotalNumbers = 0;
-
-    for (const [nationName, nationAreaId] of Object.entries(NATIONS)) {
-        console.log(`Processing counties for ${nationName}...`);
+    for (const countryKey in COUNTRIES) {
+        const countryData = COUNTRIES[countryKey];
+        const countryName = countryData.name;
         
-        // Fetch counties for the current nation
-        const counties = await fetchCountiesUK(nationAreaId, nationName);
-        groupedCountyStats[nationName] = [];
+        let totalInvalidCount = 0;
+        let totalAutofixableCount = 0;
+        let totalTotalNumbers = 0;
+        const groupedDivisionStats = {};
 
-        const processedCounties = new Set();
-        const uniqueCounties = counties.filter(county => {
-            if (processedCounties.has(county.name)) {
-                return false;
-            }
-            processedCounties.add(county.name);
-            return true;
-        });
-
-        console.log(`Processing phone numbers for ${uniqueCounties.length} counties in ${nationName}.`);
-
-        // Testing
-        let countiesProcessed = 0; 
-
-        for (const county of uniqueCounties) {
-            const elements = await fetchOsmDataForCounty(county);
-            const { invalidNumbers, totalNumbers } = validateNumbers(elements);
-
-            const autoFixableCount = invalidNumbers.filter(item => item.autoFixable).length;
-
-            const stats = {
-                name: county.name,
-                invalidCount: invalidNumbers.length,
-                autoFixableCount: autoFixableCount,
-                totalNumbers: totalNumbers
-            };
+        for (const divisionName in countryData.subdivisions) {
+            const divisionAreaId = countryData.subdivisions[divisionName];
+            console.log(`Processing divisions for ${divisionName}...`);
             
-            countyStats.push(stats);
-            groupedCountyStats[nationName].push(stats);
+            const subdivisions = await fetchAdminLevel6(divisionAreaId, divisionName);
+            groupedDivisionStats[divisionName] = [];
             
-            totalInvalidCount += invalidNumbers.length;
-            totalAutofixableCount += autoFixableCount;
-            totalTotalNumbers += totalNumbers;
+            // Testing: only get two subdivisions from each main division for now
+            let subdivisionsProcessed = 0;
+            for (const subdivision of subdivisions) {
+                if (subdivisionsProcessed >= 2) {
+                    break;
+                }
+                
+                const elements = await fetchOsmDataForDivision(subdivision);
+                const { invalidNumbers, totalNumbers } = validateNumbers(elements, countryData.countryCode);
+                
+                const autoFixableCount = invalidNumbers.filter(item => item.autoFixable).length;
 
-            generateHtmlReport(county, invalidNumbers, totalNumbers, dataTimestamp);
-            
-            // Testing - only do one from each to quickly check it's working for now
-            countiesProcessed++;
-            if (countiesProcessed >= 2) {
-                // Exit the inner loop after processing two counties
-                break;
+                const stats = {
+                    name: subdivision.name,
+                    invalidCount: invalidNumbers.length,
+                    autoFixableCount: autoFixableCount,
+                    totalNumbers: totalNumbers
+                };
+                
+                groupedDivisionStats[divisionName].push(stats);
+                
+                totalInvalidCount += invalidNumbers.length;
+                totalAutofixableCount += autoFixableCount;
+                totalTotalNumbers += totalNumbers;
+                
+                generateHtmlReport(subdivision, invalidNumbers, totalNumbers, dataTimestamp);
+                
+                subdivisionsProcessed++;
             }
         }
+        
+        countryStats.push({
+            name: countryName,
+            page: countryData.page,
+            invalidCount: totalInvalidCount,
+            autoFixableCount: totalAutofixableCount,
+            totalNumbers: totalTotalNumbers
+        });
+
+        generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, dataTimestamp, countryData.page);
     }
-    
-    generateIndexHtml(groupedCountyStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, dataTimestamp);
+
+    generateMainIndexHtml(countryStats, dataTimestamp);
 
     console.log('Full build process completed successfully.');
+}
+
+function createStatsBox(total, invalid, fixable) {
+    const totalPercentage = total > 0 ? ((invalid / total) * 100).toFixed(2) : '0.00';
+    const fixablePercentage = invalid > 0 ? ((fixable / invalid) * 100).toFixed(2) : '0.00';
+
+    return `
+        <div class="bg-white rounded-xl shadow-lg p-8 grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
+            <div>
+                <p class="text-4xl font-extrabold text-gray-800">${total.toLocaleString()}</p>
+                <p class="text-sm text-gray-500">Numbers Checked</p>
+            </div>
+            <div>
+                <p class="text-4xl font-extrabold text-blue-700">${invalid.toLocaleString()}</p>
+                <p class="text-gray-500">Invalid Numbers</p>
+                <p class="text-sm text-gray-400">${totalPercentage.toLocaleString()}% of total</p>
+            </div>
+            <div>
+                <p class="text-4xl font-extrabold text-green-700">${fixable.toLocaleString()}</p>
+                <p class="text-gray-500">Potentially Fixable</p>
+                <p class="text-sm text-gray-400">${fixablePercentage.toLocaleString()}% of invalid</p>
+            </div>
+            
+        </div>
+    `;
+}
+
+// 6. You'll need to create or get the other utility functions `createStatsBox`, `createFooter`, `fetchOsmDataForDivision`, and `generateHtmlReport`.
+
+
+function createFooter(dataTimestamp) {
+    // Formatting the date and time
+    const formattedDate = dataTimestamp.toLocaleDateString('en-GB', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+    const formattedTime = dataTimestamp.toLocaleTimeString('en-GB', {
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+    
+    // Calculating hours ago
+    const now = new Date();
+    const millisecondsAgo = now - dataTimestamp;
+    const hoursAgo = Math.floor(millisecondsAgo / (1000 * 60 * 60));
+
+    return `
+    <p class="text-sm text-gray-500 mt-2">Data sourced on ${formattedDate} at ${formattedTime} UTC (${hoursAgo} hours ago)</p>
+    <p class="text-sm text-gray-500 mt-2">Got a suggestion or an issue? <a href="https://github.com/arrival-spring/osm-phones/" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:text-blue-700 underline transition-colors">Let me know on GitHub</a>.</p>
+    `
 }
 
 main();
