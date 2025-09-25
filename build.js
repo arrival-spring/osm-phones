@@ -12,27 +12,36 @@ const NATIONS = {
     'Northern Ireland': 3600156393
 };
 
-async function fetchCountiesUK(nationAreaId) {
-    console.log('Fetching all counties for the current nation...');
+async function fetchCountiesUK(nationAreaId, nationName, retries=3) {
+    console.log(`Fetching all counties for ${nationName}...`);
     const { default: fetch } = await import('node-fetch');
 
     const queryTimeout = 180;
     
     // This query fetches all administrative level 6 relations within the region
-    // It is a small, fast query that is unlikely to time out
     const query = `
         [out:json][timeout:${queryTimeout}];
         area(${nationAreaId})->.nation;
         rel(area.nation)["admin_level"="6"]["name"];
         out body;
     `;
-    
+
     try {
         const response = await fetch(OVERPASS_API_URL, {
             method: 'POST',
             body: `data=${encodeURIComponent(query)}`,
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         });
+        
+        if (response.status === 429 || response.status === 504) {
+            if (retries > 0) {
+                const retryAfter = response.headers.get('Retry-After') || 60;
+                console.warn(`Received ${response.status}. Retrying in ${retryAfter} seconds...`);
+                await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+                return await fetchCountiesUK(nationAreaId, nationName, retries - 1);
+            }
+        }
+        
         if (!response.ok) {
             throw new Error(`Overpass API response error: ${response.statusText}`);
         }
@@ -42,7 +51,7 @@ async function fetchCountiesUK(nationAreaId) {
             id: el.id
         }));
     } catch (error) {
-        console.error(`Error fetching county data for Great Britain:`, error);
+        console.error(`Error fetching county data for nation ${nationName} ${nationAreaId}:`, error);
         return [];
     }
 }
@@ -568,8 +577,10 @@ async function main() {
         console.log(`Processing counties for ${nationName}...`);
         
         // Fetch counties for the current nation
-        const counties = await fetchCountiesUK(nationAreaId);
+        const counties = await fetchCountiesUK(nationAreaId, nationName);
         groupedCountyStats[nationName] = [];
+
+        let countiesProcessed = 0; 
 
         for (const county of counties) {
             console.log(`Processing phone numbers for ${counties.length} counties in ${nationName}.`);
@@ -594,8 +605,13 @@ async function main() {
             totalTotalNumbers += totalNumbers;
 
             generateHtmlReport(county, invalidNumbers, totalNumbers, dataTimestamp);
+            
             // Testing - only do one from each to quickly check it's working for now
-            break
+            countiesProcessed++;
+            if (countiesProcessed >= 2) {
+                // Exit the inner loop after processing two counties
+                break;
+            }
         }
     }
     
