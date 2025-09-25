@@ -346,15 +346,15 @@ function generateHtmlReport(county, invalidNumbers, totalNumbers, dataTimestamp)
                 <h2 class="text-2xl font-semibold text-gray-700 mt-2">${county.name}</h2>
             </header>
             ${createStatsBox(totalNumbers, invalidNumbers.length, autofixableNumbers.length)}
-            <div class="text-center">
-                <h2 class="text-2xl font-semibold text-gray-900">Fixable numbers</h2>
+            <div>
+                <h2 class="text-center text-2xl font-semibold text-gray-900">Fixable numbers</h2>
                 <p class="text-sm text-gray-500 mt-2">These numbers appear to be valid UK numbers but are formatted incorrectly. The suggested fix assumes that they are indeed UK numbers. Not all 'auto' fixes are necessarily valid, so please do not blindly click on all the fix links without first verifying the number.</p>
             </div>
             <ul class="space-y-4">
                 ${fixableListContent}
             </ul>
-            <div class="text-center">
-                <h2 class="text-2xl font-semibold text-gray-900">Invalid numbers</h2>
+            <div>
+                <h2 class="text-center text-2xl font-semibold text-gray-900">Invalid numbers</h2>
                 <p class="text-sm text-gray-500 mt-2">These numbers are all invalid in some way; maybe they are too long or too short, or perhaps they're missing an area code. The website could be used to check for a valid number, or a survey may be necessary.</p>
             </div>
             <ul class="space-y-4">
@@ -399,7 +399,8 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
             const countyStats = ${JSON.stringify(sortedStats)};
             const listContainer = document.getElementById('county-list');
             const sortButtons = document.querySelectorAll('.sort-btn');
-            let currentSort = 'invalidCount'; // Set initial sort state
+            const hideEmptyCheckbox = document.getElementById('hide-empty');
+            let currentSort = 'invalidCount';
 
             function updateButtonStyles() {
                 sortButtons.forEach(button => {
@@ -416,7 +417,14 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
             function renderList() {
                 listContainer.innerHTML = ''; // Clear existing list
 
-                const sortedData = [...countyStats].sort((a, b) => {
+                // Filter the data based on the checkbox state
+                let filteredData = [...countyStats];
+                if (hideEmptyCheckbox.checked) {
+                    filteredData = filteredData.filter(county => county.invalidCount > 0);
+                }
+
+                // Sort the filtered data
+                const sortedData = filteredData.sort((a, b) => {
                     if (currentSort === 'invalidCount') {
                         return b.invalidCount - a.invalidCount;
                     } else if (currentSort === 'name') {
@@ -424,47 +432,57 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
                     }
                 });
 
-                sortedData.forEach(county => {
-                    const safeCountyName = county.name.replace(/\\s+|\\//g, '-').toLowerCase();
-                    const percentage = county.totalNumbers > 0 ? (county.invalidCount / county.totalNumbers) * 100 : 0;
-                    const validPercentage = Math.max(0, Math.min(100, percentage));
-
-                    function getBackgroundColor(percent) {
-                        if (percent > 2) {
-                            return \`hsl(0, 70%, 50%)\`;
-                        }
-                        const hue = ((2 - percent) / 2) * 120;
-                        return \`hsl(\${hue}, 70%, 50%)\`;
-                    }
-                    const backgroundColor = getBackgroundColor(validPercentage);
-
+                // Handle the case where the list becomes empty after filtering
+                if (sortedData.length === 0) {
                     const li = document.createElement('li');
-                    li.className = 'bg-white rounded-xl shadow-lg p-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 transition-transform transform hover:scale-105';
-                    li.innerHTML = \`
-                        <a href="\${safeCountyName}.html" class="flex-grow flex items-center space-x-4">
-                            <div class="h-12 w-12 rounded-full flex-shrink-0" style="background-color: \${backgroundColor};"></div>
-                            <div class="flex-grow">
-                                <h3 class="text-xl font-bold text-gray-900">\${county.name}</h3>
-                                <p class="text-sm text-gray-500">\${county.invalidCount} invalid numbers out of \${county.totalNumbers}</p>
-                            </div>
-                        </a>
-                        <div class="text-center sm:text-right">
-                            <p class="text-2xl font-bold text-gray-800">\${validPercentage.toFixed(2)}<span class="text-base font-normal">%</span></p>
-                            <p class="text-xs text-gray-500">of total</p>
-                        </div>
-                    \`;
+                    li.className = 'bg-white rounded-xl shadow-lg p-6 text-center text-gray-500';
+                    li.textContent = 'No counties with invalid numbers found.';
                     listContainer.appendChild(li);
-                });
+                } else {
+                    sortedData.forEach(county => {
+                        const safeCountyName = county.name.replace(/\\s+|\\//g, '-').toLowerCase();
+                        const percentage = county.totalNumbers > 0 ? (county.invalidCount / county.totalNumbers) * 100 : 0;
+                        const validPercentage = Math.max(0, Math.min(100, percentage));
+
+                        function getBackgroundColor(percent) {
+                            if (percent > 2) {
+                                return \`hsl(0, 70%, 50%)\`;
+                            }
+                            const hue = ((2 - percent) / 2) * 120;
+                            return \`hsl(\${hue}, 70%, 50%)\`;
+                        }
+                        const backgroundColor = getBackgroundColor(validPercentage);
+
+                        const li = document.createElement('li');
+                        li.className = 'bg-white rounded-xl shadow-lg p-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 transition-transform transform hover:scale-105';
+                        li.innerHTML = \`
+                            <a href="\${safeCountyName}.html" class="flex-grow flex items-center space-x-4">
+                                <div class="h-12 w-12 rounded-full flex-shrink-0" style="background-color: \${backgroundColor};"></div>
+                                <div class="flex-grow">
+                                    <h3 class="text-xl font-bold text-gray-900">\${county.name}</h3>
+                                    <p class="text-sm text-gray-500">\${county.invalidCount} invalid numbers out of \${county.totalNumbers}</p>
+                                </div>
+                            </a>
+                            <div class="text-center sm:text-right">
+                                <p class="text-2xl font-bold text-gray-800">\${validPercentage.toFixed(2)}<span class="text-base font-normal">%</span></p>
+                                <p class="text-xs text-gray-500">of total</p>
+                            </div>
+                        \`;
+                        listContainer.appendChild(li);
+                    });
+                }
                 updateButtonStyles();
             }
 
-            // Add event listeners to the buttons
+            // Add event listeners for both buttons and the checkbox
             sortButtons.forEach(button => {
                 button.addEventListener('click', () => {
                     currentSort = button.dataset.sort;
                     renderList();
                 });
             });
+            
+            hideEmptyCheckbox.addEventListener('change', renderList);
 
             // Initial render
             renderList();
@@ -494,10 +512,16 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
             <div class="bg-white rounded-xl shadow-lg p-6">
                 <div class="flex flex-col sm:flex-row justify-between items-center mb-6">
                     <h2 class="text-2xl font-bold text-gray-900">County Reports</h2>
-                    <div class="flex items-center space-x-2 mt-4 sm:mt-0">
-                        <span class="mr-2 text-sm font-medium text-gray-700">Sort by:</span>
-                        <button id="sort-invalid" data-sort="invalidCount" class="sort-btn px-4 py-2 rounded-md text-sm font-medium transition-colors">Invalid Count</button>
-                        <button id="sort-name" data-sort="name" class="sort-btn px-4 py-2 rounded-md text-sm font-medium transition-colors">Name</button>
+                    <div class="flex items-center space-x-4 mt-4 sm:mt-0">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="hide-empty" checked class="h-4 w-4 rounded text-blue-600 focus:ring-blue-500 border-gray-300">
+                            <label for="hide-empty" class="ml-2 text-sm font-medium text-gray-700">Hide empty</label>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="mr-2 text-sm font-medium text-gray-700">Sort by:</span>
+                            <button id="sort-invalid" data-sort="invalidCount" class="sort-btn px-4 py-2 rounded-md text-sm font-medium transition-colors">Invalid Count</button>
+                            <button id="sort-name" data-sort="name" class="sort-btn px-4 py-2 rounded-md text-sm font-medium transition-colors">Name</button>
+                        </div>
                     </div>
                 </div>
                 <ul id="county-list" class="space-y-4">
