@@ -630,13 +630,13 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
     </head>
     <body class="p-8">
         <div class="max-w-5xl mx-auto space-y-8">
-            <a href="index.html" class="inline-block mb-4 text-blue-500 hover:text-blue-700 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline-block align-middle mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-                <span class="align-middle">Back to all countries</span>
-            </a>
             <header class="text-center space-y-2">
+                <a href="index.html" class="inline-block mb-4 text-blue-500 hover:text-blue-700 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline-block align-middle mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    <span class="align-middle">Back to all countries</span>
+                </a>
                 <h1 class="text-4xl font-extrabold text-gray-900">OSM Phone Number Validation</h1>
                 <p class="text-sm text-gray-500">A report on invalid phone numbers in OpenStreetMap data for ${countryName}.</p>
             </header>
@@ -720,9 +720,9 @@ async function main() {
             // Testing: only get two subdivisions from each main division for now
             let subdivisionsProcessed = 0;
             for (const subdivision of uniqueSubdivisions) {
-                if (subdivisionsProcessed >= 2) {
-                    break;
-                }
+                // if (subdivisionsProcessed >= 2) {
+                //     break;
+                // }
 
                 const elements = await fetchOsmDataForDivision(subdivision);
                 const { invalidNumbers, totalNumbers } = validateNumbers(elements, countryData.countryCode);
