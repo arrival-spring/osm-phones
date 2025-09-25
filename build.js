@@ -451,22 +451,22 @@ function generateIndexHtml(groupedCountyStats, totalInvalidCount, totalAutofixab
                                     return \`hsl(0, 70%, 50%)\`;
                                 }
                                 const hue = ((2 - percent) / 2) * 120;
-                                return \`hsl(${hue}, 70%, 50%)\`;
+                                return \`hsl(\${hue}, 70%, 50%)\`;
                             }
                             const backgroundColor = getBackgroundColor(validPercentage);
 
                             const li = document.createElement('li');
                             li.className = 'bg-white rounded-xl shadow-lg p-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 transition-transform transform hover:scale-105';
                             li.innerHTML = \`
-                                <a href="${safeCountyName}.html" class="flex-grow flex items-center space-x-4">
-                                    <div class="h-12 w-12 rounded-full flex-shrink-0" style="background-color: ${backgroundColor};"></div>
+                                <a href="\${safeCountyName}.html" class="flex-grow flex items-center space-x-4">
+                                    <div class="h-12 w-12 rounded-full flex-shrink-0" style="background-color: \${backgroundColor};"></div>
                                     <div class="flex-grow">
-                                        <h3 class="text-xl font-bold text-gray-900">${county.name}</h3>
-                                        <p class="text-sm text-gray-500">${county.invalidCount} invalid numbers out of ${county.totalNumbers}</p>
+                                        <h3 class="text-xl font-bold text-gray-900">\${county.name}</h3>
+                                        <p class="text-sm text-gray-500">\${county.invalidCount} invalid numbers out of \${county.totalNumbers}</p>
                                     </div>
                                 </a>
                                 <div class="text-center sm:text-right">
-                                    <p class="text-2xl font-bold text-gray-800">${validPercentage.toFixed(2)}<span class="text-base font-normal">%</span></p>
+                                    <p class="text-2xl font-bold text-gray-800">\${validPercentage.toFixed(2)}<span class="text-base font-normal">%</span></p>
                                     <p class="text-xs text-gray-500">of total</p>
                                 </div>
                             \`;
