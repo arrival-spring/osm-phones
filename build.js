@@ -597,8 +597,9 @@ async function main() {
             // Testing - only do one from each to quickly check it's working for now
             break
         }
+    }
     
-    generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, dataTimestamp);
+    generateIndexHtml(groupedCountyStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, dataTimestamp);
 
     console.log('Full build process completed successfully.');
 }
