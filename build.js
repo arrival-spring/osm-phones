@@ -9,9 +9,9 @@ const COUNTRIES = {
     'United Kingdom': {
         name: 'United Kingdom',
         subdivisions: {
-            'England':          3600058447,
-            'Scotland':         3600058446,
-            'Wales':            3600058437,
+            'England': 3600058447,
+            'Scotland': 3600058446,
+            'Wales': 3600058437,
             'Northern Ireland': 3600156393
         },
         countryCode: 'GB'
@@ -19,15 +19,15 @@ const COUNTRIES = {
     'South Africa': {
         name: 'South Africa',
         subdivisions: {
-            'Eastern Cape':  3604782250,
-            'Free State':    3600092417,
-            'Gauteng':       3600349344,
+            'Eastern Cape': 3604782250,
+            'Free State': 3600092417,
+            'Gauteng': 3600349344,
             'KwaZulu-Natal': 3600349390,
-            'Limpopo':       3600349547,
-            'Mpumalanga':    3600349556,
-            'North West':    3600349519,
+            'Limpopo': 3600349547,
+            'Mpumalanga': 3600349556,
+            'North West': 3600349519,
             'Northern Cape': 3600086720,
-            'Western Cape':  3600080501,
+            'Western Cape': 3600080501,
         },
         countryCode: 'ZA'
     }
@@ -37,12 +37,12 @@ function safeName(name) {
     return name.replace(/\s+|\//g, '-').toLowerCase();
 }
 
-async function fetchAdminLevel6(divisionAreaId, divisionName, retries=3) {
+async function fetchAdminLevel6(divisionAreaId, divisionName, retries = 3) {
     console.log(`Fetching all subdivisions for ${divisionName}...`);
     const { default: fetch } = await import('node-fetch');
 
     const queryTimeout = 180;
-    
+
     const query = `
         [out:json][timeout:${queryTimeout}];
         area(${divisionAreaId})->.division;
@@ -56,7 +56,7 @@ async function fetchAdminLevel6(divisionAreaId, divisionName, retries=3) {
             body: `data=${encodeURIComponent(query)}`,
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         });
-        
+
         if (response.status === 429 || response.status === 504) {
             if (retries > 0) {
                 const retryAfter = response.headers.get('Retry-After') || 60;
@@ -67,7 +67,7 @@ async function fetchAdminLevel6(divisionAreaId, divisionName, retries=3) {
                 throw new Error(`Overpass API response error: ${response.statusText}`);
             }
         }
-        
+
         if (!response.ok) {
             throw new Error(`Overpass API response error: ${response.statusText}`);
         }
@@ -92,7 +92,7 @@ async function fetchOsmDataForDivision(division, retries = 3) {
 
     const areaId = division.id + 3600000000;
     const queryTimeout = 600;
-    
+
     const overpassQuery = `
         [out:json][timeout:${queryTimeout}];
         area(${areaId})->.division;
@@ -109,7 +109,7 @@ async function fetchOsmDataForDivision(division, retries = 3) {
             body: `data=${encodeURIComponent(overpassQuery)}`,
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         });
-        
+
         if (response.status === 429 || response.status === 504) {
             if (retries > 0) {
                 const retryAfter = response.headers.get('Retry-After') || 60;
@@ -118,7 +118,7 @@ async function fetchOsmDataForDivision(division, retries = 3) {
                 return await fetchOsmDataForDivision(division, retries - 1);
             }
         }
-        
+
         if (!response.ok) {
             throw new Error(`Overpass API response error: ${response.statusText}`);
         }
@@ -135,11 +135,11 @@ function validateNumbers(elements, countryCode) {
     let totalNumbers = 0;
 
     elements.forEach(element => {
-        if (element.tags) { 
+        if (element.tags) {
             const tags = element.tags;
             const phoneTags = ['phone', 'contact:phone'];
             const websiteTags = ['website', 'contact:website'];
-    
+
             let website = websiteTags.map(tag => tags[tag]).find(url => url);
             if (website && !website.startsWith('http://') && !website.startsWith('https://')) {
                 website = `http://${website}`;
@@ -149,26 +149,51 @@ function validateNumbers(elements, countryCode) {
             const lon = element.lon || (element.center && element.center.lon);
             const name = tags.name;
             const key = `${element.type}-${element.id}`;
-    
+
             let foundInvalidNumber = false;
-            
+
             for (const tag of phoneTags) {
-              if (tags[tag]) {
-                const numbers = tags[tag].split(';').map(s => s.trim());
-                numbers.forEach(numberStr => {
-                    totalNumbers++;
-                    try {
-                        const phoneNumber = parsePhoneNumber(numberStr, countryCode);
-                        
-                        const normalizedOriginal = numberStr.replace(/\s/g, '');
-                        let normalizedParsed = '';
-                        if (phoneNumber && phoneNumber.isValid()) {
-                            normalizedParsed = phoneNumber.number.replace(/\s/g, '');
-                        }
-                        
-                        const isInvalid = normalizedOriginal !== normalizedParsed;
-                        
-                        if (isInvalid) {
+                if (tags[tag]) {
+                    const numbers = tags[tag].split(';').map(s => s.trim());
+                    numbers.forEach(numberStr => {
+                        totalNumbers++;
+                        try {
+                            const phoneNumber = parsePhoneNumber(numberStr, countryCode);
+
+                            const normalizedOriginal = numberStr.replace(/\s/g, '');
+                            let normalizedParsed = '';
+                            if (phoneNumber && phoneNumber.isValid()) {
+                                normalizedParsed = phoneNumber.number.replace(/\s/g, '');
+                            }
+
+                            const isInvalid = normalizedOriginal !== normalizedParsed;
+
+                            if (isInvalid) {
+                                foundInvalidNumber = true;
+                                if (!invalidItemsMap.has(key)) {
+                                    invalidItemsMap.set(key, {
+                                        type: element.type,
+                                        id: element.id,
+                                        osmUrl: `https://www.openstreetmap.org/${element.type}/${element.id}`,
+                                        tag: tag,
+                                        website: website,
+                                        lat: lat,
+                                        lon: lon,
+                                        name: name,
+                                        allTags: tags,
+                                        invalidNumbers: [],
+                                        suggestedFixes: [],
+                                        autoFixable: true
+                                    });
+                                }
+                                const item = invalidItemsMap.get(key);
+                                item.invalidNumbers.push(numberStr);
+                                item.suggestedFixes.push(phoneNumber ? phoneNumber.format('INTERNATIONAL') : 'No fix available');
+                                if (!phoneNumber || !phoneNumber.isValid()) {
+                                    item.autoFixable = false;
+                                }
+                            }
+                        } catch (e) {
                             foundInvalidNumber = true;
                             if (!invalidItemsMap.has(key)) {
                                 invalidItemsMap.set(key, {
@@ -183,46 +208,21 @@ function validateNumbers(elements, countryCode) {
                                     allTags: tags,
                                     invalidNumbers: [],
                                     suggestedFixes: [],
-                                    autoFixable: true
+                                    autoFixable: false,
+                                    error: e.message
                                 });
                             }
                             const item = invalidItemsMap.get(key);
                             item.invalidNumbers.push(numberStr);
-                            item.suggestedFixes.push(phoneNumber ? phoneNumber.format('INTERNATIONAL') : 'No fix available');
-                            if (!phoneNumber || !phoneNumber.isValid()) {
-                                item.autoFixable = false;
-                            }
+                            item.suggestedFixes.push('No fix available');
+                            item.autoFixable = false;
                         }
-                    } catch (e) {
-                        foundInvalidNumber = true;
-                        if (!invalidItemsMap.has(key)) {
-                            invalidItemsMap.set(key, {
-                                type: element.type,
-                                id: element.id,
-                                osmUrl: `https://www.openstreetmap.org/${element.type}/${element.id}`,
-                                tag: tag,
-                                website: website,
-                                lat: lat,
-                                lon: lon,
-                                name: name,
-                                allTags: tags,
-                                invalidNumbers: [],
-                                suggestedFixes: [],
-                                autoFixable: false,
-                                error: e.message
-                            });
-                        }
-                        const item = invalidItemsMap.get(key);
-                        item.invalidNumbers.push(numberStr);
-                        item.suggestedFixes.push('No fix available');
-                        item.autoFixable = false;
-                    }
-                });
-              }
+                    });
+                }
             }
         }
-      });
-    
+    });
+
     return { invalidNumbers: Array.from(invalidItemsMap.values()), totalNumbers };
 }
 
@@ -285,7 +285,7 @@ function createFooter(dataTimestamp) {
         hour: '2-digit',
         minute: '2-digit'
     });
-    
+
     // Calculating hours ago
     const now = new Date();
     const millisecondsAgo = now - dataTimestamp;
@@ -297,7 +297,7 @@ function createFooter(dataTimestamp) {
     `
 }
 
-function generateHtmlReport(countryName, division, invalidNumbers, totalNumbers, dataTimestamp) {
+async function generateHtmlReport(countryName, division, invalidNumbers, totalNumbers, dataTimestamp) {
     const safeDivisionName = safeName(division.name);
     const safeCountryName = safeName(countryName);
     const filePath = path.join(PUBLIC_DIR, safeCountryName, `${safeDivisionName}.html`);
@@ -314,14 +314,14 @@ function generateHtmlReport(countryName, division, invalidNumbers, totalNumbers,
         const idEditUrl = `${idBaseUrl}${item.lat}/${item.lon}&${item.type}=${item.id}`;
         const josmEditUrl = `${josmBaseUrl}?objects=${item.type}${item.id}`;
         const josmFixUrl = item.autoFixable ? `${josmEditUrl}&addtags=${item.tag}=${encodeURIComponent(fixedNumber)}` : null;
-    
+
         const idEditButton = `<a href="${idEditUrl}" class="inline-flex items-center rounded-full bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-colors" target="_blank">Edit in iD</a>`;
         const josmEditButton = `<a href="#" onclick="fixWithJosm('${josmEditUrl}', event)" class="inline-flex items-center rounded-full bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-colors">Edit in JOSM</a>`;
         const josmFixButton = josmFixUrl ? `<a href="#" onclick="fixWithJosm('${josmFixUrl}', event)" class="inline-flex items-center rounded-full bg-yellow-200 px-3 py-1.5 text-sm font-semibold text-yello-800 shadow-sm hover:bg-yellow-300 transition-colors">Fix in JOSM</a>` : '';
         const websiteButton = item.website ? `<a href="${item.website}" class="inline-flex items-center rounded-full bg-green-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-green-600 transition-colors" target="_blank">Website</a>` : '';
-    
+
         const errorMessage = item.error ? `<p class="text-sm text-red-500 mt-1"><span class="font-bold">Reason:</span> ${item.error}</p>` : '';
-    
+
         return `
             <li class="bg-white rounded-xl shadow-md p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
                 <div>
@@ -428,7 +428,7 @@ function generateHtmlReport(countryName, division, invalidNumbers, totalNumbers,
     </body>
     </html>
     `;
-    fs.writeFileSync(filePath, htmlContent);
+    await fs.writeFile(filePath, htmlContent);
     console.log(`Generated report for ${division.name} at ${filePath}`);
 }
 
@@ -438,7 +438,7 @@ function generateMainIndexHtml(countryStats, dataTimestamp) {
         const countryPageName = `${safeCountryName}.html`;
         const percentage = country.totalNumbers > 0 ? (country.invalidCount / country.totalNumbers) * 100 : 0;
         const validPercentage = Math.max(0, Math.min(100, percentage));
-        
+
         function getBackgroundColor(percent) {
             if (percent > 2) {
                 return `hsl(0, 70%, 50%)`;
@@ -508,7 +508,7 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
     const renderListScript = `
         <script>
             const groupedDivisionStats = ${JSON.stringify(groupedDivisionStats)};
-            const countryName = "${safeCountryName}";
+            const safeCountryName = '${safeCountryName}';
             const listContainer = document.getElementById('division-list');
             const sortButtons = document.querySelectorAll('.sort-btn');
             const hideEmptyCheckbox = document.getElementById('hide-empty');
@@ -676,7 +676,7 @@ async function main() {
     if (!fs.existsSync(PUBLIC_DIR)) {
         fs.mkdirSync(PUBLIC_DIR);
     }
-    
+
     console.log('Starting full build process...');
 
     const dataTimestamp = new Date();
@@ -701,7 +701,7 @@ async function main() {
         for (const divisionName in countryData.subdivisions) {
             const divisionAreaId = countryData.subdivisions[divisionName];
             console.log(`Processing divisions for ${divisionName}...`);
-            
+
             const subdivisions = await fetchAdminLevel6(divisionAreaId, divisionName);
             groupedDivisionStats[divisionName] = [];
 
@@ -722,10 +722,10 @@ async function main() {
                 if (subdivisionsProcessed >= 2) {
                     break;
                 }
-                
+
                 const elements = await fetchOsmDataForDivision(subdivision);
                 const { invalidNumbers, totalNumbers } = validateNumbers(elements, countryData.countryCode);
-                
+
                 const autoFixableCount = invalidNumbers.filter(item => item.autoFixable).length;
 
                 const stats = {
@@ -734,19 +734,19 @@ async function main() {
                     autoFixableCount: autoFixableCount,
                     totalNumbers: totalNumbers
                 };
-                
+
                 groupedDivisionStats[divisionName].push(stats);
-                
+
                 totalInvalidCount += invalidNumbers.length;
                 totalAutofixableCount += autoFixableCount;
                 totalTotalNumbers += totalNumbers;
-                
-                generateHtmlReport(countryName, subdivision, invalidNumbers, totalNumbers, dataTimestamp);
-                
+
+                await generateHtmlReport(countryName, subdivision, invalidNumbers, totalNumbers, dataTimestamp);
+
                 subdivisionsProcessed++;
             }
         }
-        
+
         countryStats.push({
             name: countryName,
             invalidCount: totalInvalidCount,
