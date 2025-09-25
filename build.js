@@ -213,6 +213,25 @@ function validateNumbers(elements) {
     }
 }
 
+function createStatsBox(total, invalid, fixable) {
+return `
+    <div class="bg-white rounded-xl shadow-lg p-8 grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
+        <div>
+            <p class="text-4xl font-extrabold text-blue-600">${invalid.toLocaleString()}</p>
+            <p class="text-sm text-gray-500">Total Invalid Numbers</p>
+        </div>
+        <div>
+            <p class="text-4xl font-extrabold text-green-600">${fixable.toLocaleString()}</p>
+            <p class="text-sm text-gray-500">Potentially Fixable</p>
+        </div>
+        <div>
+            <p class="text-4xl font-extrabold text-gray-800">${total.toLocaleString()}</p>
+            <p class="text-sm text-gray-500">Total Numbers Checked</p>
+        </div>
+    </div>
+    `;
+}
+
 function generateHtmlReport(county, invalidNumbers, totalNumbers) {
     const safeCountyName = county.name.replace(/\s+|\//g, '-').toLowerCase();
     const filePath = path.join(PUBLIC_DIR, `${safeCountyName}.html`);
@@ -303,27 +322,18 @@ function generateHtmlReport(county, invalidNumbers, totalNumbers) {
                 <h1 class="text-4xl font-extrabold text-gray-900">Phone Number Report</h1>
                 <h2 class="text-2xl font-semibold text-gray-700 mt-2">${county.name}</h2>
             </header>
-            <div class="bg-white rounded-xl shadow-lg p-8 grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
-                <div>
-                    <p class="text-4xl font-extrabold text-blue-600">${invalidNumbers.length.toLocaleString()}</p>
-                    <p class="text-sm text-gray-500">Total Invalid Numbers</p>
-                </div>
-                <div>
-                    <p class="text-4xl font-extrabold text-green-600">${autofixableNumbers.length.toLocaleString()}</p>
-                    <p class="text-sm text-gray-500">Potentially Fixable</p>
-                </div>
-                <div>
-                    <p class="text-4xl font-extrabold text-gray-800">${totalNumbers.toLocaleString()}</p>
-                    <p class="text-sm text-gray-500">Total Numbers Checked</p>
-                </div>
+            ${createStatsBox(totalNumbers, invalidNumbers.length, autofixableNumbers.length)}
+            <div class="text-center">
+                <h2 class="text-2xl font-semibold text-gray-900">Fixable numbers</h2>
+                <p class="text-sm text-gray-500 mt-2">These numbers appear to be valid UK numbers but are formatted incorrectly. The suggested fix assumes that they are indeed UK numbers. Not all 'auto' fixes are necessarily valid, so please do not blindly click on all the fix links without first verifying the number.</p>
             </div>
-            <h2 class="text-2xl font-semibold text-gray-900 mt-2">Fixable numbers</h2>
-            <p class="text-sm text-gray-500 mt-2">These numbers appear to be valid UK numbers but are formatted incorrectly. The suggested fix assumes that they are indeed UK numbers. Not all 'auto' fixes are necessarily valid, so please do not blindly click on all the fix links without first verifying the number.</p>
             <ul class="space-y-4">
                 ${fixableListContent}
             </ul>
-            <h2 class="text-2xl font-semibold text-gray-900 mt-2">Invalid numbers</h2>
-            <p class="text-sm text-gray-500 mt-2">These numbers are all invalid in some way; maybe they are too long or too short, or perhaps they're missing an area code. The website could be used to check for a valid number, or a survey may be necessary.</p>
+            <div class="text-center">
+                <h2 class="text-2xl font-semibold text-gray-900">Invalid numbers</h2>
+                <p class="text-sm text-gray-500 mt-2">These numbers are all invalid in some way; maybe they are too long or too short, or perhaps they're missing an area code. The website could be used to check for a valid number, or a survey may be necessary.</p>
+            </div>
             <ul class="space-y-4">
                 ${invalidListContent}
             </ul>
@@ -394,11 +404,6 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
                         const hue = ((2 - percent) / 2) * 120;
                         return \`hsl(\${hue}, 70%, 50%)\`;
                         }
-
-                    // const getBackgroundColor = (percent) => {
-                    //     const hue = (100 - percent) * 1.2;
-                    //     return \`hsl(\${hue}, 70%, 50%)\`;
-                    // };
                     const backgroundColor = getBackgroundColor(validPercentage);
 
                     const li = document.createElement('li');
@@ -446,22 +451,7 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
                 <h1 class="text-4xl font-extrabold text-gray-900">OSM Phone Number Validation</h1>
                 <p class="text-sm text-gray-500">A report on invalid phone numbers in OpenStreetMap data for Great Britain.</p>
             </header>
-            
-            <div class="bg-white rounded-xl shadow-lg p-8 grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
-                <div>
-                    <p class="text-4xl font-extrabold text-blue-600">${totalInvalidCount.toLocaleString()}</p>
-                    <p class="text-sm text-gray-500">Total Invalid Numbers</p>
-                </div>
-                <div>
-                    <p class="text-4xl font-extrabold text-green-600">${totalAutofixableCount.toLocaleString()}</p>
-                    <p class="text-sm text-gray-500">Potentially Fixable</p>
-                </div>
-                <div>
-                    <p class="text-4xl font-extrabold text-gray-800">${totalTotalNumbers.toLocaleString()}</p>
-                    <p class="text-sm text-gray-500">Total Numbers Checked</p>
-                </div>
-            </div>
-
+            ${createStatsBox(totalTotalNumbers, totalInvalidCount, totalAutofixableCount)}
             <div class="bg-white rounded-xl shadow-lg p-6">
                 <div class="flex flex-col sm:flex-row justify-between items-center mb-6">
                     <h2 class="text-2xl font-bold text-gray-900">County Reports</h2>
