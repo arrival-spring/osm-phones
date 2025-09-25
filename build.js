@@ -60,8 +60,8 @@ async function fetchAdminLevel6(divisionAreaId, divisionName, retries=3) {
         if (response.status === 429 || response.status === 504) {
             if (retries > 0) {
                 const retryAfter = response.headers.get('Retry-After') || 60;
-                console.warn(`Overpass API rate limit or gateway timeout hit. Retrying in ${retryAfter} seconds... (${retries} retries left)`);
-                await new Promise(resolve => setTimeout(resolve, 10000));
+                console.warn(`Overpass API rate limit or gateway timeout hit (error ${response.status}). Retrying in ${retryAfter} seconds... (${retries} retries left)`);
+                await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
                 return fetchAdminLevel6(divisionAreaId, divisionName, retries - 1);
             } else {
                 throw new Error(`Overpass API response error: ${response.statusText}`);
@@ -113,7 +113,7 @@ async function fetchOsmDataForDivision(division, retries = 3) {
         if (response.status === 429 || response.status === 504) {
             if (retries > 0) {
                 const retryAfter = response.headers.get('Retry-After') || 60;
-                console.warn(`Received ${response.status}. Retrying in ${retryAfter} seconds... (${retries} retries left)`);
+                console.warn(`Overpass API rate limit or gateway timeout hit (error ${response.status}). Retrying in ${retryAfter} seconds... (${retries} retries left)`);
                 await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
                 return await fetchOsmDataForDivision(division, retries - 1);
             }
@@ -435,7 +435,7 @@ function generateHtmlReport(countryName, division, invalidNumbers, totalNumbers,
 function generateMainIndexHtml(countryStats, dataTimestamp) {
     const listContent = countryStats.map(country => {
         const safeCountryName = safeName(country.name);
-        const countryPageName = path.join(PUBLIC_DIR, `${safeCountryName}.html`);
+        const countryPageName = `${safeCountryName}.html`;
         const percentage = country.totalNumbers > 0 ? (country.invalidCount / country.totalNumbers) * 100 : 0;
         const validPercentage = Math.max(0, Math.min(100, percentage));
         
@@ -504,9 +504,11 @@ function generateMainIndexHtml(countryStats, dataTimestamp) {
 }
 
 function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, dataTimestamp) {
+    const safeCountryName = safeName(countryName);
     const renderListScript = `
         <script>
             const groupedDivisionStats = ${JSON.stringify(groupedDivisionStats)};
+            const countryName = ${safeCountryName};
             const listContainer = document.getElementById('division-list');
             const sortButtons = document.querySelectorAll('.sort-btn');
             const hideEmptyCheckbox = document.getElementById('hide-empty');
@@ -572,7 +574,7 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                             const li = document.createElement('li');
                             li.className = 'bg-white rounded-xl shadow-lg p-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 transition-transform transform hover:scale-105';
                             li.innerHTML = \`
-                                <a href="\${safeDivisionName}.html" class="flex-grow flex items-center space-x-4">
+                                <a href="\${path.join(safeCountryName, safeDivisionName)}.html" class="flex-grow flex items-center space-x-4">
                                     <div class="h-12 w-12 rounded-full flex-shrink-0" style="background-color: \${backgroundColor};"></div>
                                     <div class="flex-grow">
                                         <h3 class="text-xl font-bold text-gray-900">\${division.name}</h3>
@@ -710,7 +712,7 @@ async function main() {
                 return true;
             });
 
-            console.log(`Processing phone numbers for ${uniqueSubdivisions.length} subdivisions in ${countryData.name}.`);
+            console.log(`Processing phone numbers for ${uniqueSubdivisions.length} subdivisions in ${divisionName.name}.`);
 
             // Testing: only get two subdivisions from each main division for now
             let subdivisionsProcessed = 0;
