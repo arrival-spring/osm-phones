@@ -240,6 +240,7 @@ function generateHtmlReport(county, invalidNumbers) {
             }
             .summary-circles {
                 display: flex;
+                flex-wrap: wrap;
                 justify-content: center;
                 gap: 20px;
                 margin-top: 10px;
@@ -255,6 +256,8 @@ function generateHtmlReport(county, invalidNumbers) {
                 color: white;
                 font-weight: bold;
                 padding: 5px;
+                box-sizing: border-box;
+                text-align: center;
             }
             .circle-label {
                 font-size: 0.8em;
@@ -268,6 +271,9 @@ function generateHtmlReport(county, invalidNumbers) {
             }
             .autofixable-circle {
                 background-color: #ff914d;
+            }
+            .percentage-circle {
+                background-color: hsl(120, 70%, 50%);
             }
             .number-info { font-weight: bold; }
             .error { color: red; font-size: 0.9em; }
@@ -295,6 +301,10 @@ function generateHtmlReport(county, invalidNumbers) {
                 <div class="data-circle autofixable-circle">
                     ${county.autoFixableCount}
                     <span class="circle-label">Autofixable</span>
+                </div>
+                <div class="data-circle percentage-circle">
+                    ${validPercentage.toFixed(2)}%
+                    <span class="circle-label">Valid</span>
                 </div>
             </div>
           </div>
@@ -408,7 +418,7 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
     
     const totalValidCount = totalTotalNumbers - totalInvalidCount;
     const totalValidPercentage = totalTotalNumbers > 0 ? (totalValidCount / totalTotalNumbers) * 100 : 100;
-    
+
     // Formatting the date and time
     const formattedDate = dataTimestamp.toLocaleDateString('en-GB', {
         year: 'numeric',
@@ -420,8 +430,6 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
         minute: '2-digit'
     });
     
-    const summaryColor = getBackgroundColor(totalValidPercentage);
-
     // Calculating hours ago
     const now = new Date();
     const millisecondsAgo = now - dataTimestamp;
@@ -442,10 +450,12 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
                   font-size: 1.2em;
                   margin-bottom: 2em;
                   padding: 15px;
+                  background: #e9ecef;
                   border-radius: 8px;
               }
               .summary-circles {
                   display: flex;
+                  flex-wrap: wrap;
                   justify-content: center;
                   gap: 20px;
                   margin-top: 10px;
@@ -461,6 +471,8 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
                   color: white;
                   font-weight: bold;
                   padding: 5px;
+                  box-sizing: border-box;
+                  text-align: center;
               }
               .circle-label {
                   font-size: 0.8em;
@@ -474,6 +486,9 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
               }
               .autofixable-circle {
                   background-color: #ff914d;
+              }
+              .percentage-circle {
+                  background-color: hsl(120, 70%, 50%);
               }
               .controls {
                   display: flex;
@@ -519,7 +534,7 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
         <body>
           <h1>Invalid UK Phone Numbers in OpenStreetMap</h1>
           <p style="text-align: center;">Got a suggestion or an issue? <a href="https://github.com/arrival-spring/osm-phones/" target="_blank" rel="noopener noreferrer">Let me know on GitHub</a>.</p>
-          <div class="summary" style="background-color: ${summaryColor};">
+          <div class="summary">
             <p><strong>Overall Summary</strong></p>
             <div class="summary-circles">
                 <div class="data-circle total-circle">
@@ -533,6 +548,10 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
                 <div class="data-circle autofixable-circle">
                     ${totalAutofixableCount}
                     <span class="circle-label">Autofixable</span>
+                </div>
+                <div class="data-circle percentage-circle">
+                    ${totalValidPercentage.toFixed(2)}%
+                    <span class="circle-label">Valid</span>
                 </div>
             </div>
           </div>
