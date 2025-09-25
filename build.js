@@ -61,12 +61,8 @@ async function fetchOsmDataForCounty(county, retries = 3) {
         [out:json][timeout:${queryTimeout}];
         area(${areaId})->.county;
         (
-          node(area.county)["phone"~".*"];
-          way(area.county)["phone"~".*"];
-          relation(area.county)["phone"~".*"];
-          node(area.county)["contact:phone"~".*"];
-          way(area.county)["contact:phone"~".*"];
-          relation(area.county)["contact:phone"~".*"];
+          nwr(area.county)["phone"~".*"];
+          nwr(area.county)["contact:phone"~".*"];
         );
         out body geom;
     `;
