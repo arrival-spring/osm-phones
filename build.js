@@ -22,7 +22,7 @@ async function fetchCountiesUK(nationAreaId) {
     // It is a small, fast query that is unlikely to time out
     const query = `
         [out:json][timeout:${queryTimeout}];
-        area[name="${nationAreaId}"]->.nation;
+        area(${nationAreaId})->.nation;
         rel(area.nation)["admin_level"="6"]["name"];
         out body;
     `;
