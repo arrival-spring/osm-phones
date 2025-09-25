@@ -232,7 +232,30 @@ return `
     `;
 }
 
-function generateHtmlReport(county, invalidNumbers, totalNumbers) {
+function createFooter(dataTimestamp) {
+    // Formatting the date and time
+    const formattedDate = dataTimestamp.toLocaleDateString('en-GB', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+    const formattedTime = dataTimestamp.toLocaleTimeString('en-GB', {
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+    
+    // Calculating hours ago
+    const now = new Date();
+    const millisecondsAgo = now - dataTimestamp;
+    const hoursAgo = Math.floor(millisecondsAgo / (1000 * 60 * 60));
+
+    return `
+    <p class="text-sm text-gray-500 mt-2">Data sourced on ${formattedDate} at ${formattedTime} UTC (${hoursAgo} hours ago)</p>
+    <p class="text-sm text-gray-500 mt-2">Got a suggestion or an issue? <a href="https://github.com/arrival-spring/osm-phones/" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:text-blue-700 underline transition-colors">Let me know on GitHub</a>.</p>
+    `
+}
+
+function generateHtmlReport(county, invalidNumbers, totalNumbers, dataTimestamp) {
     const safeCountyName = county.name.replace(/\s+|\//g, '-').toLowerCase();
     const filePath = path.join(PUBLIC_DIR, `${safeCountyName}.html`);
 
@@ -337,6 +360,9 @@ function generateHtmlReport(county, invalidNumbers, totalNumbers) {
             <ul class="space-y-4">
                 ${invalidListContent}
             </ul>
+            <div class="bg-white rounded-xl shadow-lg p-2 text-center">
+                ${createFooter(dataTimestamp)}
+            </div>
         </div>
     <script>
         function fixWithJosm(url, event) {
@@ -367,22 +393,6 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
     
     const totalPercentage = totalTotalNumbers > 0 ? ((totalInvalidCount / totalTotalNumbers) * 100).toFixed(2) : '0.00';
     const totalFixablePercentage = totalInvalidCount > 0 ? ((totalAutofixableCount / totalInvalidCount) * 100).toFixed(2) : '0.00';
-
-    // Formatting the date and time
-    const formattedDate = dataTimestamp.toLocaleDateString('en-GB', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
-    const formattedTime = dataTimestamp.toLocaleTimeString('en-GB', {
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-    
-    // Calculating hours ago
-    const now = new Date();
-    const millisecondsAgo = now - dataTimestamp;
-    const hoursAgo = Math.floor(millisecondsAgo / (1000 * 60 * 60));
 
     const renderListScript = `
         <script>
@@ -493,11 +503,8 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
                 <ul id="county-list" class="space-y-4">
                     </ul>
             </div>
-            <div class="bg-white rounded-xl shadow-lg p-8 grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
-                <div>
-                    <p class="text-sm text-gray-500 mt-2">Data sourced on ${formattedDate} at ${formattedTime} (${hoursAgo} hours ago)</p>
-                    <p class="text-sm text-gray-500 mt-2">Got a suggestion or an issue? <a href="https://github.com/arrival-spring/osm-phones/" target="_blank" rel="noopener noreferrer">Let me know on GitHub</a>.</p>
-                </div>
+            <div class="bg-white rounded-xl shadow-lg p-2 text-center">
+                ${createFooter(dataTimestamp)}
             </div>
         </div>
         ${renderListScript}
@@ -543,7 +550,7 @@ async function main() {
         totalAutofixableCount += autoFixableCount;
         totalTotalNumbers += totalNumbers;
         
-        generateHtmlReport(county, invalidNumbers, totalNumbers);
+        generateHtmlReport(county, invalidNumbers, totalNumbers, dataTimestamp);
     }
     
     generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, dataTimestamp);
