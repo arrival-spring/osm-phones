@@ -217,11 +217,14 @@ function generateHtmlReport(county, invalidNumbers) {
     const safeCountyName = county.name.replace(/\s+|\//g, '-').toLowerCase();
     const filePath = path.join(PUBLIC_DIR, `${safeCountyName}.html`);
 
+    const autofixableNumbers = invalidNumbers.filter(item => item.autoFixable);
+    const manualFixNumbers = invalidNumbers.filter(item => !item.autoFixable);
+
     const josmBaseUrl = 'http://127.0.0.1:8111/load_object';
 
-    let listContent = '';
-    if (invalidNumbers.length > 0) {
-        listContent = invalidNumbers.map(item => {
+    let fixableListContent = '';
+    if (autofixableNumbers.length > 0) {
+        fixableListContent = autofixableNumbers.map(item => {
             const phoneNumber = item.invalidNumbers.join('; ');
             const fixableTag = item.autoFixable ? '<span class="text-xs font-semibold px-2 py-1 rounded-full bg-yellow-200 text-yellow-800">Fixable</span>' : '';
             const josmUrl = `${josmBaseUrl}?objects=${item.type}${item.id}&addtags=${item.tag}=${encodeURIComponent(item.suggestedFixes.join('; '))}`;
@@ -230,12 +233,9 @@ function generateHtmlReport(county, invalidNumbers) {
             return `
             <li class="bg-white rounded-xl shadow-md p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
                 <div>
-                    <h3 class="text-lg font-bold text-gray-900">${item.name || item.type || 'Unknown object'}</h3>
+                    <h3 class="text-lg font-bold text-gray-900">${getFeatureHeading(item)}</h3>
                     <p class="text-sm text-gray-500">
                         <span class="font-semibold">Phone:</span> ${phoneNumber}
-                    </p>
-                    <p class="text-sm text-red-500 mt-1">
-                        <span class="font-bold">Reason:</span> ${item.error}
                     </p>
                 </div>
                 <div class="flex-shrink-0 flex items-center space-x-2">
@@ -246,7 +246,41 @@ function generateHtmlReport(county, invalidNumbers) {
             `;
         }).join('');
     } else {
-        listContent = `
+        fixableListContent = `
+        <li class="bg-white rounded-xl shadow-md p-6 text-center text-gray-500">
+            No automatically fixable phone numbers found in this county.
+        </li>
+        `;
+    }
+
+    let invalidListContent = '';
+    if (manualFixNumbers.length > 0) {
+        fixableListContent = manualFixNumbers.map(item => {
+            const phoneNumber = item.invalidNumbers.join('; ');
+            const fixableTag = item.autoFixable ? '<span class="text-xs font-semibold px-2 py-1 rounded-full bg-yellow-200 text-yellow-800">Fixable</span>' : '';
+            const josmUrl = `${josmBaseUrl}?objects=${item.type}${item.id}&addtags=${item.tag}=${encodeURIComponent(item.suggestedFixes.join('; '))}`;
+            const josmButton = item.autoFixable ? `<a href="${josmUrl}" class="inline-flex items-center rounded-full bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-colors" target="_blank">Fix in JOSM</a>` : '';
+
+            return `
+            <li class="bg-white rounded-xl shadow-md p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900">${getFeatureHeading(item)}</h3>
+                    <p class="text-sm text-gray-500">
+                        <span class="font-semibold">Phone:</span> ${phoneNumber}
+                    </p>
+                    <p class="text-sm text-red-500 mt-1">
+                        ${item.error ? `<span class="font-bold">Reason:</span> ${item.error}` : ''}
+                    </p>
+                </div>
+                <div class="flex-shrink-0 flex items-center space-x-2">
+                    ${fixableTag}
+                    ${josmButton}
+                </div>
+            </li>
+            `;
+        }).join('');
+    } else {
+        invalidListContent = `
         <li class="bg-white rounded-xl shadow-md p-6 text-center text-gray-500">
             No invalid phone numbers found in this county.
         </li>
@@ -280,7 +314,10 @@ function generateHtmlReport(county, invalidNumbers) {
                 <p class="text-sm text-gray-500 mt-2">Invalid phone numbers found.</p>
             </header>
             <ul class="space-y-4">
-                ${listContent}
+                ${fixableListContent}
+            </ul>
+            <ul class="space-y-4">
+                ${invalidListContent}
             </ul>
         </div>
     </body>
