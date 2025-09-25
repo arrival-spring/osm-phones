@@ -226,19 +226,19 @@ function generateHtmlReport(county, invalidNumbers, totalNumbers) {
     // Create a single function to generate a list item
     function createListItem(item) {
         const phoneNumber = item.invalidNumbers.join('; ');
-        const fixedNumber = item.suggestedFixes.join('; ')
+        const fixedNumber = item.suggestedFixes.join('; ');
         const idEditUrl = `${idBaseUrl}${item.lat}/${item.lon}&${item.type}=${item.id}`;
         const josmEditUrl = `${josmBaseUrl}?objects=${item.type}${item.id}`;
         const josmFixUrl = item.autoFixable ? `${josmEditUrl}&addtags=${item.tag}=${encodeURIComponent(fixedNumber)}` : null;
-
+    
         const idEditButton = `<a href="${idEditUrl}" class="inline-flex items-center rounded-full bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-colors" target="_blank">Edit in iD</a>`;
-        const josmEditButton = `<a href="#" onclick="fixWithJosm('${josmEditUrl}', event)" class="inline-flex items-center rounded-full bg-yellow-200 px-3 py-1.5 text-sm font-semibold text-yellow-800 shadow-sm hover:bg-yellow-600 transition-colors">Edit in JOSM</a>`;
-        const josmFixButton = josmFixUrl ? `<a href="#" onclick="fixWithJosm('${josmFixUrl}', event)" class="inline-flex items-center rounded-full bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-colors">Fix in JOSM</a>` : '';
-        const websiteButton = `<a href="${item.website}" class="inline-flex items-center rounded-full bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-colors" target="_blank">Website</a>`;
-
+        const josmEditButton = `<a href="#" onclick="fixWithJosm('${josmEditUrl}', event)" class="inline-flex items-center rounded-full bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-colors">Edit in JOSM</a>`;
+        const josmFixButton = josmFixUrl ? `<a href="#" onclick="fixWithJosm('${josmFixUrl}', event)" class="inline-flex items-center rounded-full bg-yellow-200 px-3 py-1.5 text-sm font-semibold text-yello-800 shadow-sm hover:bg-yellow-300 transition-colors">Fix in JOSM</a>` : '';
+        const websiteButton = item.website ? `<a href="${item.website}" class="inline-flex items-center rounded-full bg-green-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-green-600 transition-colors" target="_blank">Website</a>` : '';
+    
         const fixableTag = item.autoFixable ? `<span class="text-xs font-semibold px-2 py-1 rounded-full bg-yellow-200 text-yellow-800">Fixable</span>` : '';
         const errorMessage = item.error ? `<p class="text-sm text-red-500 mt-1"><span class="font-bold">Reason:</span> ${item.error}</p>` : '';
-
+    
         return `
             <li class="bg-white rounded-xl shadow-md p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
                 <div>
@@ -250,17 +250,20 @@ function generateHtmlReport(county, invalidNumbers, totalNumbers) {
                         <div class="col-span-1">
                             <span>${phoneNumber}</span>
                         </div>
-
+                        ${item.autoFixable ? `
                         <div class="col-span-1">
                             <span class="font-semibold">Suggested fix:</span>
                         </div>
                         <div class="col-span-1">
                             <span>${fixedNumber}</span>
                         </div>
+                        ` : ''}
                     </div>
                     ${errorMessage}
                 </div>
-                <div class="flex-shrink-0 flex items-center space-x-2">
+                
+                <div class="flex-shrink-0 flex flex-wrap items-center gap-2">
+                    ${fixableTag}
                     ${idEditButton}
                     ${josmEditButton}
                     ${josmFixButton}
@@ -270,7 +273,6 @@ function generateHtmlReport(county, invalidNumbers, totalNumbers) {
         `;
     }
 
-    // Use the new function to map over the arrays
     const fixableListContent = autofixableNumbers.length > 0 ?
         autofixableNumbers.map(createListItem).join('') :
         `<li class="bg-white rounded-xl shadow-md p-6 text-center text-gray-500">No automatically fixable phone numbers found in this county.</li>`;
