@@ -216,6 +216,9 @@ function getFeatureHeading(item) {
 function generateHtmlReport(county, invalidNumbers) {
     const autofixableNumbers = invalidNumbers.filter(item => item.autoFixable);
     const manualFixNumbers = invalidNumbers.filter(item => !item.autoFixable);
+    
+    const validPercentage = (county.totalNumbers > 0) ? ((county.totalNumbers - county.invalidCount) / county.totalNumbers) * 100 : 100;
+    const summaryColor = getBackgroundColor(validPercentage);
 
     let htmlContent = `
         <!DOCTYPE html>
@@ -228,6 +231,13 @@ function generateHtmlReport(county, invalidNumbers) {
             body { font-family: sans-serif; line-height: 1.6; padding: 20px; }
             h1 { text-align: center; }
             h2 { margin-top: 2em; }
+            .summary {
+              text-align: center;
+              font-size: 1.2em;
+              margin-bottom: 2em;
+              padding: 15px;
+              border-radius: 8px;
+            }
             .number-info { font-weight: bold; }
             .error { color: red; font-size: 0.9em; }
             .fix-buttons a { margin-right: 10px; }
@@ -239,7 +249,13 @@ function generateHtmlReport(county, invalidNumbers) {
         </head>
         <body>
           <h1>Invalid UK Phone Numbers in ${county.name}</h1>
-          <p><a href="index.html">← Back to main index</a></p>
+          <p><a href="index.html">← Back to all counties</a></p>
+          <div class="summary" style="background-color: ${summaryColor};">
+            <p><strong>County Summary</strong></p>
+            <p><strong>Total Phone Numbers:</strong> ${county.totalNumbers}</p>
+            <p><strong>Invalid Numbers:</strong> ${county.invalidCount} (<strong style="color: #007bff;">${validPercentage.toFixed(2)}%</strong> valid)</p>
+            <p><strong>Autofixable Numbers:</strong> ${county.autoFixableCount}</p>
+          </div>
           <p>This report identifies phone numbers in OpenStreetMap that are invalid in ${county.name}.</p>
           <script>
             function fixWithJosm(url, event) {
@@ -361,6 +377,8 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
         hour: '2-digit',
         minute: '2-digit'
     });
+    
+    const summaryColor = getBackgroundColor(totalValidPercentage);
 
     // Calculating hours ago
     const now = new Date();
@@ -382,7 +400,6 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
                   font-size: 1.2em;
                   margin-bottom: 2em;
                   padding: 15px;
-                  background: #e9ecef;
                   border-radius: 8px;
               }
               .controls {
@@ -429,8 +446,8 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
         <body>
           <h1>Invalid UK Phone Numbers in OpenStreetMap</h1>
           <p style="text-align: center;">Got a suggestion or an issue? <a href="https://github.com/arrival-spring/osm-phones/" target="_blank" rel="noopener noreferrer">Let me know on GitHub</a>.</p>
-          <div class="summary">
-            <p>Overall Summary</p>
+          <div class="summary" style="background-color: ${summaryColor};">
+            <p><strong>Overall Summary</strong></p>
             <p><strong>Total Phone Numbers:</strong> ${totalTotalNumbers}</p>
             <p><strong>Invalid Numbers:</strong> ${totalInvalidCount} (${totalValidPercentage.toFixed(2)}% valid)</p>
             <p><strong>Autofixable Numbers:</strong> ${totalAutofixableCount}</p>
@@ -583,18 +600,20 @@ async function main() {
         
         const autoFixableCount = invalidNumbers.filter(item => item.autoFixable).length;
 
-        countyStats.push({
+        const countyData = {
             name: county.name,
             invalidCount: invalidNumbers.length,
             autoFixableCount: autoFixableCount,
             totalNumbers: totalNumbers
-        });
+        };
+
+        countyStats.push(countyData);
         
         totalInvalidCount += invalidNumbers.length;
         totalAutofixableCount += autoFixableCount;
         totalTotalNumbers += totalNumbers;
         
-        generateHtmlReport(county, invalidNumbers);
+        generateHtmlReport(countyData, invalidNumbers);
     }
     
     generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, dataTimestamp);
