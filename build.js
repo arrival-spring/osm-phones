@@ -448,16 +448,16 @@ function generateIndexHtml(groupedCountyStats, totalInvalidCount, totalAutofixab
 
                             function getBackgroundColor(percent) {
                                 if (percent > 2) {
-                                    return `hsl(0, 70%, 50%)`;
+                                    return \`hsl(0, 70%, 50%)\`;
                                 }
                                 const hue = ((2 - percent) / 2) * 120;
-                                return `hsl(${hue}, 70%, 50%)`;
+                                return \`hsl(${hue}, 70%, 50%)\`;
                             }
                             const backgroundColor = getBackgroundColor(validPercentage);
 
                             const li = document.createElement('li');
                             li.className = 'bg-white rounded-xl shadow-lg p-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 transition-transform transform hover:scale-105';
-                            li.innerHTML = `
+                            li.innerHTML = \`
                                 <a href="${safeCountyName}.html" class="flex-grow flex items-center space-x-4">
                                     <div class="h-12 w-12 rounded-full flex-shrink-0" style="background-color: ${backgroundColor};"></div>
                                     <div class="flex-grow">
@@ -469,7 +469,7 @@ function generateIndexHtml(groupedCountyStats, totalInvalidCount, totalAutofixab
                                     <p class="text-2xl font-bold text-gray-800">${validPercentage.toFixed(2)}<span class="text-base font-normal">%</span></p>
                                     <p class="text-xs text-gray-500">of total</p>
                                 </div>
-                            `;
+                            \`;
                             ul.appendChild(li);
                         });
                         listContainer.appendChild(ul);
