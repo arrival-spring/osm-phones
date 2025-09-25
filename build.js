@@ -408,7 +408,7 @@ function generateIndexHtml(groupedCountyStats, totalInvalidCount, totalAutofixab
             const listContainer = document.getElementById('county-list');
             const sortButtons = document.querySelectorAll('.sort-btn');
             const hideEmptyCheckbox = document.getElementById('hide-empty');
-            let currentSort = 'invalidCount';
+            let currentSort = 'percentage';
 
             function updateButtonStyles() {
                 sortButtons.forEach(button => {
@@ -435,7 +435,11 @@ function generateIndexHtml(groupedCountyStats, totalInvalidCount, totalAutofixab
                     if (sortedData.length > 0) {
                         // Sort within each nation
                         sortedData.sort((a, b) => {
-                            if (currentSort === 'invalidCount') {
+                            if (currentSort === 'percentage') {
+                                const percentageA = a.totalNumbers > 0 ? (a.invalidCount / a.totalNumbers) : 0;
+                                const percentageB = b.totalNumbers > 0 ? (b.invalidCount / b.totalNumbers) : 0;
+                                return percentageB - percentageA;
+                            } else if (currentSort === 'invalidCount') {
                                 return b.invalidCount - a.invalidCount;
                             } else if (currentSort === 'name') {
                                 return a.name.localeCompare(b.name);
@@ -537,6 +541,7 @@ function generateIndexHtml(groupedCountyStats, totalInvalidCount, totalAutofixab
                         </div>
                         <div class="flex items-center space-x-2">
                             <span class="mr-2 text-sm font-medium text-gray-700">Sort by:</span>
+                            <button id="sort-percentage" data-sort="percentage" class="sort-btn px-4 py-2 rounded-md text-sm font-medium transition-colors">Invalid Percentage</button>
                             <button id="sort-invalid" data-sort="invalidCount" class="sort-btn px-4 py-2 rounded-md text-sm font-medium transition-colors">Invalid Count</button>
                             <button id="sort-name" data-sort="name" class="sort-btn px-4 py-2 rounded-md text-sm font-medium transition-colors">Name</button>
                         </div>
