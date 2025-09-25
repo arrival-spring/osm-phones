@@ -215,7 +215,7 @@ function validateNumbers(elements) {
 
 function createStatsBox(total, invalid, fixable) {
     const totalPercentage = total > 0 ? (((total - invalid) / total) * 100).toFixed(2) : '0.00';
-    const fixablePercentage = totalInvalidCount > 0 ? ((totalAutofixableCount / totalInvalidCount) * 100).toFixed(2) : '0.00';
+    const fixablePercentage = invalid > 0 ? ((fixable / invalid) * 100).toFixed(2) : '0.00';
 
     return `
         <div class="bg-white rounded-xl shadow-lg p-8 grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
