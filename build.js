@@ -296,9 +296,9 @@ function createFooter(dataTimestamp) {
     `
 }
 
-function generateHtmlReport(country, division, invalidNumbers, totalNumbers, dataTimestamp) {
+function generateHtmlReport(countryName, division, invalidNumbers, totalNumbers, dataTimestamp) {
     const safeDivisionName = safeName(division.name);
-    const safeCountryName = safeName(country.name);
+    const safeCountryName = safeName(countryName);
     const filePath = path.join(PUBLIC_DIR, safeCountryName, `${safeDivisionName}.html`);
 
     const autofixableNumbers = invalidNumbers.filter(item => item.autoFixable);
