@@ -214,18 +214,18 @@ function validateNumbers(elements) {
 }
 
 function createStatsBox(total, invalid, fixable) {
-    const totalPercentage = total > 0 ? (((total - invalid) / total) * 100).toFixed(2) : '0.00';
+    const totalPercentage = total > 0 ? ((invalid / total) * 100).toFixed(2) : '0.00';
     const fixablePercentage = invalid > 0 ? ((fixable / invalid) * 100).toFixed(2) : '0.00';
 
     return `
         <div class="bg-white rounded-xl shadow-lg p-8 grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
             <div>
                 <p class="text-4xl font-extrabold text-gray-800">${total.toLocaleString()}</p>
-                <p class="text-sm text-gray-500">Total Numbers Checked</p>
+                <p class="text-sm text-gray-500">Numbers Checked</p>
             </div>
             <div>
                 <p class="text-4xl font-extrabold text-blue-700">${invalid.toLocaleString()}</p>
-                <p class="text-gray-500">Total Invalid Numbers</p>
+                <p class="text-gray-500">Invalid Numbers</p>
                 <p class="text-sm text-gray-400">${totalPercentage.toLocaleString()}% of total</p>
             </div>
             <div>
@@ -354,15 +354,15 @@ function generateHtmlReport(county, invalidNumbers, totalNumbers, dataTimestamp)
                 <h2 class="text-2xl font-semibold text-gray-700 mt-2">${county.name}</h2>
             </header>
             ${createStatsBox(totalNumbers, invalidNumbers.length, autofixableNumbers.length)}
-            <div>
-                <h2 class="text-center text-2xl font-semibold text-gray-900">Fixable numbers</h2>
+            <div class="text-center">
+                <h2 class="text-2xl font-semibold text-gray-900">Fixable numbers</h2>
                 <p class="text-sm text-gray-500 mt-2">These numbers appear to be valid UK numbers but are formatted incorrectly. The suggested fix assumes that they are indeed UK numbers. Not all 'auto' fixes are necessarily valid, so please do not blindly click on all the fix links without first verifying the number.</p>
             </div>
             <ul class="space-y-4">
                 ${fixableListContent}
             </ul>
-            <div>
-                <h2 class="text-center text-2xl font-semibold text-gray-900">Invalid numbers</h2>
+            <div class="text-center">
+                <h2 class="text-2xl font-semibold text-gray-900">Invalid numbers</h2>
                 <p class="text-sm text-gray-500 mt-2">These numbers are all invalid in some way; maybe they are too long or too short, or perhaps they're missing an area code. The website could be used to check for a valid number, or a survey may be necessary.</p>
             </div>
             <ul class="space-y-4">
