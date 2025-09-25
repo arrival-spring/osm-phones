@@ -227,62 +227,7 @@ function generateHtmlReport(county, invalidNumbers) {
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>Invalid Phone Numbers in ${county.name}</title>
-          <style>
-            body { font-family: sans-serif; line-height: 1.6; padding: 20px; }
-            h1 { text-align: center; }
-            h2 { margin-top: 2em; }
-            .summary {
-              text-align: center;
-              font-size: 1.2em;
-              margin-bottom: 2em;
-              padding: 15px;
-              border-radius: 8px;
-            }
-            .summary-circles {
-                display: flex;
-                flex-wrap: wrap;
-                justify-content: center;
-                gap: 20px;
-                margin-top: 10px;
-            }
-            .data-circle {
-                width: 100px;
-                height: 100px;
-                border-radius: 50%;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                color: white;
-                font-weight: bold;
-                padding: 5px;
-                box-sizing: border-box;
-                text-align: center;
-            }
-            .circle-label {
-                font-size: 0.8em;
-                margin-top: 5px;
-            }
-            .total-circle {
-                background-color: #007bff;
-            }
-            .invalid-circle {
-                background-color: hsl(0, 70%, 75%);
-            }
-            .autofixable-circle {
-                background-color: #ff914d;
-            }
-            .percentage-circle {
-                background-color: hsl(120, 70%, 50%);
-            }
-            .number-info { font-weight: bold; }
-            .error { color: red; font-size: 0.9em; }
-            .fix-buttons a { margin-right: 10px; }
-            .fix-container { margin-top: 5px; }
-            ul { list-style-type: none; padding: 0; }
-            li { background: #f4f4f4; margin: 10px auto; padding: 10px; border-radius: 5px; position: relative; max-width: 600px; }
-            .website-link { position: absolute; top: 10px; right: 10px; font-size: 0.9em; }
-          </style>
+          <link rel="stylesheet" href="styles.css">
         </head>
         <body>
           <h1>Invalid UK Phone Numbers in ${county.name}</h1>
@@ -442,94 +387,7 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>Invalid UK Phone Numbers in OpenStreetMap</title>
-          <style>
-              body { font-family: sans-serif; line-height: 1.6; padding: 20px; }
-              h1 { text-align: center; }
-              .summary {
-                  text-align: center;
-                  font-size: 1.2em;
-                  margin-bottom: 2em;
-                  padding: 15px;
-                  background: #e9ecef;
-                  border-radius: 8px;
-              }
-              .summary-circles {
-                  display: flex;
-                  flex-wrap: wrap;
-                  justify-content: center;
-                  gap: 20px;
-                  margin-top: 10px;
-              }
-              .data-circle {
-                  width: 100px;
-                  height: 100px;
-                  border-radius: 50%;
-                  display: flex;
-                  flex-direction: column;
-                  align-items: center;
-                  justify-content: center;
-                  color: white;
-                  font-weight: bold;
-                  padding: 5px;
-                  box-sizing: border-box;
-                  text-align: center;
-              }
-              .circle-label {
-                  font-size: 0.8em;
-                  margin-top: 5px;
-              }
-              .total-circle {
-                  background-color: #007bff;
-              }
-              .invalid-circle {
-                  background-color: hsl(0, 70%, 75%);
-              }
-              .autofixable-circle {
-                  background-color: #ff914d;
-              }
-              .percentage-circle {
-                  background-color: hsl(120, 70%, 50%);
-              }
-              .controls {
-                  display: flex;
-                  justify-content: center;
-                  gap: 10px;
-                  margin-bottom: 20px;
-                  flex-wrap: wrap;
-                  align-items: center;
-              }
-              .sort-buttons {
-                  display: flex;
-                  gap: 10px;
-              }
-              .sort-btn {
-                  background-color: #f0f0f0;
-                  border: 1px solid #ccc;
-                  padding: 8px 12px;
-                  border-radius: 5px;
-                  cursor: pointer;
-                  transition: background-color 0.3s, color 0.3s;
-              }
-              .sort-btn.active {
-                  background-color: #007bff;
-                  color: white;
-                  border-color: #007bff;
-              }
-              ul { list-style-type: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 10px; }
-              li { padding: 0; border-radius: 5px; }
-              li a {
-                  display: block;
-                  padding: 10px;
-                  text-decoration: none;
-                  color: inherit;
-                  font-weight: bold;
-                  transition: background-color 0.3s ease;
-              }
-              li a:hover {
-                  background-color: rgba(0,0,0,0.1);
-                  text-decoration: underline;
-              }
-          </style>
+          <link rel="stylesheet" href="styles.css">
         </head>
         <body>
           <h1>Invalid UK Phone Numbers in OpenStreetMap</h1>
@@ -675,6 +533,7 @@ async function main() {
     if (!fs.existsSync(PUBLIC_DIR)) {
         fs.mkdirSync(PUBLIC_DIR);
     }
+    fs.copyFileSync('styles.css', path.join(PUBLIC_DIR, 'styles.css'));
     
     console.log('Starting full build process...');
 
