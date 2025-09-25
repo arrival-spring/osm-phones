@@ -361,12 +361,28 @@ function generateHtmlReport(county, invalidNumbers, totalNumbers) {
     console.log(`Generated report for ${county.name} at ${filePath}`);
 }
 
-function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers) {
+function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, dataTimestamp) {
     // This initial sort is good practice to ensure the JSON.stringify data is in the correct order on first load.
     const sortedStats = countyStats.sort((a, b) => b.invalidCount - a.invalidCount);
     
     const totalPercentage = totalTotalNumbers > 0 ? ((totalInvalidCount / totalTotalNumbers) * 100).toFixed(2) : '0.00';
     const totalFixablePercentage = totalInvalidCount > 0 ? ((totalAutofixableCount / totalInvalidCount) * 100).toFixed(2) : '0.00';
+
+    // Formatting the date and time
+    const formattedDate = dataTimestamp.toLocaleDateString('en-GB', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+    const formattedTime = dataTimestamp.toLocaleTimeString('en-GB', {
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+    
+    // Calculating hours ago
+    const now = new Date();
+    const millisecondsAgo = now - dataTimestamp;
+    const hoursAgo = Math.floor(millisecondsAgo / (1000 * 60 * 60));
 
     const renderListScript = `
         <script>
@@ -462,7 +478,7 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
         <div class="max-w-5xl mx-auto space-y-8">
             <header class="text-center space-y-2">
                 <h1 class="text-4xl font-extrabold text-gray-900">OSM Phone Number Validation</h1>
-                <p class="text-sm text-gray-500">A report on invalid phone numbers in OpenStreetMap data for Great Britain.</p>
+                <p class="text-sm text-gray-500">A report on invalid phone numbers in OpenStreetMap data for the United Kingdom.</p>
             </header>
             ${createStatsBox(totalTotalNumbers, totalInvalidCount, totalAutofixableCount)}
             <div class="bg-white rounded-xl shadow-lg p-6">
@@ -476,6 +492,12 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
                 </div>
                 <ul id="county-list" class="space-y-4">
                     </ul>
+            </div>
+            <div class="bg-white rounded-xl shadow-lg p-8 grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
+                <div>
+                    <p class="text-sm text-gray-500 mt-2">Data sourced on ${formattedDate} at ${formattedTime} (${hoursAgo} hours ago)</p>
+                    <p class="text-sm text-gray-500 mt-2">Got a suggestion or an issue? <a href="https://github.com/arrival-spring/osm-phones/" target="_blank" rel="noopener noreferrer">Let me know on GitHub</a>.</p>
+                </div>
             </div>
         </div>
         ${renderListScript}
@@ -501,6 +523,8 @@ async function main() {
     let totalInvalidCount = 0;
     let totalAutofixableCount = 0;
     let totalTotalNumbers = 0;
+
+    const dataTimestamp = new Date();
     
     for (const county of ukCounties) {
         const elements = await fetchOsmDataForCounty(county);
@@ -522,7 +546,7 @@ async function main() {
         generateHtmlReport(county, invalidNumbers, totalNumbers);
     }
     
-    generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers);
+    generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, dataTimestamp);
 
     console.log('Full build process completed successfully.');
 }
