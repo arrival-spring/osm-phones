@@ -190,9 +190,9 @@ function validateNumbers(elements) {
     return { invalidNumbers: Array.from(invalidItemsMap.values()), totalNumbers };
   }
 
-  function getFeatureHeading(item) {
+  function getFeatureTypeName(item) {
     if (item.name) {
-        return `<h3>${item.name}</h3>`;
+        return `${item.name}`;
     }
 
     const featureTags = ['amenity', 'shop', 'tourism', 'leisure', 'emergency', 'building', 'craft', 'aeroway', 'railway', 'healthcare', 'highway', 'military', 'man_made', 'public_transport'];
@@ -206,10 +206,10 @@ function validateNumbers(elements) {
 
     if (featureType) {
         const formattedType = featureType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-        return `<h3>${formattedType}</h3>`;
+        return `${formattedType}`;
     } else {
         const formattedType = item.type.replace(/\b\w/g, c => c.toUpperCase());
-        return `<h3>OSM ${formattedType}</h3>`;
+        return `OSM ${formattedType}`;
     }
 }
 
@@ -221,26 +221,35 @@ function generateHtmlReport(county, invalidNumbers) {
     const manualFixNumbers = invalidNumbers.filter(item => !item.autoFixable);
 
     const josmBaseUrl = 'http://127.0.0.1:8111/load_object';
+    const idBaseUrl = 'https://www.openstreetmap.org/edit?editor=id&map=19/'
 
     let fixableListContent = '';
     if (autofixableNumbers.length > 0) {
         fixableListContent = autofixableNumbers.map(item => {
             const phoneNumber = item.invalidNumbers.join('; ');
+            const fixedNumber = item.suggestedFixes.join('; ');
             const fixableTag = item.autoFixable ? '<span class="text-xs font-semibold px-2 py-1 rounded-full bg-yellow-200 text-yellow-800">Fixable</span>' : '';
-            const josmUrl = `${josmBaseUrl}?objects=${item.type}${item.id}&addtags=${item.tag}=${encodeURIComponent(item.suggestedFixes.join('; '))}`;
-            const josmButton = item.autoFixable ? `<a href="${josmUrl}" class="inline-flex items-center rounded-full bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-colors" target="_blank">Fix in JOSM</a>` : '';
+            const idEditUrl = `${idBaseUrl}${item.lat}/${item.lon}&${item.type}=${item.id}`;
+            const josmEditUrl = `${josmBaseUrl}?objects=${item.type}${item.id}`;
+            const josmFixUrl = `${josmEditUrl}&addtags=${item.tag}=${encodeURIComponent(fixedNumber)}`;
+            const josmFixButton = item.autoFixable ? `<a href="${josmFixUrl}" class="inline-flex items-center rounded-full bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-colors" target="_blank">Fix in JOSM</a>` : '';
+            const josmEditButton = `<a href="${josmEditUrl}" class="inline-flex items-center rounded-full bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-colors" target="_blank">Fix in JOSM</a>`;
+            const idEditButton = `<a href="${idEditUrl}" class="inline-flex items-center rounded-full bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-colors" target="_blank">Fix in JOSM</a>`;
 
             return `
             <li class="bg-white rounded-xl shadow-md p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
                 <div>
-                    <h3 class="text-lg font-bold text-gray-900">${getFeatureHeading(item)}</h3>
+                    <h3 class="text-lg font-bold text-gray-900">${getFeatureTypeName(item)}</h3>
                     <p class="text-sm text-gray-500">
                         <span class="font-semibold">Phone:</span> ${phoneNumber}
+                        <span class="font-semibold">Suggested fix:</span> ${fixedNumber}
                     </p>
                 </div>
                 <div class="flex-shrink-0 flex items-center space-x-2">
                     ${fixableTag}
-                    ${josmButton}
+                    ${idEditButton}
+                    ${josmEditButton}
+                    ${josmFixButton}
                 </div>
             </li>
             `;
@@ -257,14 +266,15 @@ function generateHtmlReport(county, invalidNumbers) {
     if (manualFixNumbers.length > 0) {
         invalidListContent = manualFixNumbers.map(item => {
             const phoneNumber = item.invalidNumbers.join('; ');
-            const fixableTag = item.autoFixable ? '<span class="text-xs font-semibold px-2 py-1 rounded-full bg-yellow-200 text-yellow-800">Fixable</span>' : '';
-            const josmUrl = `${josmBaseUrl}?objects=${item.type}${item.id}&addtags=${item.tag}=${encodeURIComponent(item.suggestedFixes.join('; '))}`;
-            const josmButton = item.autoFixable ? `<a href="${josmUrl}" class="inline-flex items-center rounded-full bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-colors" target="_blank">Fix in JOSM</a>` : '';
+            const idEditUrl = `${idBaseUrl}${item.lat}/${item.lon}&${item.type}=${item.id}`;
+            const josmEditUrl = `${josmBaseUrl}?objects=${item.type}${item.id}`;
+            const josmEditButton = `<a href="${josmEditUrl}" class="inline-flex items-center rounded-full bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-colors" target="_blank">Fix in JOSM</a>`;
+            const idEditButton = `<a href="${idEditUrl}" class="inline-flex items-center rounded-full bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-colors" target="_blank">Fix in JOSM</a>`;
 
             return `
             <li class="bg-white rounded-xl shadow-md p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
                 <div>
-                    <h3 class="text-lg font-bold text-gray-900">${getFeatureHeading(item)}</h3>
+                    <h3 class="text-lg font-bold text-gray-900">${getFeatureTypeName(item)}</h3>
                     <p class="text-sm text-gray-500">
                         <span class="font-semibold">Phone:</span> ${phoneNumber}
                     </p>
@@ -273,8 +283,8 @@ function generateHtmlReport(county, invalidNumbers) {
                     </p>
                 </div>
                 <div class="flex-shrink-0 flex items-center space-x-2">
-                    ${fixableTag}
-                    ${josmButton}
+                    ${idEditButton}
+                    ${josmEditButton}
                 </div>
             </li>
             `;
@@ -313,9 +323,11 @@ function generateHtmlReport(county, invalidNumbers) {
                 <h2 class="text-2xl font-semibold text-gray-700 mt-2">${county.name}</h2>
                 <p class="text-sm text-gray-500 mt-2">Invalid phone numbers found.</p>
             </header>
+            <h2 class="text-2xl font-semibold text-gray-900 mt-2">Fixable numbers</h2>
             <ul class="space-y-4">
                 ${fixableListContent}
             </ul>
+            <h2 class="text-2xl font-semibold text-gray-900 mt-2">Invalid numbers</h2>
             <ul class="space-y-4">
                 ${invalidListContent}
             </ul>
