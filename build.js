@@ -358,11 +358,11 @@ function generateHtmlReport(country, division, invalidNumbers, totalNumbers, dat
 
     const fixableListContent = autofixableNumbers.length > 0 ?
         autofixableNumbers.map(createListItem).join('') :
-        `<li class="bg-white rounded-xl shadow-md p-6 text-center text-gray-500">No automatically fixable phone numbers found in this county.</li>`;
+        `<li class="bg-white rounded-xl shadow-md p-6 text-center text-gray-500">No automatically fixable phone numbers found in this subdivision.</li>`;
 
     const invalidListContent = manualFixNumbers.length > 0 ?
         manualFixNumbers.map(createListItem).join('') :
-        `<li class="bg-white rounded-xl shadow-md p-6 text-center text-gray-500">No invalid phone numbers found in this county.</li>`;
+        `<li class="bg-white rounded-xl shadow-md p-6 text-center text-gray-500">No invalid phone numbers found in this subdivision.</li>`;
 
     const htmlContent = `
     <!DOCTYPE html>
@@ -700,7 +700,7 @@ async function main() {
                 if (processedSubDivisions.has(subdivision.name)) {
                     return false;
                 }
-                processedSubDivisions.add(county.name);
+                processedSubDivisions.add(subdivision.name);
                 return true;
             });
 
