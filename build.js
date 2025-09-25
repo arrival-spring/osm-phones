@@ -226,26 +226,42 @@ function generateHtmlReport(county, invalidNumbers) {
     // Create a single function to generate a list item
     function createListItem(item) {
         const phoneNumber = item.invalidNumbers.join('; ');
+        const fixedNumber = item.suggestedFixes.join('; ')
         const idEditUrl = `${idBaseUrl}${item.lat}/${item.lon}&${item.type}=${item.id}`;
         const josmEditUrl = `${josmBaseUrl}?objects=${item.type}${item.id}`;
-        const josmFixUrl = item.autoFixable ? `${josmEditUrl}&addtags=${item.tag}=${encodeURIComponent(item.suggestedFixes.join('; '))}` : null;
+        const josmFixUrl = item.autoFixable ? `${josmEditUrl}&addtags=${item.tag}=${encodeURIComponent(fixedNumber)}` : null;
 
         const idEditButton = `<a href="${idEditUrl}" class="inline-flex items-center rounded-full bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-colors" target="_blank">Edit in iD</a>`;
         const josmEditButton = `<a href="${josmEditUrl}" class="inline-flex items-center rounded-full bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-colors" target="_blank">Edit in JOSM</a>`;
         const josmFixButton = josmFixUrl ? `<a href="${josmFixUrl}" class="inline-flex items-center rounded-full bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-colors" target="_blank">Fix in JOSM</a>` : '';
 
         const fixableTag = item.autoFixable ? `<span class="text-xs font-semibold px-2 py-1 rounded-full bg-yellow-200 text-yellow-800">Fixable</span>` : '';
-        const suggestedFix = item.autoFixable ? `<span class="font-semibold">Suggested fix:</span> ${item.suggestedFixes.join('; ')}` : '';
+        const suggestedFix = item.autoFixable ? `<span class="font-semibold">Suggested fix:</span> ${fixedNumber}` : '';
         const errorMessage = item.error ? `<p class="text-sm text-red-500 mt-1"><span class="font-bold">Reason:</span> ${item.error}</p>` : '';
 
         return `
             <li class="bg-white rounded-xl shadow-md p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
                 <div>
                     <h3 class="text-lg font-bold text-gray-900">${getFeatureTypeName(item)}</h3>
-                    <p class="text-sm text-gray-500">
-                        <span class="font-semibold">Phone:</span> ${phoneNumber}<br>
-                        ${suggestedFix}
-                    </p>
+                    <div class="grid grid-cols-2 gap-x-4">
+                        <div class="col-span-1">
+                            <span class="font-semibold">Phone:</span>
+                        </div>
+                        <div class="col-span-1">
+                            <span>${phoneNumber}</span>
+                        </div>
+
+                        <div class="col-span-1">
+                            <span class="font-semibold">Suggested fix:</span>
+                        </div>
+                        <div class="col-span-1">
+                            <span>${fixedNumber}</span>
+                        </div>
+                    </div>
+                    // <p class="text-sm text-gray-500">
+                    //     <span class="font-semibold">Phone:</span> \${phoneNumber}<br>
+                    //     \${suggestedFix}
+                    // </p>
                     ${errorMessage}
                 </div>
                 <div class="flex-shrink-0 flex items-center space-x-2">
@@ -287,11 +303,11 @@ function generateHtmlReport(county, invalidNumbers) {
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline-block align-middle mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                     </svg>
-                    <span class="align-middle">Back to Index</span>
+                    <span class="align-middle">Back to county list</span>
                 </a>
                 <h1 class="text-4xl font-extrabold text-gray-900">Phone Number Report</h1>
                 <h2 class="text-2xl font-semibold text-gray-700 mt-2">${county.name}</h2>
-                <p class="text-sm text-gray-500 mt-2">Invalid phone numbers found.</p>
+                <p class="text-sm text-gray-500 mt-2">${invalidNumbers.length} invalid phone numbers found (${autofixableNumbers} potentially fixable automatically).</p>
             </header>
             <h2 class="text-2xl font-semibold text-gray-900 mt-2">Fixable numbers</h2>
             <ul class="space-y-4">
@@ -344,12 +360,12 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
 
 
                     function getBackgroundColor(percent) {
-                        if (percent < 98) {
+                        if (percent > 2) {
                             // Red for anything below 98%
                             return \`hsl(0, 70%, 50%)\`;
                         }
                         // Scale green from 98% to 100%
-                        const hue = ((percent - 98) / 2) * 120;
+                        const hue = ((2 - percent) / 2) * 120;
                         return \`hsl(\${hue}, 70%, 50%)\`;
                         }
 
