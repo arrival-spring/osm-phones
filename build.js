@@ -8,7 +8,6 @@ const OVERPASS_API_URL = 'https://overpass-api.de/api/interpreter';
 const COUNTRIES = {
     'United Kingdom': {
         name: 'United Kingdom',
-        page: 'uk.html',
         subdivisions: {
             'England':          3600058447,
             'Scotland':         3600058446,
@@ -19,7 +18,6 @@ const COUNTRIES = {
     },
     'South Africa': {
         name: 'South Africa',
-        page: 'south-africa.html',
         subdivisions: {
             'Eastern Cape':  3604782250,
             'Free State':    3600092417,
@@ -34,6 +32,10 @@ const COUNTRIES = {
         countryCode: 'ZA'
     }
 };
+
+function safeName(name) {
+    return name.replace(/\s+|\//g, '-').toLowerCase();
+}
 
 async function fetchAdminLevel6(divisionAreaId, divisionName, retries=3) {
     console.log(`Fetching all subdivisions for ${divisionName}...`);
@@ -83,6 +85,50 @@ async function fetchAdminLevel6(divisionAreaId, divisionName, retries=3) {
     }
 }
 
+async function fetchOsmDataForDivision(division, retries = 3) {
+    console.log(`Fetching data for division: ${division.name} (ID: ${division.id})...`);
+    const { default: fetch } = await import('node-fetch');
+
+    const areaId = division.id + 3600000000;
+    const queryTimeout = 600;
+    
+    const overpassQuery = `
+        [out:json][timeout:${queryTimeout}];
+        area(${areaId})->.division;
+        (
+          nwr(area.division)["phone"~".*"];
+          nwr(area.division)["contact:phone"~".*"];
+        );
+        out body geom;
+    `;
+
+    try {
+        const response = await fetch(OVERPASS_API_URL, {
+            method: 'POST',
+            body: `data=${encodeURIComponent(overpassQuery)}`,
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        });
+        
+        if (response.status === 429 || response.status === 504) {
+            if (retries > 0) {
+                const retryAfter = response.headers.get('Retry-After') || 60;
+                console.warn(`Received ${response.status}. Retrying in ${retryAfter} seconds...`);
+                await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+                return await fetchOsmDataForDivision(division, retries - 1);
+            }
+        }
+        
+        if (!response.ok) {
+            throw new Error(`Overpass API response error: ${response.statusText}`);
+        }
+        const data = await response.json();
+        return data.elements;
+    } catch (error) {
+        console.error(`Error fetching OSM data for ${division.name}:`, error);
+        return [];
+    }
+}
+
 function validateNumbers(elements, countryCode) {
     const invalidItemsMap = new Map();
     let totalNumbers = 0;
@@ -93,7 +139,11 @@ function validateNumbers(elements, countryCode) {
             const phoneTags = ['phone', 'contact:phone'];
             const websiteTags = ['website', 'contact:website'];
     
-            const website = websiteTags.map(tag => tags[tag]).find(url => url);
+            let website = websiteTags.map(tag => tags[tag]).find(url => url);
+            if (website && !website.startsWith('http://') && !website.startsWith('https://')) {
+                website = `http://${website}`;
+            }
+
             const lat = element.lat || (element.center && element.center.lat);
             const lon = element.lon || (element.center && element.center.lon);
             const name = tags.name;
@@ -198,53 +248,58 @@ function getFeatureTypeName(item) {
     }
 }
 
-async function fetchOsmDataForDivision(division, retries = 3) {
-    console.log(`Fetching data for division: ${division.name} (ID: ${division.id})...`);
-    const { default: fetch } = await import('node-fetch');
+function createStatsBox(total, invalid, fixable) {
+    const totalPercentage = total > 0 ? ((invalid / total) * 100).toFixed(2) : '0.00';
+    const fixablePercentage = invalid > 0 ? ((fixable / invalid) * 100).toFixed(2) : '0.00';
 
-    const areaId = division.id + 3600000000;
-    const queryTimeout = 600;
-    
-    const overpassQuery = `
-        [out:json][timeout:${queryTimeout}];
-        area(${areaId})->.division;
-        (
-          nwr(area.division)["phone"~".*"];
-          nwr(area.division)["contact:phone"~".*"];
-        );
-        out body geom;
+    return `
+        <div class="bg-white rounded-xl shadow-lg p-8 grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
+            <div>
+                <p class="text-4xl font-extrabold text-gray-800">${total.toLocaleString()}</p>
+                <p class="text-sm text-gray-500">Numbers Checked</p>
+            </div>
+            <div>
+                <p class="text-4xl font-extrabold text-blue-700">${invalid.toLocaleString()}</p>
+                <p class="text-gray-500">Invalid Numbers</p>
+                <p class="text-sm text-gray-400">${totalPercentage.toLocaleString()}% of total</p>
+            </div>
+            <div>
+                <p class="text-4xl font-extrabold text-green-700">${fixable.toLocaleString()}</p>
+                <p class="text-gray-500">Potentially Fixable</p>
+                <p class="text-sm text-gray-400">${fixablePercentage.toLocaleString()}% of invalid</p>
+            </div>
+            
+        </div>
     `;
-
-    try {
-        const response = await fetch(OVERPASS_API_URL, {
-            method: 'POST',
-            body: `data=${encodeURIComponent(overpassQuery)}`,
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        });
-        
-        if (response.status === 429 || response.status === 504) {
-            if (retries > 0) {
-                const retryAfter = response.headers.get('Retry-After') || 60;
-                console.warn(`Received ${response.status}. Retrying in ${retryAfter} seconds...`);
-                await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
-                return await fetchOsmDataForDivision(division, retries - 1);
-            }
-        }
-        
-        if (!response.ok) {
-            throw new Error(`Overpass API response error: ${response.statusText}`);
-        }
-        const data = await response.json();
-        return data.elements;
-    } catch (error) {
-        console.error(`Error fetching OSM data for ${division.name}:`, error);
-        return [];
-    }
 }
 
-function generateHtmlReport(division, invalidNumbers, totalNumbers, dataTimestamp) {
-    const safeDivisionName = division.name.replace(/\s+|\//g, '-').toLowerCase();
-    const filePath = path.join(PUBLIC_DIR, `${safeDivisionName}.html`);
+function createFooter(dataTimestamp) {
+    // Formatting the date and time
+    const formattedDate = dataTimestamp.toLocaleDateString('en-GB', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+    const formattedTime = dataTimestamp.toLocaleTimeString('en-GB', {
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+    
+    // Calculating hours ago
+    const now = new Date();
+    const millisecondsAgo = now - dataTimestamp;
+    const hoursAgo = Math.floor(millisecondsAgo / (1000 * 60 * 60));
+
+    return `
+    <p class="text-sm text-gray-500 mt-2">Data sourced on ${formattedDate} at ${formattedTime} UTC (${hoursAgo} hours ago)</p>
+    <p class="text-sm text-gray-500 mt-2">Got a suggestion or an issue? <a href="https://github.com/arrival-spring/osm-phones/" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:text-blue-700 underline transition-colors">Let me know on GitHub</a>.</p>
+    `
+}
+
+function generateHtmlReport(country, division, invalidNumbers, totalNumbers, dataTimestamp) {
+    const safeDivisionName = safeName(division.name);
+    const safeCountryName = safeName(country.name);
+    const filePath = path.join(PUBLIC_DIR, safeCountryName, `${safeDivisionName}.html`);
 
     const autofixableNumbers = invalidNumbers.filter(item => item.autoFixable);
     const manualFixNumbers = invalidNumbers.filter(item => !item.autoFixable);
@@ -325,7 +380,7 @@ function generateHtmlReport(division, invalidNumbers, totalNumbers, dataTimestam
     <body class="p-8">
         <div class="max-w-4xl mx-auto space-y-8">
             <header class="text-center">
-                <a href="index.html" class="inline-block mb-4 text-blue-500 hover:text-blue-700 transition-colors">
+                <a href="${safeCountryName}.html" class="inline-block mb-4 text-blue-500 hover:text-blue-700 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline-block align-middle mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                     </svg>
@@ -378,6 +433,8 @@ function generateHtmlReport(division, invalidNumbers, totalNumbers, dataTimestam
 
 function generateMainIndexHtml(countryStats, dataTimestamp) {
     const listContent = countryStats.map(country => {
+        const safeCountryName = safeName(country.name);
+        const countryPageName = path.join(PUBLIC_DIR, safeCountryName);
         const percentage = country.totalNumbers > 0 ? (country.invalidCount / country.totalNumbers) * 100 : 0;
         const validPercentage = Math.max(0, Math.min(100, percentage));
         
@@ -391,7 +448,7 @@ function generateMainIndexHtml(countryStats, dataTimestamp) {
         const backgroundColor = getBackgroundColor(validPercentage);
 
         return `
-            <a href="${country.page}" class="bg-white rounded-xl shadow-lg p-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 transition-transform transform hover:scale-105">
+            <a href="${countryPageName}.html" class="bg-white rounded-xl shadow-lg p-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 transition-transform transform hover:scale-105">
                 <div class="flex-grow flex items-center space-x-4">
                     <div class="h-12 w-12 rounded-full flex-shrink-0" style="background-color: ${backgroundColor};"></div>
                     <div class="flex-grow">
@@ -445,7 +502,7 @@ function generateMainIndexHtml(countryStats, dataTimestamp) {
     console.log('Main index.html generated.');
 }
 
-function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, dataTimestamp, pageFileName) {
+function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, dataTimestamp) {
     const renderListScript = `
         <script>
             const groupedDivisionStats = ${JSON.stringify(groupedDivisionStats)};
@@ -569,6 +626,12 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
     </head>
     <body class="p-8">
         <div class="max-w-5xl mx-auto space-y-8">
+            <a href="index.html" class="inline-block mb-4 text-blue-500 hover:text-blue-700 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline-block align-middle mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                <span class="align-middle">Back to all countries</span>
+            </a>
             <header class="text-center space-y-2">
                 <h1 class="text-4xl font-extrabold text-gray-900">OSM Phone Number Validation</h1>
                 <p class="text-sm text-gray-500">A report on invalid phone numbers in OpenStreetMap data for ${countryName}.</p>
@@ -601,7 +664,8 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
     </body>
     </html>
     `;
-    fs.writeFileSync(path.join(PUBLIC_DIR, pageFileName), htmlContent);
+    pageFileName = path.join(PUBLIC_DIR, safeName(country.name))
+    fs.writeFileSync(pageFileName, htmlContent);
     console.log(`Report for ${countryName} generated at ${pageFileName}.`);
 }
 
@@ -630,10 +694,21 @@ async function main() {
             
             const subdivisions = await fetchAdminLevel6(divisionAreaId, divisionName);
             groupedDivisionStats[divisionName] = [];
-            
+
+            const processedSubDivisions = new Set();
+            const uniqueSubdivisions = subdivisions.filter(subdivision => {
+                if (processedSubDivisions.has(subdivision.name)) {
+                    return false;
+                }
+                processedSubDivisions.add(county.name);
+                return true;
+            });
+
+            console.log(`Processing phone numbers for ${uniqueSubdivisions.length} subdivisions in ${nationName}.`);
+
             // Testing: only get two subdivisions from each main division for now
             let subdivisionsProcessed = 0;
-            for (const subdivision of subdivisions) {
+            for (const subdivision of uniqueSubdivisions) {
                 if (subdivisionsProcessed >= 2) {
                     break;
                 }
@@ -656,7 +731,7 @@ async function main() {
                 totalAutofixableCount += autoFixableCount;
                 totalTotalNumbers += totalNumbers;
                 
-                generateHtmlReport(subdivision, invalidNumbers, totalNumbers, dataTimestamp);
+                generateHtmlReport(countryName, subdivision, invalidNumbers, totalNumbers, dataTimestamp);
                 
                 subdivisionsProcessed++;
             }
@@ -664,69 +739,17 @@ async function main() {
         
         countryStats.push({
             name: countryName,
-            page: countryData.page,
             invalidCount: totalInvalidCount,
             autoFixableCount: totalAutofixableCount,
             totalNumbers: totalTotalNumbers
         });
 
-        generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, dataTimestamp, countryData.page);
+        generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, dataTimestamp);
     }
 
     generateMainIndexHtml(countryStats, dataTimestamp);
 
     console.log('Full build process completed successfully.');
-}
-
-function createStatsBox(total, invalid, fixable) {
-    const totalPercentage = total > 0 ? ((invalid / total) * 100).toFixed(2) : '0.00';
-    const fixablePercentage = invalid > 0 ? ((fixable / invalid) * 100).toFixed(2) : '0.00';
-
-    return `
-        <div class="bg-white rounded-xl shadow-lg p-8 grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
-            <div>
-                <p class="text-4xl font-extrabold text-gray-800">${total.toLocaleString()}</p>
-                <p class="text-sm text-gray-500">Numbers Checked</p>
-            </div>
-            <div>
-                <p class="text-4xl font-extrabold text-blue-700">${invalid.toLocaleString()}</p>
-                <p class="text-gray-500">Invalid Numbers</p>
-                <p class="text-sm text-gray-400">${totalPercentage.toLocaleString()}% of total</p>
-            </div>
-            <div>
-                <p class="text-4xl font-extrabold text-green-700">${fixable.toLocaleString()}</p>
-                <p class="text-gray-500">Potentially Fixable</p>
-                <p class="text-sm text-gray-400">${fixablePercentage.toLocaleString()}% of invalid</p>
-            </div>
-            
-        </div>
-    `;
-}
-
-// 6. You'll need to create or get the other utility functions `createStatsBox`, `createFooter`, `fetchOsmDataForDivision`, and `generateHtmlReport`.
-
-
-function createFooter(dataTimestamp) {
-    // Formatting the date and time
-    const formattedDate = dataTimestamp.toLocaleDateString('en-GB', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
-    const formattedTime = dataTimestamp.toLocaleTimeString('en-GB', {
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-    
-    // Calculating hours ago
-    const now = new Date();
-    const millisecondsAgo = now - dataTimestamp;
-    const hoursAgo = Math.floor(millisecondsAgo / (1000 * 60 * 60));
-
-    return `
-    <p class="text-sm text-gray-500 mt-2">Data sourced on ${formattedDate} at ${formattedTime} UTC (${hoursAgo} hours ago)</p>
-    <p class="text-sm text-gray-500 mt-2">Got a suggestion or an issue? <a href="https://github.com/arrival-spring/osm-phones/" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:text-blue-700 underline transition-colors">Let me know on GitHub</a>.</p>
-    `
 }
 
 main();
