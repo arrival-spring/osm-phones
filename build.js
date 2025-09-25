@@ -238,6 +238,37 @@ function generateHtmlReport(county, invalidNumbers) {
               padding: 15px;
               border-radius: 8px;
             }
+            .summary-circles {
+                display: flex;
+                justify-content: center;
+                gap: 20px;
+                margin-top: 10px;
+            }
+            .data-circle {
+                width: 100px;
+                height: 100px;
+                border-radius: 50%;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-weight: bold;
+                padding: 5px;
+            }
+            .circle-label {
+                font-size: 0.8em;
+                margin-top: 5px;
+            }
+            .total-circle {
+                background-color: #007bff;
+            }
+            .invalid-circle {
+                background-color: hsl(0, 70%, 75%);
+            }
+            .autofixable-circle {
+                background-color: #ff914d;
+            }
             .number-info { font-weight: bold; }
             .error { color: red; font-size: 0.9em; }
             .fix-buttons a { margin-right: 10px; }
@@ -252,9 +283,20 @@ function generateHtmlReport(county, invalidNumbers) {
           <p><a href="index.html">← Back to all counties</a></p>
           <div class="summary" style="background-color: ${summaryColor};">
             <p><strong>County Summary</strong></p>
-            <p><strong>Total Phone Numbers:</strong> ${county.totalNumbers}</p>
-            <p><strong>Invalid Numbers:</strong> ${county.invalidCount} (<strong style="color: #007bff;">${validPercentage.toFixed(2)}%</strong> valid)</p>
-            <p><strong>Autofixable Numbers:</strong> ${county.autoFixableCount}</p>
+            <div class="summary-circles">
+                <div class="data-circle total-circle">
+                    ${county.totalNumbers}
+                    <span class="circle-label">Total Numbers</span>
+                </div>
+                <div class="data-circle invalid-circle">
+                    ${county.invalidCount}
+                    <span class="circle-label">Invalid Numbers</span>
+                </div>
+                <div class="data-circle autofixable-circle">
+                    ${county.autoFixableCount}
+                    <span class="circle-label">Autofixable</span>
+                </div>
+            </div>
           </div>
           <p>This report identifies phone numbers in OpenStreetMap that are invalid in ${county.name}.</p>
           <script>
@@ -402,6 +444,37 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
                   padding: 15px;
                   border-radius: 8px;
               }
+              .summary-circles {
+                  display: flex;
+                  justify-content: center;
+                  gap: 20px;
+                  margin-top: 10px;
+              }
+              .data-circle {
+                  width: 100px;
+                  height: 100px;
+                  border-radius: 50%;
+                  display: flex;
+                  flex-direction: column;
+                  align-items: center;
+                  justify-content: center;
+                  color: white;
+                  font-weight: bold;
+                  padding: 5px;
+              }
+              .circle-label {
+                  font-size: 0.8em;
+                  margin-top: 5px;
+              }
+              .total-circle {
+                  background-color: #007bff;
+              }
+              .invalid-circle {
+                  background-color: hsl(0, 70%, 75%);
+              }
+              .autofixable-circle {
+                  background-color: #ff914d;
+              }
               .controls {
                   display: flex;
                   justify-content: center;
@@ -448,9 +521,20 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
           <p style="text-align: center;">Got a suggestion or an issue? <a href="https://github.com/arrival-spring/osm-phones/" target="_blank" rel="noopener noreferrer">Let me know on GitHub</a>.</p>
           <div class="summary" style="background-color: ${summaryColor};">
             <p><strong>Overall Summary</strong></p>
-            <p><strong>Total Phone Numbers:</strong> ${totalTotalNumbers}</p>
-            <p><strong>Invalid Numbers:</strong> ${totalInvalidCount} (${totalValidPercentage.toFixed(2)}% valid)</p>
-            <p><strong>Autofixable Numbers:</strong> ${totalAutofixableCount}</p>
+            <div class="summary-circles">
+                <div class="data-circle total-circle">
+                    ${totalTotalNumbers}
+                    <span class="circle-label">Total Numbers</span>
+                </div>
+                <div class="data-circle invalid-circle">
+                    ${totalInvalidCount}
+                    <span class="circle-label">Invalid Numbers</span>
+                </div>
+                <div class="data-circle autofixable-circle">
+                    ${totalAutofixableCount}
+                    <span class="circle-label">Autofixable</span>
+                </div>
+            </div>
           </div>
           <p style="text-align: center;">Data sourced on ${formattedDate} at ${formattedTime} (${hoursAgo} hours ago)</p>
           <p>This site provides a breakdown of invalid UK phone numbers found in OpenStreetMap, separated by county.</p>
