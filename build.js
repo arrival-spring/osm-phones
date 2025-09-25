@@ -5,6 +5,70 @@ const { parsePhoneNumber } = require('libphonenumber-js');
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const OVERPASS_API_URL = 'https://overpass-api.de/api/interpreter';
 
+// This regular expression is a bit lenient to allow for various formats.
+// It matches sequences of numbers, spaces, and common phone characters.
+const PHONE_NUMBER_REGEX = /[+\d\s().-]{7,}/;
+
+function validateNumber(element) {
+    const phoneNumber = element.tags.phone;
+    const isFixable = false;
+    let autoFixable = false;
+
+    // Check for "invalid" or "disused" tags
+    if (element.tags.invalid || element.tags.disused) {
+        return { valid: false, reason: "Tagged as invalid or disused" };
+    }
+
+    // Check if the number is already tagged as a landline or mobile
+    if (element.tags.phone_type === 'landline' || element.tags.phone_type === 'mobile') {
+        return { valid: true };
+    }
+
+    if (!phoneNumber) {
+        return { valid: false, reason: "No phone number found" };
+    }
+
+    try {
+        const parsed = parsePhoneNumber(phoneNumber, 'GB');
+        if (parsed && parsed.isValid()) {
+            return { valid: true };
+        } else {
+            // Attempt a lenient autofix for numbers that look almost valid
+            const cleanedNumber = phoneNumber.replace(/[^+\d]/g, '');
+            const parsedClean = parsePhoneNumber(cleanedNumber, 'GB');
+            if (parsedClean && parsedClean.isValid()) {
+                autoFixable = true;
+                return { valid: false, reason: "Number is invalid but could be fixed by removing non-digit characters", autoFixable: true, fixable: true };
+            }
+        }
+    } catch (e) {
+        // Fallback to regex check for more complex cases
+        if (PHONE_NUMBER_REGEX.test(phoneNumber)) {
+            return { valid: false, reason: "Lacks a proper country code, but looks like a number", fixable: true };
+        }
+    }
+    return { valid: false, reason: `Invalid format: ${phoneNumber}` };
+}
+
+function validateNumbers(elements) {
+    const invalidNumbers = [];
+    let totalNumbers = 0;
+
+    for (const element of elements) {
+        if (element.tags && element.tags.phone) {
+            totalNumbers++;
+            const result = validateNumber(element);
+            if (!result.valid) {
+                invalidNumbers.push({
+                    ...element,
+                    ...result
+                });
+            }
+        }
+    }
+    return { invalidNumbers, totalNumbers };
+}
+
 async function fetchCountiesGB() {
     // Testing ----------------
     const testCounties = {'Bedfordshire and Hertfordshire': 17623586, 'East Yorkshire and Northern Lincolnshire': 17623573, 'Devon': 17618825, 'Blackpool': 148603}
@@ -16,6 +80,7 @@ async function fetchCountiesGB() {
     }));
 
     // ------------------------
+
 
     // console.log('Fetching all counties for Great Britain...');
     // const { default: fetch } = await import('node-fetch');
@@ -37,460 +102,260 @@ async function fetchCountiesGB() {
     //         body: `data=${encodeURIComponent(query)}`,
     //         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     //     });
+
     //     if (!response.ok) {
-    //         throw new Error(`Overpass API response error: ${response.statusText}`);
+    //         throw new Error(`Overpass API responded with status code: ${response.status}`);
     //     }
+
     //     const data = await response.json();
-    //     // Use a Map to deduplicate counties by name, as some might have the same name but different IDs
-    //     const uniqueCounties = new Map();
-    //     data.elements.forEach(el => {
-    //         if (el.tags && el.tags.name && !uniqueCounties.has(el.tags.name)) {
-    //             uniqueCounties.set(el.tags.name, {
-    //                 name: el.tags.name,
-    //                 id: el.id
-    //             });
-    //         }
-    //     });
-    //     return Array.from(uniqueCounties.values());
+    //     const counties = data.elements.map(el => ({
+    //         name: el.tags.name,
+    //         id: el.id,
+    //     }));
+    //     console.log(`Found ${counties.length} counties.`);
+    //     return counties;
+
     // } catch (error) {
-    //     console.error(`Error fetching county data for Great Britain:`, error);
+    //     console.error('Failed to fetch counties from Overpass API:', error);
     //     return [];
     // }
-
-    // ------------------------
 }
 
-async function fetchOsmDataForCounty(county, retries = 3) {
-    console.log(`Fetching data for county: ${county.name} (ID: ${county.id})...`);
+
+async function fetchOsmDataForCounty(county) {
     const { default: fetch } = await import('node-fetch');
 
-    const areaId = county.id + 3600000000;
-    const queryTimeout = 600;
-    
-    const overpassQuery = `
-        [out:json][timeout:${queryTimeout}];
-        area(${areaId})->.county;
+    const query = `
+        [out:json][timeout:180];
         (
-          node(area.county)["phone"~".*"];
-          way(area.county)["phone"~".*"];
-          relation(area.county)["phone"~".*"];
-          node(area.county)["contact:phone"~".*"];
-          way(area.county)["contact:phone"~".*"];
-          relation(area.county)["contact:phone"~".*"];
+            nwr(area:${county.id})[amenity=pub][phone];
+            nwr(area:${county.id})[amenity=restaurant][phone];
+            nwr(area:${county.id})[amenity=cafe][phone];
+            nwr(area:${county.id})[amenity=fast_food][phone];
+            nwr(area:${county.id})[amenity=bar][phone];
         );
-        out body geom;
+        out body;
     `;
 
     try {
         const response = await fetch(OVERPASS_API_URL, {
             method: 'POST',
-            body: `data=${encodeURIComponent(overpassQuery)}`,
+            body: `data=${encodeURIComponent(query)}`,
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         });
-        
-        if (response.status === 429 || response.status === 504) {
-            if (retries > 0) {
-                const retryAfter = response.headers.get('Retry-After') || 60;
-                console.warn(`Received ${response.status}. Retrying in ${retryAfter} seconds...`);
-                await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
-                return await fetchOsmDataForCounty(county, retries - 1);
-            }
-        }
-        
+
         if (!response.ok) {
-            throw new Error(`Overpass API response error: ${response.statusText}`);
+            throw new Error(`Overpass API responded with status code: ${response.status}`);
         }
+
         const data = await response.json();
         return data.elements;
     } catch (error) {
-        console.error(`Error fetching OSM data for ${county.name}:`, error);
+        console.error(`Failed to fetch OSM data for ${county.name}:`, error);
         return [];
     }
 }
 
-function validateNumbers(elements) {
-  const invalidItemsMap = new Map();
-  let totalNumbers = 0;
-
-  elements.forEach(element => {
-    if (element.tags) { 
-        const tags = element.tags;
-        const phoneTags = ['phone', 'contact:phone'];
-        const websiteTags = ['website', 'contact:website'];
-
-        const website = websiteTags.map(tag => tags[tag]).find(url => url);
-        const lat = element.lat || (element.center && element.center.lat);
-        const lon = element.lon || (element.center && element.center.lon);
-        const name = tags.name;
-        const key = `${element.type}-${element.id}`;
-
-        let foundInvalidNumber = false;
-        
-        for (const tag of phoneTags) {
-          if (tags[tag]) {
-            const numbers = tags[tag].split(';').map(s => s.trim());
-            numbers.forEach(numberStr => {
-                totalNumbers++;
-                try {
-                    const phoneNumber = parsePhoneNumber(numberStr, 'GB');
-                    
-                    const normalizedOriginal = numberStr.replace(/\s/g, '');
-                    let normalizedParsed = '';
-                    if (phoneNumber && phoneNumber.isValid()) {
-                        normalizedParsed = phoneNumber.number.replace(/\s/g, '');
-                    }
-                    
-                    const isInvalid = normalizedOriginal !== normalizedParsed;
-                    
-                    if (isInvalid) {
-                        foundInvalidNumber = true;
-                        if (!invalidItemsMap.has(key)) {
-                            invalidItemsMap.set(key, {
-                                type: element.type,
-                                id: element.id,
-                                osmUrl: `https://www.openstreetmap.org/${element.type}/${element.id}`,
-                                tag: tag,
-                                website: website,
-                                lat: lat,
-                                lon: lon,
-                                name: name,
-                                allTags: tags,
-                                invalidNumbers: [],
-                                suggestedFixes: [],
-                                autoFixable: true
-                            });
-                        }
-                        const item = invalidItemsMap.get(key);
-                        item.invalidNumbers.push(numberStr);
-                        item.suggestedFixes.push(phoneNumber ? phoneNumber.format('INTERNATIONAL') : 'No fix available');
-                        if (!phoneNumber || !phoneNumber.isValid()) {
-                            item.autoFixable = false;
-                        }
-                    }
-                } catch (e) {
-                    foundInvalidNumber = true;
-                    if (!invalidItemsMap.has(key)) {
-                        invalidItemsMap.set(key, {
-                            type: element.type,
-                            id: element.id,
-                            osmUrl: `https://www.openstreetmap.org/${element.type}/${element.id}`,
-                            tag: tag,
-                            website: website,
-                            lat: lat,
-                            lon: lon,
-                            name: name,
-                            allTags: tags,
-                            invalidNumbers: [],
-                            suggestedFixes: [],
-                            autoFixable: false,
-                            error: e.message
-                        });
-                    }
-                    const item = invalidItemsMap.get(key);
-                    item.invalidNumbers.push(numberStr);
-                    item.suggestedFixes.push('No fix available');
-                    item.autoFixable = false;
-                }
-            });
-          }
-        }
-    }
-  });
-
-  return { invalidNumbers: Array.from(invalidItemsMap.values()), totalNumbers };
-}
-
-function getFeatureHeading(item) {
-    if (item.name) {
-        return `<h3>${item.name}</h3>`;
-    }
-
-    const featureTags = ['amenity', 'shop', 'tourism', 'leisure', 'emergency', 'building', 'craft', 'aeroway', 'railway', 'healthcare', 'highway', 'military', 'man_made', 'public_transport'];
-    let featureType = null;
-    for (const tag of featureTags) {
-        if (item.allTags[tag]) {
-            featureType = item.allTags[tag];
-            break;
-        }
-    }
-
-    if (featureType) {
-        const formattedType = featureType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-        return `<h3>${formattedType}</h3>`;
-    } else {
-        const formattedType = item.type.replace(/\b\w/g, c => c.toUpperCase());
-        return `<h3>OSM ${formattedType}</h3>`;
-    }
-}
-
 function generateHtmlReport(county, invalidNumbers) {
-    const autofixableNumbers = invalidNumbers.filter(item => item.autoFixable);
-    const manualFixNumbers = invalidNumbers.filter(item => !item.autoFixable);
-
-    let htmlContent = `
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Invalid Phone Numbers in ${county.name}</title>
-          <style>
-            body { font-family: sans-serif; line-height: 1.6; padding: 20px; }
-            h1 { text-align: center; }
-            h2 { margin-top: 2em; }
-            .number-info { font-weight: bold; }
-            .error { color: red; font-size: 0.9em; }
-            .fix-buttons a { margin-right: 10px; }
-            .fix-container { margin-top: 5px; }
-            ul { list-style-type: none; padding: 0; }
-            li { background: #f4f4f4; margin: 10px auto; padding: 10px; border-radius: 5px; position: relative; max-width: 600px; }
-            .website-link { position: absolute; top: 10px; right: 10px; font-size: 0.9em; }
-          </style>
-        </head>
-        <body>
-          <h1>Invalid UK Phone Numbers in ${county.name}</h1>
-          <p><a href="index.html">← Back to main index</a></p>
-          <p>This report identifies phone numbers in OpenStreetMap that are invalid in ${county.name}.</p>
-          <script>
-            function fixWithJosm(url, event) {
-                event.preventDefault();
-                fetch(url)
-                    .then(response => {
-                        if (response.ok) {
-                            console.log('JOSM command sent successfully.');
-                        } else {
-                            console.error('Failed to send command to JOSM. Please ensure JOSM is running with Remote Control enabled.');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Could not connect to JOSM Remote Control. Please ensure JOSM is running.', error);
-                    });
-            }
-          </script>
-      `;
-  
-      if (autofixableNumbers.length > 0) {
-        htmlContent += `<h2>Autofixable Numbers</h2>`;
-        htmlContent += `<p>These numbers appear to be valid UK numbers but are formatted incorrectly. The suggested fix assumes that they are indeed UK numbers. Not all 'auto' fixes are necessarily valid, so please do not blindly click on all the fix links without first verifying the number.</p><ul>`;
-        autofixableNumbers.forEach(item => {
-          const idLink = `https://www.openstreetmap.org/edit?editor=id&map=19/${item.lat}/${item.lon}&${item.type}=${item.id}`;
-          const josmLink = `http://localhost:8111/load_object?objects=${item.type}${item.id}&zoom=19`;
-          const josmFixLink = `http://localhost:8111/load_object?objects=${item.type}${item.id}&addtags=${item.tag}=${encodeURIComponent(item.suggestedFixes.join('; '))}`;
-
-          let websiteHtml = '';
-          if (item.website) {
-              websiteHtml = `<span class="website-link"><a href="${item.website}" target="_blank">Website</a></span>`;
-          }
-
-          htmlContent += `
-            <li>
-              ${getFeatureHeading(item)}
-              ${websiteHtml}
-              <div class="fix-buttons">
-                <a href="${idLink}" target="_blank">Edit in iD</a>
-                <a href="#" onclick="fixWithJosm('${josmLink}', event)">Open in JOSM</a>
-                <a href="#" onclick="fixWithJosm('${josmFixLink}', event)">Fix with JOSM</a>
-              </div>
-              <span class="number-info">Invalid Number(s):</span> ${item.invalidNumbers.join('; ')}<br>
-              <span class="number-info">Suggested Fix(es):</span> ${item.suggestedFixes.join('; ')}<br>
-              <span class="number-info">OSM ID:</span> <a href="${item.osmUrl}" target="_blank">${item.type}/${item.id}</a><br>
-            </li>
-          `;
-        });
-        htmlContent += `</ul>`;
-      }
-
-      if (manualFixNumbers.length > 0) {
-        htmlContent += `<h2>Manual Fixes</h2>`;
-        htmlContent += `<p>These numbers are all invalid in some way; maybe they are too long or too short, or perhaps they're missing an area code. The website could be used to check for a valid number, or a survey may be necessary.</p><ul>`;
-        manualFixNumbers.forEach(item => {
-          const idLink = `https://www.openstreetmap.org/edit?editor=id&map=19/${item.lat}/${item.lon}&${item.type}=${item.id}`;
-          const josmLink = `http://localhost:8111/load_object?objects=${item.type}${item.id}&zoom=19`;
-
-          let websiteHtml = '';
-          if (item.website) {
-              websiteHtml = `<span class="website-link"><a href="${item.website}" target="_blank">Website</a></span>`;
-          }
-
-          htmlContent += `
-            <li>
-              ${getFeatureHeading(item)}
-              ${websiteHtml}
-              <div class="fix-buttons">
-                <a href="${idLink}" target="_blank">Edit in iD</a>
-                <a href="#" onclick="fixWithJosm('${josmLink}', event)">Open in JOSM</a>
-              </div>
-              <span class="number-info">Invalid Number(s):</span> ${item.invalidNumbers.join('; ')}<br>
-              <span class="number-info">OSM ID:</span> <a href="${item.osmUrl}" target="_blank">${item.type}/${item.id}</a><br>
-              ${item.error ? `<span class="error">Error:</span> ${item.error}` : ''}
-            </li>
-          `;
-        });
-        htmlContent += `</ul>`;
-      }
-      
-      if (invalidNumbers.length === 0) {
-        htmlContent += '<ul><li>No invalid phone numbers found! 🎉</li></ul>';
-      }
-  
-      htmlContent += `
-        </body>
-        </html>
-      `;
-    
     const safeCountyName = county.name.replace(/\s+|\//g, '-').toLowerCase();
-    const fileName = `${safeCountyName}.html`;
+    const filePath = path.join(PUBLIC_DIR, `${safeCountyName}.html`);
 
-    fs.writeFileSync(path.join(PUBLIC_DIR, fileName), htmlContent);
-    console.log(`Report for ${county.name} saved to ${fileName}.`);
-}
+    const joshmBaseUrl = 'http://127.0.0.1:8111/load_and_zoom';
 
-function getBackgroundColor(percent) {
-  if (percent < 98) {
-    // Red for anything below 98%
-    return `hsl(0, 70%, 75%)`;
-  }
-  // Scale green from 98% to 100%
-  const hue = ((percent - 98) / 2) * 120;
-  return `hsl(${hue}, 70%, 75%)`;
+    let listContent = '';
+    if (invalidNumbers.length > 0) {
+        listContent = invalidNumbers.map(item => {
+            const phoneNumber = item.tags.phone.split(';').join(', ');
+            const isFixable = item.fixable || item.autoFixable;
+            const fixableTag = isFixable ? '<span class="text-xs font-semibold px-2 py-1 rounded-full bg-yellow-200 text-yellow-800">Fixable</span>' : '';
+            const joshmUrl = `${joshmBaseUrl}?select=${item.type}${item.id}`;
+            const joshmButton = isFixable ? `<a href="${joshmUrl}" class="inline-flex items-center rounded-full bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-colors" target="_blank">Fix in JOSM</a>` : '';
+
+            return `
+            <li class="bg-white rounded-xl shadow-md p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900">${item.tags.name || item.tags.amenity || 'Unnamed Place'}</h3>
+                    <p class="text-sm text-gray-500">
+                        <span class="font-semibold">Phone:</span> ${phoneNumber}
+                    </p>
+                    <p class="text-sm text-red-500 mt-1">
+                        <span class="font-bold">Reason:</span> ${item.reason}
+                    </p>
+                </div>
+                <div class="flex-shrink-0 flex items-center space-x-2">
+                    ${fixableTag}
+                    ${joshmButton}
+                </div>
+            </li>
+            `;
+        }).join('');
+    } else {
+        listContent = `
+        <li class="bg-white rounded-xl shadow-md p-6 text-center text-gray-500">
+            No invalid phone numbers found in this county.
+        </li>
+        `;
+    }
+
+    const htmlContent = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Phone Number Report for ${county.name}</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+            body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        </style>
+    </head>
+    <body class="p-8">
+        <div class="max-w-4xl mx-auto space-y-8">
+            <header class="text-center">
+                <a href="index.html" class="inline-block mb-4 text-blue-500 hover:text-blue-700 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline-block align-middle mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    <span class="align-middle">Back to Index</span>
+                </a>
+                <h1 class="text-4xl font-extrabold text-gray-900">Phone Number Report</h1>
+                <h2 class="text-2xl font-semibold text-gray-700 mt-2">${county.name}</h2>
+                <p class="text-sm text-gray-500 mt-2">Invalid phone numbers found in commercial establishments.</p>
+            </header>
+            <ul class="space-y-4">
+                ${listContent}
+            </ul>
+        </div>
+    </body>
+    </html>
+    `;
+    fs.writeFileSync(filePath, htmlContent);
+    console.log(`Generated report for ${county.name} at ${filePath}`);
 }
 
 function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers) {
-    const lastUpdated = new Date().toLocaleString();
+    const sortedStats = countyStats.sort((a, b) => b.invalidCount - a.invalidCount);
     
-    const totalValidCount = totalTotalNumbers - totalInvalidCount;
-    const totalValidPercentage = totalTotalNumbers > 0 ? (totalValidCount / totalTotalNumbers) * 100 : 100;
-    
-    let htmlContent = `
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Invalid UK Phone Numbers in OpenStreetMap</title>
-          <style>
-              body { font-family: sans-serif; line-height: 1.6; padding: 20px; }
-              h1 { text-align: center; }
-              .summary {
-                  text-align: center;
-                  font-size: 1.2em;
-                  margin-bottom: 2em;
-                  padding: 15px;
-                  background: #e9ecef;
-                  border-radius: 8px;
-              }
-              .controls { margin-bottom: 20px; text-align: center; }
-              .controls label { margin-right: 20px; }
-              ul { list-style-type: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 10px; }
-              li { padding: 0; border-radius: 5px; }
-              li a {
-                  display: block;
-                  padding: 10px;
-                  text-decoration: none;
-                  color: inherit;
-                  font-weight: bold;
-                  transition: background-color 0.3s ease;
-              }
-              li a:hover {
-                  background-color: rgba(0,0,0,0.1);
-                  text-decoration: underline;
-              }
-          </style>
-        </head>
-        <body>
-          <p><a href="https://github.com/arrival-spring/osm-phones/" target="_blank">Suggest issues or make suggestions on GitHub</a></p>
-          <h1>Invalid UK Phone Numbers in OpenStreetMap</h1>
-          <p style="text-align: center; font-size: 0.9em;">Last updated: ${lastUpdated}</p>
-          <div class="summary">
-            <p>Overall Summary</p>
-            <p><strong>Total Phone Numbers:</strong> ${totalTotalNumbers}</p>
-            <p><strong>Invalid Numbers:</strong> ${totalInvalidCount} (${totalValidPercentage.toFixed(2)}% valid)</p>
-            <p><strong>Autofixable Numbers:</strong> ${totalAutofixableCount}</p>
-          </div>
-          <p>This site provides a breakdown of invalid UK phone numbers found in OpenStreetMap, separated by county.</p>
-          
-          <div class="controls">
-              <label><input type="checkbox" id="hide-valid"> Hide counties with no invalid numbers</label>
-              <label>
-                Sort by:
-                <select id="sort-by">
-                  <option value="name">County Name</option>
-                  <option value="invalid">Number of Invalid Numbers</option>
-                  <option value="autofix">Number of Autofixable Numbers</option>
-                </select>
-              </label>
-          </div>
-          
-          <ul id="county-list"></ul>
-          
-          <script>
-            const countyStats = ${JSON.stringify(countyStats)};
-            const countyListEl = document.getElementById('county-list');
-            const hideValidCheckbox = document.getElementById('hide-valid');
-            const sortBySelect = document.getElementById('sort-by');
-            
+    let statsContent = '';
+    const totalPercentage = totalTotalNumbers > 0 ? ((totalInvalidCount / totalTotalNumbers) * 100).toFixed(2) : '0.00';
+    const totalFixablePercentage = totalInvalidCount > 0 ? ((totalAutofixableCount / totalInvalidCount) * 100).toFixed(2) : '0.00';
+
+    const renderListScript = `
+        <script>
+            const countyStats = ${JSON.stringify(sortedStats)};
+            const totalInvalidCount = ${totalInvalidCount};
+            const totalTotalNumbers = ${totalTotalNumbers};
+            const listContainer = document.getElementById('county-list');
+
             function renderList() {
-                let filteredCounties = countyStats;
-                
-                if (hideValidCheckbox.checked) {
-                    filteredCounties = filteredCounties.filter(county => county.invalidCount > 0);
-                }
-                
-                const sortBy = sortBySelect.value;
-                if (sortBy === 'invalid') {
-                    filteredCounties.sort((a, b) => b.invalidCount - a.invalidCount);
-                } else if (sortBy === 'autofix') {
-                    filteredCounties.sort((a, b) => b.autoFixableCount - a.autoFixableCount);
-                } else {
-                    filteredCounties.sort((a, b) => a.name.localeCompare(b.name));
-                }
-                
-                countyListEl.innerHTML = '';
-                filteredCounties.forEach(county => {
-                    const safeCountyName = county.name.replace(/\\s+|\\//g, '-').toLowerCase();
-                    const fileName = `${safeCountyName}.html`;
-                    
-                    let statsHtml = '';
-                    const validPercentage = (county.totalNumbers > 0) ? ((county.totalNumbers - county.invalidCount) / county.totalNumbers) * 100 : 100;
-                    const backgroundColor = (function getBackgroundColor(percent) {
-                        if (percent < 98) {
-                            return `hsl(0, 70%, 75%)`;
-                        }
-                        const hue = ((percent - 98) / 2) * 120;
-                        return `hsl(${hue}, 70%, 75%)`;
-                    })(validPercentage);
-                    
-                    if (county.totalNumbers > 0) {
-                        statsHtml = `
-                          <p>Found <strong>${county.invalidCount}</strong> invalid numbers (${county.autoFixableCount} autofixable) out of <strong>${county.totalNumbers}</strong> total numbers (<strong style="color: #007bff;">${validPercentage.toFixed(2)}%</strong> valid).</p>
-                        `;
-                    } else {
-                        statsHtml = `<p>No phone numbers found.</p>`;
+                listContainer.innerHTML = ''; // Clear existing list
+
+                // Sort the data based on the selected option
+                const sortSelect = document.getElementById('sort-by');
+                const sortBy = sortSelect.value;
+                const sortedData = [...countyStats].sort((a, b) => {
+                    if (sortBy === 'invalidCount') {
+                        return b.invalidCount - a.invalidCount;
+                    } else if (sortBy === 'name') {
+                        return a.name.localeCompare(b.name);
                     }
-                    
+                });
+
+                sortedData.forEach(county => {
+                    const safeCountyName = county.name.replace(/\\s+|\\//g, '-').toLowerCase();
+                    const percentage = county.totalNumbers > 0 ? (county.invalidCount / county.totalNumbers) * 100 : 0;
+                    const validPercentage = Math.max(0, Math.min(100, percentage));
+
+                    const getBackgroundColor = (percent) => {
+                        const hue = (100 - percent) * 1.2;
+                        return \`hsl(\${hue}, 70%, 50%)\`;
+                    };
+                    const backgroundColor = getBackgroundColor(validPercentage);
+
                     const li = document.createElement('li');
-                    li.style.backgroundColor = backgroundColor;
-                    li.innerHTML = `
-                      <a href="${fileName}">
-                        <h3 style="margin-top: 0; text-align: center;">${county.name}</h3>
-                        ${statsHtml}
-                      </a>
-                    `;
-                    countyListEl.appendChild(li);
+                    li.className = 'bg-white rounded-xl shadow-lg p-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 transition-transform transform hover:scale-105';
+                    li.innerHTML = \`
+                        <a href="\${safeCountyName}.html" class="flex-grow flex items-center space-x-4">
+                            <div class="h-12 w-12 rounded-full flex-shrink-0" style="background-color: \${backgroundColor};"></div>
+                            <div class="flex-grow">
+                                <h3 class="text-xl font-bold text-gray-900">\${county.name}</h3>
+                                <p class="text-sm text-gray-500">\${county.invalidCount} invalid numbers out of \${county.totalNumbers}</p>
+                            </div>
+                        </a>
+                        <div class="text-center sm:text-right">
+                            <p class="text-2xl font-bold text-gray-800">\${validPercentage.toFixed(2)}<span class="text-base font-normal">%</span></p>
+                            <p class="text-xs text-gray-500">of total</p>
+                        </div>
+                    \`;
+                    listContainer.appendChild(li);
                 });
             }
-            
-            hideValidCheckbox.addEventListener('change', renderList);
-            sortBySelect.addEventListener('change', renderList);
-            
+
+            document.getElementById('sort-by').addEventListener('change', renderList);
+
             // Initial render
             renderList();
-          </script>
-        </body>
-        </html>
-      `;
-      fs.writeFileSync(path.join(PUBLIC_DIR, 'index.html'), htmlContent);
-      console.log('Main index.html generated.');
+        </script>
+    `;
+
+    const htmlContent = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>OSM Phone Number Validation Report</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+            body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        </style>
+    </head>
+    <body class="p-8">
+        <div class="max-w-5xl mx-auto space-y-8">
+            <header class="text-center space-y-2">
+                <h1 class="text-4xl font-extrabold text-gray-900">OSM Phone Number Validation</h1>
+                <p class="text-sm text-gray-500">A report on invalid phone numbers in OpenStreetMap data for Great Britain.</p>
+            </header>
+            
+            <div class="bg-white rounded-xl shadow-lg p-8 grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
+                <div>
+                    <p class="text-4xl font-extrabold text-blue-600">${totalInvalidCount.toLocaleString()}</p>
+                    <p class="text-sm text-gray-500">Total Invalid Numbers</p>
+                </div>
+                <div>
+                    <p class="text-4xl font-extrabold text-green-600">${totalAutofixableCount.toLocaleString()}</p>
+                    <p class="text-sm text-gray-500">Potentially Fixable</p>
+                </div>
+                <div>
+                    <p class="text-4xl font-extrabold text-gray-800">${totalTotalNumbers.toLocaleString()}</p>
+                    <p class="text-sm text-gray-500">Total Numbers Checked</p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex flex-col sm:flex-row justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900">County Reports</h2>
+                    <div class="mt-4 sm:mt-0">
+                        <label for="sort-by" class="mr-2 text-sm font-medium text-gray-700">Sort by:</label>
+                        <select id="sort-by" class="rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+                            <option value="invalidCount">Invalid Count (desc)</option>
+                            <option value="name">Name (A-Z)</option>
+                        </select>
+                    </div>
+                </div>
+                <ul id="county-list" class="space-y-4">
+                    <!-- County reports will be dynamically inserted here by JavaScript -->
+                </ul>
+            </div>
+        </div>
+        ${renderListScript}
+    </body>
+    </html>
+    `;
+    fs.writeFileSync(path.join(PUBLIC_DIR, 'index.html'), htmlContent);
+    console.log('Main index.html generated.');
 }
 
 async function main() {
