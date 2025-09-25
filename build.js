@@ -362,29 +362,38 @@ function generateHtmlReport(county, invalidNumbers, totalNumbers) {
 }
 
 function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers) {
+    // This initial sort is good practice to ensure the JSON.stringify data is in the correct order on first load.
     const sortedStats = countyStats.sort((a, b) => b.invalidCount - a.invalidCount);
     
-    let statsContent = '';
     const totalPercentage = totalTotalNumbers > 0 ? ((totalInvalidCount / totalTotalNumbers) * 100).toFixed(2) : '0.00';
     const totalFixablePercentage = totalInvalidCount > 0 ? ((totalAutofixableCount / totalInvalidCount) * 100).toFixed(2) : '0.00';
 
     const renderListScript = `
         <script>
             const countyStats = ${JSON.stringify(sortedStats)};
-            const totalInvalidCount = ${totalInvalidCount};
-            const totalTotalNumbers = ${totalTotalNumbers};
             const listContainer = document.getElementById('county-list');
+            const sortButtons = document.querySelectorAll('.sort-btn');
+            let currentSort = 'invalidCount'; // Set initial sort state
+
+            function updateButtonStyles() {
+                sortButtons.forEach(button => {
+                    if (button.dataset.sort === currentSort) {
+                        button.classList.add('bg-blue-500', 'text-white', 'shadow');
+                        button.classList.remove('bg-gray-200', 'text-gray-800', 'hover:bg-gray-300');
+                    } else {
+                        button.classList.remove('bg-blue-500', 'text-white', 'shadow');
+                        button.classList.add('bg-gray-200', 'text-gray-800', 'hover:bg-gray-300');
+                    }
+                });
+            }
 
             function renderList() {
                 listContainer.innerHTML = ''; // Clear existing list
 
-                // Sort the data based on the selected option
-                const sortSelect = document.getElementById('sort-by');
-                const sortBy = sortSelect.value;
                 const sortedData = [...countyStats].sort((a, b) => {
-                    if (sortBy === 'invalidCount') {
+                    if (currentSort === 'invalidCount') {
                         return b.invalidCount - a.invalidCount;
-                    } else if (sortBy === 'name') {
+                    } else if (currentSort === 'name') {
                         return a.name.localeCompare(b.name);
                     }
                 });
@@ -394,16 +403,13 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
                     const percentage = county.totalNumbers > 0 ? (county.invalidCount / county.totalNumbers) * 100 : 0;
                     const validPercentage = Math.max(0, Math.min(100, percentage));
 
-
                     function getBackgroundColor(percent) {
                         if (percent > 2) {
-                            // Red for anything below 98%
                             return \`hsl(0, 70%, 50%)\`;
                         }
-                        // Scale green from 98% to 100%
                         const hue = ((2 - percent) / 2) * 120;
                         return \`hsl(\${hue}, 70%, 50%)\`;
-                        }
+                    }
                     const backgroundColor = getBackgroundColor(validPercentage);
 
                     const li = document.createElement('li');
@@ -423,9 +429,16 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
                     \`;
                     listContainer.appendChild(li);
                 });
+                updateButtonStyles();
             }
 
-            document.getElementById('sort-by').addEventListener('change', renderList);
+            // Add event listeners to the buttons
+            sortButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    currentSort = button.dataset.sort;
+                    renderList();
+                });
+            });
 
             // Initial render
             renderList();
@@ -455,17 +468,14 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
             <div class="bg-white rounded-xl shadow-lg p-6">
                 <div class="flex flex-col sm:flex-row justify-between items-center mb-6">
                     <h2 class="text-2xl font-bold text-gray-900">County Reports</h2>
-                    <div class="mt-4 sm:mt-0">
-                        <label for="sort-by" class="mr-2 text-sm font-medium text-gray-700">Sort by:</label>
-                        <select id="sort-by" class="rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
-                            <option value="invalidCount">Invalid Count (desc)</option>
-                            <option value="name">Name (A-Z)</option>
-                        </select>
+                    <div class="flex items-center space-x-2 mt-4 sm:mt-0">
+                        <span class="mr-2 text-sm font-medium text-gray-700">Sort by:</span>
+                        <button id="sort-invalid" data-sort="invalidCount" class="sort-btn px-4 py-2 rounded-md text-sm font-medium transition-colors">Invalid Count</button>
+                        <button id="sort-name" data-sort="name" class="sort-btn px-4 py-2 rounded-md text-sm font-medium transition-colors">Name</button>
                     </div>
                 </div>
                 <ul id="county-list" class="space-y-4">
-                    <!-- County reports will be dynamically inserted here by JavaScript -->
-                </ul>
+                    </ul>
             </div>
         </div>
         ${renderListScript}
