@@ -282,7 +282,9 @@ function generateHtmlReport(county, invalidNumbers, totalNumbers, dataTimestamp)
         return `
             <li class="bg-white rounded-xl shadow-md p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
                 <div>
-                    <h3 class="text-lg font-bold text-gray-900">${getFeatureTypeName(item)}</h3>
+                    <h3 class="text-lg font-bold text-gray-900">
+                        <a href="${item.osmUrl}" target="_blank" rel="noopener noreferrer" class="hover:text-gray-950 underline transition-colors">${getFeatureTypeName(item)}</a>
+                    </h3>
                     <div class="grid grid-cols-[max-content,1fr] gap-x-4">
                         <div class="col-span-1">
                             <span class="font-semibold">Phone:</span>
@@ -515,7 +517,7 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
                     <div class="flex items-center space-x-4 mt-4 sm:mt-0">
                         <div class="flex items-center">
                             <input type="checkbox" id="hide-empty" checked class="h-4 w-4 rounded text-blue-600 focus:ring-blue-500 border-gray-300">
-                            <label for="hide-empty" class="ml-2 text-sm font-medium text-gray-700">Hide empty</label>
+                            <label for="hide-empty" class="ml-2 text-sm font-medium text-gray-700">Hide counties with no issues</label>
                         </div>
                         <div class="flex items-center space-x-2">
                             <span class="mr-2 text-sm font-medium text-gray-700">Sort by:</span>
