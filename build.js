@@ -682,7 +682,12 @@ async function main() {
     for (const countryKey in COUNTRIES) {
         const countryData = COUNTRIES[countryKey];
         const countryName = countryData.name;
-        
+
+        const countryDir = path.join(PUBLIC_DIR, safeName(countryName));
+        if (!fs.existsSync(countryDir)) {
+            fs.mkdirSync(countryDir, { recursive: true });
+        }
+
         let totalInvalidCount = 0;
         let totalAutofixableCount = 0;
         let totalTotalNumbers = 0;
