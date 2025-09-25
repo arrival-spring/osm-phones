@@ -232,11 +232,11 @@ function generateHtmlReport(county, invalidNumbers, totalNumbers) {
         const josmFixUrl = item.autoFixable ? `${josmEditUrl}&addtags=${item.tag}=${encodeURIComponent(fixedNumber)}` : null;
 
         const idEditButton = `<a href="${idEditUrl}" class="inline-flex items-center rounded-full bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-colors" target="_blank">Edit in iD</a>`;
-        const josmEditButton = `<a href="${josmEditUrl}" class="inline-flex items-center rounded-full bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-colors" target="_blank">Edit in JOSM</a>`;
-        const josmFixButton = josmFixUrl ? `<a href="${josmFixUrl}" class="inline-flex items-center rounded-full bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-colors" target="_blank">Fix in JOSM</a>` : '';
+        const josmEditButton = `<a href="#" onclick="fixWithJosm('${josmEditUrl}', event)" class="inline-flex items-center rounded-full bg-yellow-200 px-3 py-1.5 text-sm font-semibold text-yellow-800 shadow-sm hover:bg-yellow-600 transition-colors">Edit in JOSM</a>`;
+        const josmFixButton = josmFixUrl ? `<a href="#" onclick="fixWithJosm('${josmFixUrl}', event)" class="inline-flex items-center rounded-full bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-colors">Fix in JOSM</a>` : '';
+        const websiteButton = `<a href="${item.website}" class="inline-flex items-center rounded-full bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-colors" target="_blank">Website</a>`;
 
         const fixableTag = item.autoFixable ? `<span class="text-xs font-semibold px-2 py-1 rounded-full bg-yellow-200 text-yellow-800">Fixable</span>` : '';
-        const suggestedFix = item.autoFixable ? `<span class="font-semibold">Suggested fix:</span> ${fixedNumber}` : '';
         const errorMessage = item.error ? `<p class="text-sm text-red-500 mt-1"><span class="font-bold">Reason:</span> ${item.error}</p>` : '';
 
         return `
@@ -261,10 +261,10 @@ function generateHtmlReport(county, invalidNumbers, totalNumbers) {
                     ${errorMessage}
                 </div>
                 <div class="flex-shrink-0 flex items-center space-x-2">
-                    ${fixableTag}
                     ${idEditButton}
                     ${josmEditButton}
                     ${josmFixButton}
+                    ${websiteButton}
                 </div>
             </li>
         `;
@@ -303,7 +303,6 @@ function generateHtmlReport(county, invalidNumbers, totalNumbers) {
                 </a>
                 <h1 class="text-4xl font-extrabold text-gray-900">Phone Number Report</h1>
                 <h2 class="text-2xl font-semibold text-gray-700 mt-2">${county.name}</h2>
-                <p class="text-sm text-gray-500 mt-2">${invalidNumbers.length} invalid phone numbers found (${autofixableNumbers.length} potentially fixable automatically).</p>
             </header>
             <div class="bg-white rounded-xl shadow-lg p-8 grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
                 <div>
@@ -320,14 +319,32 @@ function generateHtmlReport(county, invalidNumbers, totalNumbers) {
                 </div>
             </div>
             <h2 class="text-2xl font-semibold text-gray-900 mt-2">Fixable numbers</h2>
+            <p class="text-sm text-gray-500 mt-2">These numbers appear to be valid UK numbers but are formatted incorrectly. The suggested fix assumes that they are indeed UK numbers. Not all 'auto' fixes are necessarily valid, so please do not blindly click on all the fix links without first verifying the number.</p>
             <ul class="space-y-4">
                 ${fixableListContent}
             </ul>
             <h2 class="text-2xl font-semibold text-gray-900 mt-2">Invalid numbers</h2>
+            <p class="text-sm text-gray-500 mt-2">These numbers are all invalid in some way; maybe they are too long or too short, or perhaps they're missing an area code. The website could be used to check for a valid number, or a survey may be necessary.</p>
             <ul class="space-y-4">
                 ${invalidListContent}
             </ul>
         </div>
+    <script>
+        function fixWithJosm(url, event) {
+            event.preventDefault();
+            fetch(url)
+                .then(response => {
+                    if (response.ok) {
+                        console.log('JOSM command sent successfully.');
+                    } else {
+                        console.error('Failed to send command to JOSM. Please ensure JOSM is running with Remote Control enabled.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Could not connect to JOSM Remote Control. Please ensure JOSM is running.', error);
+                });
+        }
+    </script>
     </body>
     </html>
     `;
