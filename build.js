@@ -51,7 +51,7 @@ async function fetchCountiesUK(nationAreaId, nationName, retries=3) {
             id: el.id
         }));
     } catch (error) {
-        console.error(`Error fetching county data for nation ${nationName} ${nationAreaId}:`, error);
+        console.error(`Error fetching county data for nation ${nationName} (ID: ${nationAreaId}):`, error);
         return [];
     }
 }
@@ -580,11 +580,21 @@ async function main() {
         const counties = await fetchCountiesUK(nationAreaId, nationName);
         groupedCountyStats[nationName] = [];
 
+        const processedCounties = new Set();
+        const uniqueCounties = counties.filter(county => {
+            if (processedCounties.has(county.name)) {
+                return false;
+            }
+            processedCounties.add(county.name);
+            return true;
+        });
+
+        console.log(`Processing phone numbers for ${uniqueCounties.length} counties in ${nationName}.`);
+
+        // Testing
         let countiesProcessed = 0; 
 
-        for (const county of counties) {
-            console.log(`Processing phone numbers for ${counties.length} counties in ${nationName}.`);
-
+        for (const county of uniqueCounties) {
             const elements = await fetchOsmDataForCounty(county);
             const { invalidNumbers, totalNumbers } = validateNumbers(elements);
 
