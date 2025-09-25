@@ -221,29 +221,32 @@ function generateHtmlReport(county, invalidNumbers) {
     const manualFixNumbers = invalidNumbers.filter(item => !item.autoFixable);
 
     const josmBaseUrl = 'http://127.0.0.1:8111/load_object';
-    const idBaseUrl = 'https://www.openstreetmap.org/edit?editor=id&map=19/'
+    const idBaseUrl = 'https://www.openstreetmap.org/edit?editor=id&map=19/';
 
-    let fixableListContent = '';
-    if (autofixableNumbers.length > 0) {
-        fixableListContent = autofixableNumbers.map(item => {
-            const phoneNumber = item.invalidNumbers.join('; ');
-            const fixedNumber = item.suggestedFixes.join('; ');
-            const fixableTag = item.autoFixable ? '<span class="text-xs font-semibold px-2 py-1 rounded-full bg-yellow-200 text-yellow-800">Fixable</span>' : '';
-            const idEditUrl = `${idBaseUrl}${item.lat}/${item.lon}&${item.type}=${item.id}`;
-            const josmEditUrl = `${josmBaseUrl}?objects=${item.type}${item.id}`;
-            const josmFixUrl = `${josmEditUrl}&addtags=${item.tag}=${encodeURIComponent(fixedNumber)}`;
-            const josmFixButton = item.autoFixable ? `<a href="${josmFixUrl}" class="inline-flex items-center rounded-full bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-colors" target="_blank">Fix in JOSM</a>` : '';
-            const josmEditButton = `<a href="${josmEditUrl}" class="inline-flex items-center rounded-full bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-colors" target="_blank">Fix in JOSM</a>`;
-            const idEditButton = `<a href="${idEditUrl}" class="inline-flex items-center rounded-full bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-colors" target="_blank">Fix in JOSM</a>`;
+    // Create a single function to generate a list item
+    function createListItem(item) {
+        const phoneNumber = item.invalidNumbers.join('; ');
+        const idEditUrl = `${idBaseUrl}${item.lat}/${item.lon}&${item.type}=${item.id}`;
+        const josmEditUrl = `${josmBaseUrl}?objects=${item.type}${item.id}`;
+        const josmFixUrl = item.autoFixable ? `${josmEditUrl}&addtags=${item.tag}=${encodeURIComponent(item.suggestedFixes.join('; '))}` : null;
 
-            return `
+        const idEditButton = `<a href="${idEditUrl}" class="inline-flex items-center rounded-full bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-colors" target="_blank">Edit in iD</a>`;
+        const josmEditButton = `<a href="${josmEditUrl}" class="inline-flex items-center rounded-full bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-colors" target="_blank">Edit in JOSM</a>`;
+        const josmFixButton = josmFixUrl ? `<a href="${josmFixUrl}" class="inline-flex items-center rounded-full bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-colors" target="_blank">Fix in JOSM</a>` : '';
+
+        const fixableTag = item.autoFixable ? `<span class="text-xs font-semibold px-2 py-1 rounded-full bg-yellow-200 text-yellow-800">Fixable</span>` : '';
+        const suggestedFix = item.autoFixable ? `<span class="font-semibold">Suggested fix:</span> ${item.suggestedFixes.join('; ')}` : '';
+        const errorMessage = item.error ? `<p class="text-sm text-red-500 mt-1"><span class="font-bold">Reason:</span> ${item.error}</p>` : '';
+
+        return `
             <li class="bg-white rounded-xl shadow-md p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
                 <div>
                     <h3 class="text-lg font-bold text-gray-900">${getFeatureTypeName(item)}</h3>
                     <p class="text-sm text-gray-500">
-                        <span class="font-semibold">Phone:</span> ${phoneNumber}
-                        <span class="font-semibold">Suggested fix:</span> ${fixedNumber}
+                        <span class="font-semibold">Phone:</span> ${phoneNumber}<br>
+                        ${suggestedFix}
                     </p>
+                    ${errorMessage}
                 </div>
                 <div class="flex-shrink-0 flex items-center space-x-2">
                     ${fixableTag}
@@ -252,50 +255,17 @@ function generateHtmlReport(county, invalidNumbers) {
                     ${josmFixButton}
                 </div>
             </li>
-            `;
-        }).join('');
-    } else {
-        fixableListContent = `
-        <li class="bg-white rounded-xl shadow-md p-6 text-center text-gray-500">
-            No automatically fixable phone numbers found in this county.
-        </li>
         `;
     }
 
-    let invalidListContent = '';
-    if (manualFixNumbers.length > 0) {
-        invalidListContent = manualFixNumbers.map(item => {
-            const phoneNumber = item.invalidNumbers.join('; ');
-            const idEditUrl = `${idBaseUrl}${item.lat}/${item.lon}&${item.type}=${item.id}`;
-            const josmEditUrl = `${josmBaseUrl}?objects=${item.type}${item.id}`;
-            const josmEditButton = `<a href="${josmEditUrl}" class="inline-flex items-center rounded-full bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-colors" target="_blank">Fix in JOSM</a>`;
-            const idEditButton = `<a href="${idEditUrl}" class="inline-flex items-center rounded-full bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-colors" target="_blank">Fix in JOSM</a>`;
+    // Use the new function to map over the arrays
+    const fixableListContent = autofixableNumbers.length > 0 ?
+        autofixableNumbers.map(createListItem).join('') :
+        `<li class="bg-white rounded-xl shadow-md p-6 text-center text-gray-500">No automatically fixable phone numbers found in this county.</li>`;
 
-            return `
-            <li class="bg-white rounded-xl shadow-md p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
-                <div>
-                    <h3 class="text-lg font-bold text-gray-900">${getFeatureTypeName(item)}</h3>
-                    <p class="text-sm text-gray-500">
-                        <span class="font-semibold">Phone:</span> ${phoneNumber}
-                    </p>
-                    <p class="text-sm text-red-500 mt-1">
-                        ${item.error ? `<span class="font-bold">Reason:</span> ${item.error}` : ''}
-                    </p>
-                </div>
-                <div class="flex-shrink-0 flex items-center space-x-2">
-                    ${idEditButton}
-                    ${josmEditButton}
-                </div>
-            </li>
-            `;
-        }).join('');
-    } else {
-        invalidListContent = `
-        <li class="bg-white rounded-xl shadow-md p-6 text-center text-gray-500">
-            No invalid phone numbers found in this county.
-        </li>
-        `;
-    }
+    const invalidListContent = manualFixNumbers.length > 0 ?
+        manualFixNumbers.map(createListItem).join('') :
+        `<li class="bg-white rounded-xl shadow-md p-6 text-center text-gray-500">No invalid phone numbers found in this county.</li>`;
 
     const htmlContent = `
     <!DOCTYPE html>
@@ -372,10 +342,21 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
                     const percentage = county.totalNumbers > 0 ? (county.invalidCount / county.totalNumbers) * 100 : 0;
                     const validPercentage = Math.max(0, Math.min(100, percentage));
 
-                    const getBackgroundColor = (percent) => {
-                        const hue = (100 - percent) * 1.2;
+
+                    function getBackgroundColor(percent) {
+                        if (percent < 98) {
+                            // Red for anything below 98%
+                            return \`hsl(0, 70%, 50%)\`;
+                        }
+                        // Scale green from 98% to 100%
+                        const hue = ((percent - 98) / 2) * 120;
                         return \`hsl(\${hue}, 70%, 50%)\`;
-                    };
+                        }
+
+                    // const getBackgroundColor = (percent) => {
+                    //     const hue = (100 - percent) * 1.2;
+                    //     return \`hsl(\${hue}, 70%, 50%)\`;
+                    // };
                     const backgroundColor = getBackgroundColor(validPercentage);
 
                     const li = document.createElement('li');
