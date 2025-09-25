@@ -7,13 +7,13 @@ const OVERPASS_API_URL = 'https://overpass-api.de/api/interpreter';
 
 async function fetchCountiesGB() {
     // Testing ---------------
-    // const testCounties = {'Bedfordshire and Hertfordshire': 17623586, 'East Yorkshire and Northern Lincolnshire': 17623573, 'Devon': 17618825}
+    const testCounties = {'Bedfordshire and Hertfordshire': 17623586, 'East Yorkshire and Northern Lincolnshire': 17623573, 'Devon': 17618825}
 
-    // // Convert the object into the expected array format
-    // return Object.entries(testCounties).map(([name, id]) => ({
-    //     name: name,
-    //     id: id
-    // }));
+    // Convert the object into the expected array format
+    return Object.entries(testCounties).map(([name, id]) => ({
+        name: name,
+        id: id
+    }));
     // -----------------------
 
     // console.log('Fetching all counties for Great Britain...');
@@ -278,7 +278,7 @@ function generateHtmlReport(county, invalidNumbers) {
               ${websiteHtml}
               <div class="fix-buttons">
                 <a href="${idLink}" target="_blank">Edit in iD</a>
-                <a href="${josmLink}" target="_blank">Open in JOSM</a>
+                <a href="#" onclick="fixWithJosm('${josmLink}', event)">Open in JOSM</a>
                 <a href="#" onclick="fixWithJosm('${josmFixLink}', event)">Fix with JOSM</a>
               </div>
               <span class="number-info">Invalid Number(s):</span> ${item.invalidNumbers.join('; ')}<br>
@@ -308,7 +308,7 @@ function generateHtmlReport(county, invalidNumbers) {
               ${websiteHtml}
               <div class="fix-buttons">
                 <a href="${idLink}" target="_blank">Edit in iD</a>
-                <a href="${josmLink}" target="_blank">Open in JOSM</a>
+                <a href="#" onclick="fixWithJosm('${josmLink}', event)">Open in JOSM</a>
               </div>
               <span class="number-info">Invalid Number(s):</span> ${item.invalidNumbers.join('; ')}<br>
               <span class="number-info">OSM ID:</span> <a href="${item.osmUrl}" target="_blank">${item.type}/${item.id}</a><br>
@@ -387,6 +387,7 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
         </head>
         <body>
           <h1>Invalid UK Phone Numbers in OpenStreetMap</h1>
+          <p style="text-align: center;">Got a suggestion or an issue? <a href="https://github.com/arrival-spring/osm-phones/" target="_blank" rel="noopener noreferrer">Please let me know on GitHub</a>.</p>
           <div class="summary">
             <p>Overall Summary</p>
             <p><strong>Total Phone Numbers:</strong> ${totalTotalNumbers}</p>
