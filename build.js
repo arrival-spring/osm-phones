@@ -59,7 +59,8 @@ async function fetchAdminLevel6(divisionAreaId, divisionName, retries=3) {
         
         if (response.status === 429 || response.status === 504) {
             if (retries > 0) {
-                console.warn(`Overpass API rate limit or gateway timeout hit. Retrying in 10 seconds... (${retries} retries left)`);
+                const retryAfter = response.headers.get('Retry-After') || 60;
+                console.warn(`Overpass API rate limit or gateway timeout hit. Retrying in ${retryAfter} seconds... (${retries} retries left)`);
                 await new Promise(resolve => setTimeout(resolve, 10000));
                 return fetchAdminLevel6(divisionAreaId, divisionName, retries - 1);
             } else {
@@ -664,7 +665,7 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
     </body>
     </html>
     `;
-    pageFileName = path.join(PUBLIC_DIR, safeName(country.name))
+    pageFileName = path.join(PUBLIC_DIR, safeName(countryName))
     fs.writeFileSync(pageFileName, htmlContent);
     console.log(`Report for ${countryName} generated at ${pageFileName}.`);
 }
