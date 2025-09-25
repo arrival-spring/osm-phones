@@ -533,6 +533,7 @@ async function main() {
     if (!fs.existsSync(PUBLIC_DIR)) {
         fs.mkdirSync(PUBLIC_DIR);
     }
+    fs.copyFileSync('styles.css', path.join(PUBLIC_DIR, 'styles.css'));
     
     console.log('Starting full build process...');
 
