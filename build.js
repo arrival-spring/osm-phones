@@ -255,7 +255,7 @@ function generateHtmlReport(county, invalidNumbers) {
 
     let invalidListContent = '';
     if (manualFixNumbers.length > 0) {
-        fixableListContent = manualFixNumbers.map(item => {
+        invalidListContent = manualFixNumbers.map(item => {
             const phoneNumber = item.invalidNumbers.join('; ');
             const fixableTag = item.autoFixable ? '<span class="text-xs font-semibold px-2 py-1 rounded-full bg-yellow-200 text-yellow-800">Fixable</span>' : '';
             const josmUrl = `${josmBaseUrl}?objects=${item.type}${item.id}&addtags=${item.tag}=${encodeURIComponent(item.suggestedFixes.join('; '))}`;
