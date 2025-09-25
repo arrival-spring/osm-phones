@@ -5,28 +5,25 @@ const { parsePhoneNumber } = require('libphonenumber-js');
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const OVERPASS_API_URL = 'https://overpass-api.de/api/interpreter';
 
-async function fetchCountiesGB() {
-    // Testing ---------------
-    // const testCounties = {'Bedfordshire and Hertfordshire': 17623586, 'East Yorkshire and Northern Lincolnshire': 17623573, 'Devon': 17618825, 'Blackpool': 148603}
+const NATIONS = {
+    'England': 3600058447,
+    'Scotland': 3600058446,
+    'Wales': 3600058437,
+    'Northern Ireland': 3600156393
+};
 
-    // // Convert the object into the expected array format
-    // return Object.entries(testCounties).map(([name, id]) => ({
-    //     name: name,
-    //     id: id
-    // }));
-    // -----------------------
-
-    console.log('Fetching all counties for Great Britain...');
+async function fetchCountiesUK(nationAreaId) {
+    console.log('Fetching all counties for the current nation...');
     const { default: fetch } = await import('node-fetch');
 
     const queryTimeout = 180;
     
-    // This query fetches all administrative level 6 relations within the UK
+    // This query fetches all administrative level 6 relations within the region
     // It is a small, fast query that is unlikely to time out
     const query = `
         [out:json][timeout:${queryTimeout}];
-        area[name="United Kingdom"]->.uk;
-        rel(area.uk)["admin_level"="6"]["name"];
+        area[name="${nationAreaId}"]->.nation;
+        rel(area.nation)["admin_level"="6"]["name"];
         out body;
     `;
     
@@ -395,13 +392,10 @@ function generateHtmlReport(county, invalidNumbers, totalNumbers, dataTimestamp)
     console.log(`Generated report for ${county.name} at ${filePath}`);
 }
 
-function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, dataTimestamp) {
-    // This initial sort is good practice to ensure the JSON.stringify data is in the correct order on first load.
-    const sortedStats = countyStats.sort((a, b) => b.invalidCount - a.invalidCount);
-
+function generateIndexHtml(groupedCountyStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, dataTimestamp) {
     const renderListScript = `
         <script>
-            const countyStats = ${JSON.stringify(sortedStats)};
+            const groupedCountyStats = ${JSON.stringify(groupedCountyStats)};
             const listContainer = document.getElementById('county-list');
             const sortButtons = document.querySelectorAll('.sort-btn');
             const hideEmptyCheckbox = document.getElementById('hide-empty');
@@ -420,66 +414,77 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
             }
 
             function renderList() {
-                listContainer.innerHTML = ''; // Clear existing list
+                listContainer.innerHTML = '';
+                
+                for (const nationName in groupedCountyStats) {
+                    let sortedData = [...groupedCountyStats[nationName]];
+                    
+                    if (hideEmptyCheckbox.checked) {
+                        sortedData = sortedData.filter(county => county.invalidCount > 0);
+                    }
+                    
+                    if (sortedData.length > 0) {
+                        // Sort within each nation
+                        sortedData.sort((a, b) => {
+                            if (currentSort === 'invalidCount') {
+                                return b.invalidCount - a.invalidCount;
+                            } else if (currentSort === 'name') {
+                                return a.name.localeCompare(b.name);
+                            }
+                        });
 
-                // Filter the data based on the checkbox state
-                let filteredData = [...countyStats];
-                if (hideEmptyCheckbox.checked) {
-                    filteredData = filteredData.filter(county => county.invalidCount > 0);
+                        const nationHeader = document.createElement('h2');
+                        nationHeader.className = 'text-2xl font-bold text-gray-900 mt-8 mb-4';
+                        nationHeader.textContent = nationName;
+                        listContainer.appendChild(nationHeader);
+                        
+                        const ul = document.createElement('ul');
+                        ul.className = 'space-y-4';
+
+                        sortedData.forEach(county => {
+                            const safeCountyName = county.name.replace(/\\s+|\\//g, '-').toLowerCase();
+                            const percentage = county.totalNumbers > 0 ? (county.invalidCount / county.totalNumbers) * 100 : 0;
+                            const validPercentage = Math.max(0, Math.min(100, percentage));
+
+                            function getBackgroundColor(percent) {
+                                if (percent > 2) {
+                                    return `hsl(0, 70%, 50%)`;
+                                }
+                                const hue = ((2 - percent) / 2) * 120;
+                                return `hsl(${hue}, 70%, 50%)`;
+                            }
+                            const backgroundColor = getBackgroundColor(validPercentage);
+
+                            const li = document.createElement('li');
+                            li.className = 'bg-white rounded-xl shadow-lg p-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 transition-transform transform hover:scale-105';
+                            li.innerHTML = `
+                                <a href="${safeCountyName}.html" class="flex-grow flex items-center space-x-4">
+                                    <div class="h-12 w-12 rounded-full flex-shrink-0" style="background-color: ${backgroundColor};"></div>
+                                    <div class="flex-grow">
+                                        <h3 class="text-xl font-bold text-gray-900">${county.name}</h3>
+                                        <p class="text-sm text-gray-500">${county.invalidCount} invalid numbers out of ${county.totalNumbers}</p>
+                                    </div>
+                                </a>
+                                <div class="text-center sm:text-right">
+                                    <p class="text-2xl font-bold text-gray-800">${validPercentage.toFixed(2)}<span class="text-base font-normal">%</span></p>
+                                    <p class="text-xs text-gray-500">of total</p>
+                                </div>
+                            `;
+                            ul.appendChild(li);
+                        });
+                        listContainer.appendChild(ul);
+                    }
                 }
 
-                // Sort the filtered data
-                const sortedData = filteredData.sort((a, b) => {
-                    if (currentSort === 'invalidCount') {
-                        return b.invalidCount - a.invalidCount;
-                    } else if (currentSort === 'name') {
-                        return a.name.localeCompare(b.name);
-                    }
-                });
-
-                // Handle the case where the list becomes empty after filtering
-                if (sortedData.length === 0) {
+                if (listContainer.innerHTML === '') {
                     const li = document.createElement('li');
                     li.className = 'bg-white rounded-xl shadow-lg p-6 text-center text-gray-500';
                     li.textContent = 'No counties with invalid numbers found.';
                     listContainer.appendChild(li);
-                } else {
-                    sortedData.forEach(county => {
-                        const safeCountyName = county.name.replace(/\\s+|\\//g, '-').toLowerCase();
-                        const percentage = county.totalNumbers > 0 ? (county.invalidCount / county.totalNumbers) * 100 : 0;
-                        const validPercentage = Math.max(0, Math.min(100, percentage));
-
-                        function getBackgroundColor(percent) {
-                            if (percent > 2) {
-                                return \`hsl(0, 70%, 50%)\`;
-                            }
-                            const hue = ((2 - percent) / 2) * 120;
-                            return \`hsl(\${hue}, 70%, 50%)\`;
-                        }
-                        const backgroundColor = getBackgroundColor(validPercentage);
-
-                        const li = document.createElement('li');
-                        li.className = 'bg-white rounded-xl shadow-lg p-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 transition-transform transform hover:scale-105';
-                        li.innerHTML = \`
-                            <a href="\${safeCountyName}.html" class="flex-grow flex items-center space-x-4">
-                                <div class="h-12 w-12 rounded-full flex-shrink-0" style="background-color: \${backgroundColor};"></div>
-                                <div class="flex-grow">
-                                    <h3 class="text-xl font-bold text-gray-900">\${county.name}</h3>
-                                    <p class="text-sm text-gray-500">\${county.invalidCount} invalid numbers out of \${county.totalNumbers}</p>
-                                </div>
-                            </a>
-                            <div class="text-center sm:text-right">
-                                <p class="text-2xl font-bold text-gray-800">\${validPercentage.toFixed(2)}<span class="text-base font-normal">%</span></p>
-                                <p class="text-xs text-gray-500">of total</p>
-                            </div>
-                        \`;
-                        listContainer.appendChild(li);
-                    });
                 }
                 updateButtonStyles();
             }
-
-            // Add event listeners for both buttons and the checkbox
+            
             sortButtons.forEach(button => {
                 button.addEventListener('click', () => {
                     currentSort = button.dataset.sort;
@@ -489,7 +494,6 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
             
             hideEmptyCheckbox.addEventListener('change', renderList);
 
-            // Initial render
             renderList();
         </script>
     `;
@@ -529,8 +533,8 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
                         </div>
                     </div>
                 </div>
-                <ul id="county-list" class="space-y-4">
-                    </ul>
+                <div id="county-list" class="space-y-4">
+                </div>
             </div>
             <div class="bg-white rounded-xl shadow-lg p-2 text-center">
                 ${createFooter(dataTimestamp)}
@@ -551,36 +555,48 @@ async function main() {
     
     console.log('Starting full build process...');
 
-    const ukCounties = await fetchCountiesGB();
-    
-    console.log(`Processing phone numbers for ${ukCounties.length} counties.`);
-    
+    const dataTimestamp = new Date();
+
     const countyStats = [];
+    const groupedCountyStats = {};
+
     let totalInvalidCount = 0;
     let totalAutofixableCount = 0;
     let totalTotalNumbers = 0;
 
-    const dataTimestamp = new Date();
-    
-    for (const county of ukCounties) {
-        const elements = await fetchOsmDataForCounty(county);
-        const { invalidNumbers, totalNumbers } = validateNumbers(elements);
+    for (const [nationName, nationAreaId] of Object.entries(NATIONS)) {
+        console.log(`Processing counties for ${nationName}...`);
         
-        const autoFixableCount = invalidNumbers.filter(item => item.autoFixable).length;
+        // Fetch counties for the current nation
+        const counties = await fetchCountiesUK(nationAreaId);
+        groupedCountyStats[nationName] = [];
 
-        countyStats.push({
-            name: county.name,
-            invalidCount: invalidNumbers.length,
-            autoFixableCount: autoFixableCount,
-            totalNumbers: totalNumbers
-        });
-        
-        totalInvalidCount += invalidNumbers.length;
-        totalAutofixableCount += autoFixableCount;
-        totalTotalNumbers += totalNumbers;
-        
-        generateHtmlReport(county, invalidNumbers, totalNumbers, dataTimestamp);
-    }
+        for (const county of counties) {
+            console.log(`Processing phone numbers for ${counties.length} counties in ${nationName}.`);
+
+            const elements = await fetchOsmDataForCounty(county);
+            const { invalidNumbers, totalNumbers } = validateNumbers(elements);
+
+            const autoFixableCount = invalidNumbers.filter(item => item.autoFixable).length;
+
+            const stats = {
+                name: county.name,
+                invalidCount: invalidNumbers.length,
+                autoFixableCount: autoFixableCount,
+                totalNumbers: totalNumbers
+            };
+            
+            countyStats.push(stats);
+            groupedCountyStats[nationName].push(stats);
+            
+            totalInvalidCount += invalidNumbers.length;
+            totalAutofixableCount += autoFixableCount;
+            totalTotalNumbers += totalNumbers;
+
+            generateHtmlReport(county, invalidNumbers, totalNumbers, dataTimestamp);
+            // Testing - only do one from each to quickly check it's working for now
+            break
+        }
     
     generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, dataTimestamp);
 
