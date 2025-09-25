@@ -574,7 +574,7 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                             const li = document.createElement('li');
                             li.className = 'bg-white rounded-xl shadow-lg p-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 transition-transform transform hover:scale-105';
                             li.innerHTML = \`
-                                <a href="\${path.join(safeCountryName, safeDivisionName)}.html" class="flex-grow flex items-center space-x-4">
+                                <a href="\${safeCountryName}/\${safeDivisionName}.html" class="flex-grow flex items-center space-x-4">
                                     <div class="h-12 w-12 rounded-full flex-shrink-0" style="background-color: \${backgroundColor};"></div>
                                     <div class="flex-grow">
                                         <h3 class="text-xl font-bold text-gray-900">\${division.name}</h3>
