@@ -214,21 +214,27 @@ function validateNumbers(elements) {
 }
 
 function createStatsBox(total, invalid, fixable) {
-return `
-    <div class="bg-white rounded-xl shadow-lg p-8 grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
-        <div>
-            <p class="text-4xl font-extrabold text-blue-600">${invalid.toLocaleString()}</p>
-            <p class="text-sm text-gray-500">Total Invalid Numbers</p>
+    const totalPercentage = total > 0 ? ((invalid / total) * 100).toFixed(2) : '0.00';
+    return `
+        <div class="bg-white rounded-xl shadow-lg p-8 grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
+            <div>
+                <p class="text-4xl font-extrabold text-gray-800">${total.toLocaleString()}</p>
+                <p class="text-sm text-gray-500">Total Numbers Checked</p>
+            </div>
+            <div>
+                <p class="text-4xl font-extrabold text-purple-700">${totalPercentage.toLocaleString()}</p>
+                <p class="text-sm text-gray-500">Valid Numbers</p>
+            </div>
+            <div>
+                <p class="text-4xl font-extrabold text-blue-700">${invalid.toLocaleString()}</p>
+                <p class="text-sm text-gray-500">Total Invalid Numbers</p>
+            </div>
+            <div>
+                <p class="text-4xl font-extrabold text-green-700">${fixable.toLocaleString()}</p>
+                <p class="text-sm text-gray-500">Potentially Fixable</p>
+            </div>
+            
         </div>
-        <div>
-            <p class="text-4xl font-extrabold text-green-600">${fixable.toLocaleString()}</p>
-            <p class="text-sm text-gray-500">Potentially Fixable</p>
-        </div>
-        <div>
-            <p class="text-4xl font-extrabold text-gray-800">${total.toLocaleString()}</p>
-            <p class="text-sm text-gray-500">Total Numbers Checked</p>
-        </div>
-    </div>
     `;
 }
 
@@ -392,8 +398,7 @@ function generateHtmlReport(county, invalidNumbers, totalNumbers, dataTimestamp)
 function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, dataTimestamp) {
     // This initial sort is good practice to ensure the JSON.stringify data is in the correct order on first load.
     const sortedStats = countyStats.sort((a, b) => b.invalidCount - a.invalidCount);
-    
-    const totalPercentage = totalTotalNumbers > 0 ? ((totalInvalidCount / totalTotalNumbers) * 100).toFixed(2) : '0.00';
+
     const totalFixablePercentage = totalInvalidCount > 0 ? ((totalAutofixableCount / totalInvalidCount) * 100).toFixed(2) : '0.00';
 
     const renderListScript = `
