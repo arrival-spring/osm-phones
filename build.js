@@ -215,23 +215,21 @@ function validateNumbers(elements) {
 
 function createStatsBox(total, invalid, fixable) {
     const totalPercentage = total > 0 ? (((total - invalid) / total) * 100).toFixed(2) : '0.00';
+    const fixablePercentage = totalInvalidCount > 0 ? ((totalAutofixableCount / totalInvalidCount) * 100).toFixed(2) : '0.00';
+
     return `
-        <div class="bg-white rounded-xl shadow-lg p-8 grid grid-cols-1 sm:grid-cols-4 gap-6 text-center">
+        <div class="bg-white rounded-xl shadow-lg p-8 grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
             <div>
                 <p class="text-4xl font-extrabold text-gray-800">${total.toLocaleString()}</p>
                 <p class="text-sm text-gray-500">Total Numbers Checked</p>
             </div>
             <div>
-                <p class="text-4xl font-extrabold text-purple-700">${totalPercentage.toLocaleString()}%</p>
-                <p class="text-sm text-gray-500">Valid Numbers</p>
-            </div>
-            <div>
                 <p class="text-4xl font-extrabold text-blue-700">${invalid.toLocaleString()}</p>
-                <p class="text-sm text-gray-500">Total Invalid Numbers</p>
+                <p class="text-sm text-gray-500">Total Invalid Numbers<br>${totalPercentage.toLocaleString()}% of total</p>
             </div>
             <div>
                 <p class="text-4xl font-extrabold text-green-700">${fixable.toLocaleString()}</p>
-                <p class="text-sm text-gray-500">Potentially Fixable</p>
+                <p class="text-sm text-gray-500">Potentially Fixable<br>(${fixablePercentage.toLocaleString()}% of invalid)</p>
             </div>
             
         </div>
@@ -398,8 +396,6 @@ function generateHtmlReport(county, invalidNumbers, totalNumbers, dataTimestamp)
 function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, dataTimestamp) {
     // This initial sort is good practice to ensure the JSON.stringify data is in the correct order on first load.
     const sortedStats = countyStats.sort((a, b) => b.invalidCount - a.invalidCount);
-
-    const totalFixablePercentage = totalInvalidCount > 0 ? ((totalAutofixableCount / totalInvalidCount) * 100).toFixed(2) : '0.00';
 
     const renderListScript = `
         <script>
