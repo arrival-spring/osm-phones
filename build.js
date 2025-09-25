@@ -345,11 +345,27 @@ function getBackgroundColor(percent) {
   return `hsl(${hue}, 70%, 75%)`;
 }
 
-function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers) {
+function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, dataTimestamp) {
     const sortedCounties = [...countyStats].sort((a, b) => a.name.localeCompare(b.name));
     
     const totalValidCount = totalTotalNumbers - totalInvalidCount;
     const totalValidPercentage = totalTotalNumbers > 0 ? (totalValidCount / totalTotalNumbers) * 100 : 100;
+    
+    // Formatting the date and time
+    const formattedDate = dataTimestamp.toLocaleDateString('en-GB', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+    const formattedTime = dataTimestamp.toLocaleTimeString('en-GB', {
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+
+    // Calculating hours ago
+    const now = new Date();
+    const millisecondsAgo = now - dataTimestamp;
+    const hoursAgo = Math.floor(millisecondsAgo / (1000 * 60 * 60));
     
     let htmlContent = `
         <!DOCTYPE html>
@@ -419,6 +435,7 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
             <p><strong>Invalid Numbers:</strong> ${totalInvalidCount} (${totalValidPercentage.toFixed(2)}% valid)</p>
             <p><strong>Autofixable Numbers:</strong> ${totalAutofixableCount}</p>
           </div>
+          <p style="text-align: center;">Data current as of ${formattedDate} at ${formattedTime} (${hoursAgo} hours ago)</p>
           <p>This site provides a breakdown of invalid UK phone numbers found in OpenStreetMap, separated by county.</p>
           
           <div class="controls">
@@ -550,6 +567,8 @@ async function main() {
     let totalAutofixableCount = 0;
     let totalTotalNumbers = 0;
     
+    const dataTimestamp = new Date(); // Moved the timestamp to here
+
     for (const county of ukCounties) {
         const elements = await fetchOsmDataForCounty(county);
         const { invalidNumbers, totalNumbers } = validateNumbers(elements);
@@ -570,10 +589,9 @@ async function main() {
         generateHtmlReport(county, invalidNumbers);
     }
     
-    generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers);
+    generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, dataTimestamp);
 
     console.log('Full build process completed successfully.');
 }
 
 main();
-
