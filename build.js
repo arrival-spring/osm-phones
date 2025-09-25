@@ -428,14 +428,14 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
         </head>
         <body>
           <h1>Invalid UK Phone Numbers in OpenStreetMap</h1>
-          <p style="text-align: center;">Got a suggestion or an issue? <a href="https://github.com/arrival-spring/osm-phones/" target="_blank" rel="noopener noreferrer">Please let me know on GitHub</a>.</p>
+          <p style="text-align: center;">Got a suggestion or an issue? <a href="https://github.com/arrival-spring/osm-phones/" target="_blank" rel="noopener noreferrer">Let me know on GitHub</a>.</p>
           <div class="summary">
             <p>Overall Summary</p>
             <p><strong>Total Phone Numbers:</strong> ${totalTotalNumbers}</p>
             <p><strong>Invalid Numbers:</strong> ${totalInvalidCount} (${totalValidPercentage.toFixed(2)}% valid)</p>
             <p><strong>Autofixable Numbers:</strong> ${totalAutofixableCount}</p>
           </div>
-          <p style="text-align: center;">Data current as of ${formattedDate} at ${formattedTime} (${hoursAgo} hours ago)</p>
+          <p style="text-align: center;">Data sourced on ${formattedDate} at ${formattedTime} (${hoursAgo} hours ago)</p>
           <p>This site provides a breakdown of invalid UK phone numbers found in OpenStreetMap, separated by county.</p>
           
           <div class="controls">
@@ -559,8 +559,16 @@ async function main() {
     console.log('Starting full build process...');
 
     const ukCounties = await fetchCountiesGB();
-    
-    console.log(`Processing phone numbers for ${ukCounties.length} counties.`);
+    const processedCounties = new Set();
+    const uniqueUkCounties = ukCounties.filter(county => {
+        if (processedCounties.has(county.name)) {
+            return false;
+        }
+        processedCounties.add(county.name);
+        return true;
+    });
+
+    console.log(`Processing phone numbers for ${uniqueUkCounties.length} unique counties.`);
     
     const countyStats = [];
     let totalInvalidCount = 0;
@@ -569,7 +577,7 @@ async function main() {
     
     const dataTimestamp = new Date(); // Moved the timestamp to here
 
-    for (const county of ukCounties) {
+    for (const county of uniqueUkCounties) {
         const elements = await fetchOsmDataForCounty(county);
         const { invalidNumbers, totalNumbers } = validateNumbers(elements);
         
