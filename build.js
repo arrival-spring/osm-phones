@@ -372,10 +372,27 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
               .controls {
                   display: flex;
                   justify-content: center;
-                  gap: 20px;
+                  gap: 10px;
                   margin-bottom: 20px;
                   flex-wrap: wrap;
                   align-items: center;
+              }
+              .sort-buttons {
+                  display: flex;
+                  gap: 10px;
+              }
+              .sort-btn {
+                  background-color: #f0f0f0;
+                  border: 1px solid #ccc;
+                  padding: 8px 12px;
+                  border-radius: 5px;
+                  cursor: pointer;
+                  transition: background-color 0.3s, color 0.3s;
+              }
+              .sort-btn.active {
+                  background-color: #007bff;
+                  color: white;
+                  border-color: #007bff;
               }
               ul { list-style-type: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 10px; }
               li { padding: 0; border-radius: 5px; }
@@ -409,14 +426,12 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
               <input type="checkbox" id="hide-valid">
               Exclude counties with no invalid numbers
             </label>
-            <label for="sort-by">
-              Sort by:
-              <select id="sort-by">
-                <option value="name">Alphabetical</option>
-                <option value="percentage">Percentage Valid</option>
-                <option value="autofixable">Autofixes Available</option>
-              </select>
-            </label>
+            <div id="sort-buttons" class="sort-buttons">
+              <span>Sort by:</span>
+              <button class="sort-btn active" data-sort="name">Alphabetical</button>
+              <button class="sort-btn" data-sort="percentage">Percentage Valid</button>
+              <button class="sort-btn" data-sort="autofixable">Autofixes Available</button>
+            </div>
           </div>
 
           <ul id="county-list">
@@ -458,13 +473,15 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
           <script>
             document.addEventListener('DOMContentLoaded', () => {
                 const hideValidCheckbox = document.getElementById('hide-valid');
-                const sortBySelect = document.getElementById('sort-by');
+                const sortButtonsContainer = document.getElementById('sort-buttons');
+                const sortButtons = sortButtonsContainer.querySelectorAll('.sort-btn');
                 const countyList = document.getElementById('county-list');
                 const countyElements = Array.from(countyList.querySelectorAll('li'));
+                let currentSort = 'name';
 
                 function updateList() {
                     const hideValid = hideValidCheckbox.checked;
-                    const sortBy = sortBySelect.value;
+                    const sortBy = currentSort;
 
                     // Sort the array of LI elements
                     countyElements.sort((a, b) => {
@@ -472,7 +489,8 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
                         const bData = b.dataset;
 
                         if (sortBy === 'percentage') {
-                            return parseFloat(bData.percentageValid) - parseFloat(aData.percentageValid);
+                            // Sorts by lowest percentage first
+                            return parseFloat(aData.percentageValid) - parseFloat(bData.percentageValid);
                         } else if (sortBy === 'autofixable') {
                             return parseInt(bData.autofixableCount, 10) - parseInt(aData.autofixableCount, 10);
                         } else { // 'name'
@@ -493,7 +511,15 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
                 }
 
                 hideValidCheckbox.addEventListener('change', updateList);
-                sortBySelect.addEventListener('change', updateList);
+                
+                sortButtons.forEach(button => {
+                    button.addEventListener('click', () => {
+                        currentSort = button.dataset.sort;
+                        sortButtons.forEach(btn => btn.classList.remove('active'));
+                        button.classList.add('active');
+                        updateList();
+                    });
+                });
 
                 // Initial load is already sorted alphabetically by the build script,
                 // but we call updateList() in case the filter needs to be applied
