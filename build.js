@@ -213,7 +213,7 @@ function validateNumbers(elements) {
     }
 }
 
-function generateHtmlReport(county, invalidNumbers) {
+function generateHtmlReport(county, invalidNumbers, totalNumbers) {
     const safeCountyName = county.name.replace(/\s+|\//g, '-').toLowerCase();
     const filePath = path.join(PUBLIC_DIR, `${safeCountyName}.html`);
 
@@ -243,7 +243,7 @@ function generateHtmlReport(county, invalidNumbers) {
             <li class="bg-white rounded-xl shadow-md p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
                 <div>
                     <h3 class="text-lg font-bold text-gray-900">${getFeatureTypeName(item)}</h3>
-                    <div class="grid grid-cols-2 gap-x-4">
+                    <div class="grid grid-cols-[max-content,1fr] gap-x-4">
                         <div class="col-span-1">
                             <span class="font-semibold">Phone:</span>
                         </div>
@@ -258,10 +258,6 @@ function generateHtmlReport(county, invalidNumbers) {
                             <span>${fixedNumber}</span>
                         </div>
                     </div>
-                    // <p class="text-sm text-gray-500">
-                    //     <span class="font-semibold">Phone:</span> \${phoneNumber}<br>
-                    //     \${suggestedFix}
-                    // </p>
                     ${errorMessage}
                 </div>
                 <div class="flex-shrink-0 flex items-center space-x-2">
@@ -307,8 +303,22 @@ function generateHtmlReport(county, invalidNumbers) {
                 </a>
                 <h1 class="text-4xl font-extrabold text-gray-900">Phone Number Report</h1>
                 <h2 class="text-2xl font-semibold text-gray-700 mt-2">${county.name}</h2>
-                <p class="text-sm text-gray-500 mt-2">${invalidNumbers.length} invalid phone numbers found (${autofixableNumbers} potentially fixable automatically).</p>
+                <p class="text-sm text-gray-500 mt-2">${invalidNumbers.length} invalid phone numbers found (${autofixableNumbers.length} potentially fixable automatically).</p>
             </header>
+            <div class="bg-white rounded-xl shadow-lg p-8 grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
+                <div>
+                    <p class="text-4xl font-extrabold text-blue-600">${invalidNumbers.length.toLocaleString()}</p>
+                    <p class="text-sm text-gray-500">Total Invalid Numbers</p>
+                </div>
+                <div>
+                    <p class="text-4xl font-extrabold text-green-600">${autofixableNumbers.length.toLocaleString()}</p>
+                    <p class="text-sm text-gray-500">Potentially Fixable</p>
+                </div>
+                <div>
+                    <p class="text-4xl font-extrabold text-gray-800">${totalNumbers.toLocaleString()}</p>
+                    <p class="text-sm text-gray-500">Total Numbers Checked</p>
+                </div>
+            </div>
             <h2 class="text-2xl font-semibold text-gray-900 mt-2">Fixable numbers</h2>
             <ul class="space-y-4">
                 ${fixableListContent}
@@ -493,7 +503,7 @@ async function main() {
         totalAutofixableCount += autoFixableCount;
         totalTotalNumbers += totalNumbers;
         
-        generateHtmlReport(county, invalidNumbers);
+        generateHtmlReport(county, invalidNumbers, totalNumbers);
     }
     
     generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers);
