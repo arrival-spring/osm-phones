@@ -704,7 +704,7 @@ async function main() {
                 return true;
             });
 
-            console.log(`Processing phone numbers for ${uniqueSubdivisions.length} subdivisions in ${nationName}.`);
+            console.log(`Processing phone numbers for ${uniqueSubdivisions.length} subdivisions in ${countryData.name}.`);
 
             // Testing: only get two subdivisions from each main division for now
             let subdivisionsProcessed = 0;
