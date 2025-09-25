@@ -214,15 +214,15 @@ function validateNumbers(elements) {
 }
 
 function createStatsBox(total, invalid, fixable) {
-    const totalPercentage = total > 0 ? ((invalid / total) * 100).toFixed(2) : '0.00';
+    const totalPercentage = total > 0 ? (((total - invalid) / total) * 100).toFixed(2) : '0.00';
     return `
-        <div class="bg-white rounded-xl shadow-lg p-8 grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
+        <div class="bg-white rounded-xl shadow-lg p-8 grid grid-cols-1 sm:grid-cols-4 gap-6 text-center">
             <div>
                 <p class="text-4xl font-extrabold text-gray-800">${total.toLocaleString()}</p>
                 <p class="text-sm text-gray-500">Total Numbers Checked</p>
             </div>
             <div>
-                <p class="text-4xl font-extrabold text-purple-700">${totalPercentage.toLocaleString()}</p>
+                <p class="text-4xl font-extrabold text-purple-700">${totalPercentage.toLocaleString()}%</p>
                 <p class="text-sm text-gray-500">Valid Numbers</p>
             </div>
             <div>
