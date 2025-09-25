@@ -381,7 +381,7 @@ function generateHtmlReport(countryName, division, invalidNumbers, totalNumbers,
     <body class="p-8">
         <div class="max-w-4xl mx-auto space-y-8">
             <header class="text-center">
-                <a href="${safeCountryName}.html" class="inline-block mb-4 text-blue-500 hover:text-blue-700 transition-colors">
+                <a href="../${safeCountryName}.html" class="inline-block mb-4 text-blue-500 hover:text-blue-700 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline-block align-middle mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                     </svg>
@@ -508,7 +508,7 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
     const renderListScript = `
         <script>
             const groupedDivisionStats = ${JSON.stringify(groupedDivisionStats)};
-            const countryName = ${safeCountryName};
+            const countryName = "${safeCountryName}";
             const listContainer = document.getElementById('division-list');
             const sortButtons = document.querySelectorAll('.sort-btn');
             const hideEmptyCheckbox = document.getElementById('hide-empty');
@@ -686,6 +686,8 @@ async function main() {
         const countryData = COUNTRIES[countryKey];
         const countryName = countryData.name;
 
+        console.log(`Starting fetching divisions for ${countryName}...`);
+
         const countryDir = path.join(PUBLIC_DIR, safeName(countryName));
         if (!fs.existsSync(countryDir)) {
             fs.mkdirSync(countryDir, { recursive: true });
@@ -712,7 +714,7 @@ async function main() {
                 return true;
             });
 
-            console.log(`Processing phone numbers for ${uniqueSubdivisions.length} subdivisions in ${divisionName.name}.`);
+            console.log(`Processing phone numbers for ${uniqueSubdivisions.length} subdivisions in ${divisionName}.`);
 
             // Testing: only get two subdivisions from each main division for now
             let subdivisionsProcessed = 0;
