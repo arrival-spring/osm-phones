@@ -261,31 +261,6 @@ function createFooter(dataTimestamp) {
     `
 }
 
-function getDarkModeScript() {
-    return `
-    <script>
-        const body = document.body;
-        const btn = document.getElementById("theme-toggle");
-        const savedTheme = localStorage.getItem("theme");
-        if (savedTheme) body.setAttribute("data-bs-theme", savedTheme);
-
-        function updateButton() {
-            btn.textContent = body.getAttribute("data-bs-theme") === "dark" ? "☀️ Light Mode" : "🌙 Dark Mode";
-        }
-
-        btn.addEventListener("click", () => {
-            const current = body.getAttribute("data-bs-theme");
-            const next = current === "dark" ? "light" : "dark";
-            body.setAttribute("data-bs-theme", next);
-            localStorage.setItem("theme", next);
-            updateButton();
-        });
-
-        updateButton();
-    </script>
-`
-}
-
 function generateHtmlReport(county, invalidNumbers, totalNumbers, dataTimestamp) {
     const safeCountyName = county.name.replace(/\s+|\//g, '-').toLowerCase();
     const filePath = path.join(PUBLIC_DIR, `${safeCountyName}.html`);
@@ -366,8 +341,7 @@ function generateHtmlReport(county, invalidNumbers, totalNumbers, dataTimestamp)
             body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
         </style>
     </head>
-    <body class="p-8" data-bs-theme="light">
-        <button id="theme-toggle" class="btn btn-outline-secondary btn-sm float-end">🌙 Dark Mode</button>
+    <body class="p-8">
         <div class="max-w-4xl mx-auto space-y-8">
             <header class="text-center">
                 <a href="index.html" class="inline-block mb-4 text-blue-500 hover:text-blue-700 transition-colors">
@@ -414,7 +388,6 @@ function generateHtmlReport(county, invalidNumbers, totalNumbers, dataTimestamp)
                 });
         }
     </script>
-    ${getDarkModeScript()}
     </body>
     </html>
     `;
@@ -534,8 +507,7 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
             body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
         </style>
     </head>
-    <body class="p-8" data-bs-theme="light">
-        <button id="theme-toggle" class="btn btn-outline-secondary btn-sm float-end">🌙 Dark Mode</button>
+    <body class="p-8">
         <div class="max-w-5xl mx-auto space-y-8">
             <header class="text-center space-y-2">
                 <h1 class="text-4xl font-extrabold text-gray-900">OSM Phone Number Validation</h1>
@@ -565,7 +537,6 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
             </div>
         </div>
         ${renderListScript}
-        ${getDarkModeScript()}
     </body>
     </html>
     `;
