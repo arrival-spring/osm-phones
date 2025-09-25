@@ -230,7 +230,7 @@ function generateHtmlReport(county, invalidNumbers) {
             return `
             <li class="bg-white rounded-xl shadow-md p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
                 <div>
-                    <h3 class="text-lg font-bold text-gray-900">${item.tags.name || item.tags.type || 'Unknown object'}</h3>
+                    <h3 class="text-lg font-bold text-gray-900">${item.name || item.type || 'Unknown object'}</h3>
                     <p class="text-sm text-gray-500">
                         <span class="font-semibold">Phone:</span> ${phoneNumber}
                     </p>
