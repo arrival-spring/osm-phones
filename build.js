@@ -7,7 +7,7 @@ const OVERPASS_API_URL = 'https://overpass-api.de/api/interpreter';
 
 async function fetchCountiesGB() {
     // Testing ---------------
-    const testCounties = {'Bedfordshire and Hertfordshire': 17623586, 'East Yorkshire and Northern Lincolnshire': 17623573, 'Devon': 17618825}
+    const testCounties = {'Bedfordshire and Hertfordshire': 17623586, 'East Yorkshire and Northern Lincolnshire': 17623573, 'Devon': 17618825, 'Blackpool': 148603}
 
     // Convert the object into the expected array format
     return Object.entries(testCounties).map(([name, id]) => ({
@@ -369,6 +369,14 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
                   background: #e9ecef;
                   border-radius: 8px;
               }
+              .controls {
+                  display: flex;
+                  justify-content: center;
+                  gap: 20px;
+                  margin-bottom: 20px;
+                  flex-wrap: wrap;
+                  align-items: center;
+              }
               ul { list-style-type: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 10px; }
               li { padding: 0; border-radius: 5px; }
               li a {
@@ -395,7 +403,23 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
             <p><strong>Autofixable Numbers:</strong> ${totalAutofixableCount}</p>
           </div>
           <p>This site provides a breakdown of invalid UK phone numbers found in OpenStreetMap, separated by county.</p>
-          <ul>
+          
+          <div class="controls">
+            <label for="hide-valid">
+              <input type="checkbox" id="hide-valid">
+              Exclude counties with no invalid numbers
+            </label>
+            <label for="sort-by">
+              Sort by:
+              <select id="sort-by">
+                <option value="name">Alphabetical</option>
+                <option value="percentage">Percentage Valid</option>
+                <option value="autofixable">Autofixes Available</option>
+              </select>
+            </label>
+          </div>
+
+          <ul id="county-list">
       `;
   
       sortedCounties.forEach(county => {
@@ -415,7 +439,11 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
           }
 
           htmlContent += `
-            <li style="background-color: ${backgroundColor};">
+            <li style="background-color: ${backgroundColor};"
+                data-name="${county.name}"
+                data-invalid-count="${county.invalidCount}"
+                data-autofixable-count="${county.autoFixableCount}"
+                data-percentage-valid="${validPercentage.toFixed(2)}">
               <a href="${fileName}">
                 <h3 style="margin-top: 0; text-align: center;">${county.name}</h3>
                 ${statsHtml}
@@ -426,6 +454,53 @@ function generateIndexHtml(countyStats, totalInvalidCount, totalAutofixableCount
   
       htmlContent += `
           </ul>
+
+          <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const hideValidCheckbox = document.getElementById('hide-valid');
+                const sortBySelect = document.getElementById('sort-by');
+                const countyList = document.getElementById('county-list');
+                const countyElements = Array.from(countyList.querySelectorAll('li'));
+
+                function updateList() {
+                    const hideValid = hideValidCheckbox.checked;
+                    const sortBy = sortBySelect.value;
+
+                    // Sort the array of LI elements
+                    countyElements.sort((a, b) => {
+                        const aData = a.dataset;
+                        const bData = b.dataset;
+
+                        if (sortBy === 'percentage') {
+                            return parseFloat(bData.percentageValid) - parseFloat(aData.percentageValid);
+                        } else if (sortBy === 'autofixable') {
+                            return parseInt(bData.autofixableCount, 10) - parseInt(aData.autofixableCount, 10);
+                        } else { // 'name'
+                            return aData.name.localeCompare(bData.name);
+                        }
+                    });
+
+                    // Filter visibility and re-append to the DOM to reflect the new order
+                    countyElements.forEach(li => {
+                        const invalidCount = parseInt(li.dataset.invalidCount, 10);
+                        if (hideValid && invalidCount === 0) {
+                            li.style.display = 'none';
+                        } else {
+                            li.style.display = ''; // Resets to default (block, grid item, etc.)
+                        }
+                        countyList.appendChild(li); // This re-appends the element, ordering it correctly
+                    });
+                }
+
+                hideValidCheckbox.addEventListener('change', updateList);
+                sortBySelect.addEventListener('change', updateList);
+
+                // Initial load is already sorted alphabetically by the build script,
+                // but we call updateList() in case the filter needs to be applied
+                // (e.g. if the checkbox state was cached by the browser).
+                updateList();
+            });
+          </script>
         </body>
         </html>
       `;
@@ -475,3 +550,4 @@ async function main() {
 }
 
 main();
+
