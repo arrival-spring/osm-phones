@@ -223,7 +223,6 @@ function generateHtmlReport(county, invalidNumbers, totalNumbers) {
     const josmBaseUrl = 'http://127.0.0.1:8111/load_object';
     const idBaseUrl = 'https://www.openstreetmap.org/edit?editor=id&map=19/';
 
-    // Create a single function to generate a list item
     function createListItem(item) {
         const phoneNumber = item.invalidNumbers.join('; ');
         const fixedNumber = item.suggestedFixes.join('; ');
@@ -236,7 +235,6 @@ function generateHtmlReport(county, invalidNumbers, totalNumbers) {
         const josmFixButton = josmFixUrl ? `<a href="#" onclick="fixWithJosm('${josmFixUrl}', event)" class="inline-flex items-center rounded-full bg-yellow-200 px-3 py-1.5 text-sm font-semibold text-yello-800 shadow-sm hover:bg-yellow-300 transition-colors">Fix in JOSM</a>` : '';
         const websiteButton = item.website ? `<a href="${item.website}" class="inline-flex items-center rounded-full bg-green-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-green-600 transition-colors" target="_blank">Website</a>` : '';
     
-        const fixableTag = item.autoFixable ? `<span class="text-xs font-semibold px-2 py-1 rounded-full bg-yellow-200 text-yellow-800">Fixable</span>` : '';
         const errorMessage = item.error ? `<p class="text-sm text-red-500 mt-1"><span class="font-bold">Reason:</span> ${item.error}</p>` : '';
     
         return `
@@ -263,11 +261,10 @@ function generateHtmlReport(county, invalidNumbers, totalNumbers) {
                 </div>
                 
                 <div class="flex-shrink-0 flex flex-wrap items-center gap-2">
-                    ${fixableTag}
+                    ${websiteButton}
+                    ${josmFixButton}
                     ${idEditButton}
                     ${josmEditButton}
-                    ${josmFixButton}
-                    ${websiteButton}
                 </div>
             </li>
         `;
