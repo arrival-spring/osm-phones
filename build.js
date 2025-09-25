@@ -1,4 +1,5 @@
 const fs = require('fs');
+const { promises: fsPromises } = require('fs');
 const path = require('path');
 const { parsePhoneNumber } = require('libphonenumber-js');
 
@@ -428,7 +429,7 @@ async function generateHtmlReport(countryName, division, invalidNumbers, totalNu
     </body>
     </html>
     `;
-    await fs.writeFile(filePath, htmlContent);
+    await fsPromises.writeFile(filePath, htmlContent);
     console.log(`Generated report for ${division.name} at ${filePath}`);
 }
 
