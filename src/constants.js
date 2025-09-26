@@ -7,13 +7,11 @@ const COUNTRIES = {
     'United Kingdom': {
         name: 'United Kingdom',
         divisions: {
-            'England': 3600058447,
-            'Scotland': 3600058446,
-            'Wales': 3600058437,
-            'Northern Ireland': 3600156393
+            'Lesotho': 3602093234,
         },
-        countryCode: 'GB',
-        locale: 'en-GB'
+        countryCode: 'LS',
+        locale: 'en-ZA',
+        subdivisionAdminLevel: 5
     },
     'South Africa': {
         name: 'South Africa',
@@ -29,8 +27,21 @@ const COUNTRIES = {
             'Western Cape': 3600080501,
         },
         countryCode: 'ZA',
-        locale: 'en-ZA'
-    }
+        locale: 'en-ZA',
+        subdivisionAdminLevel: 6
+    },
+    'United Kingdom': {
+        name: 'United Kingdom',
+        divisions: {
+            'England': 3600058447,
+            'Scotland': 3600058446,
+            'Wales': 3600058437,
+            'Northern Ireland': 3600156393
+        },
+        countryCode: 'GB',
+        locale: 'en-GB',
+        subdivisionAdminLevel: 6
+    },
 };
 
 module.exports = {

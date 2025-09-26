@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { PUBLIC_DIR, COUNTRIES } = require('./constants');
-const { fetchAdminLevel6, fetchOsmDataForDivision } = require('./osm-api');
+const { fetchAdminLevels: fetchAdminLevels, fetchOsmDataForDivision } = require('./osm-api');
 const { safeName, validateNumbers } = require('./data-processor');
 const {
     generateHtmlReport,
@@ -39,7 +39,7 @@ async function main() {
             const divisionAreaId = countryData.divisions[divisionName];
             console.log(`Processing subdivisions for ${divisionName}...`);
 
-            const subdivisions = await fetchAdminLevel6(divisionAreaId, divisionName);
+            const subdivisions = await fetchAdminLevels(divisionAreaId, divisionName, countryData.subdivisionAdminLevel);
             groupedDivisionStats[divisionName] = [];
 
             const processedSubDivisions = new Set();
