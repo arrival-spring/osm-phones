@@ -644,12 +644,12 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
             <div class="bg-white rounded-xl shadow-lg p-6">
                 <div class="flex flex-col sm:flex-row justify-between items-center mb-6">
                     <h2 class="text-2xl font-bold text-gray-900">Divisional Reports</h2>
-                    <div class="flex items-center space-x-4 mt-4 sm:mt-0">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 mt-4 sm:mt-0">
                         <div class="flex items-center">
                             <input type="checkbox" id="hide-empty" checked class="h-4 w-4 rounded text-blue-600 focus:ring-blue-500 border-gray-300">
                             <label for="hide-empty" class="ml-2 text-sm font-medium text-gray-700">Hide divisions with no issues</label>
                         </div>
-                        <div class="flex items-center space-x-2">
+                        <div class="flex flex-wrap items-center space-x-2">
                             <span class="mr-2 text-sm font-medium text-gray-700">Sort by:</span>
                             <button id="sort-percentage" data-sort="percentage" class="sort-btn px-4 py-2 rounded-md text-sm font-medium transition-colors">Invalid Percentage</button>
                             <button id="sort-invalid" data-sort="invalidCount" class="sort-btn px-4 py-2 rounded-md text-sm font-medium transition-colors">Invalid Count</button>
