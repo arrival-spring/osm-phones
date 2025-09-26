@@ -583,7 +583,7 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                                     <div class="h-12 w-12 rounded-full flex-shrink-0" style="background-color: \${backgroundColor};"></div>
                                     <div class="flex-grow">
                                         <h3 class="text-xl font-bold text-gray-900">\${division.name}</h3>
-                                        <p class="text-sm text-gray-500">\${division.invalidCount} invalid numbers out of \${division.totalNumbers}</p>
+                                        <p class="text-sm text-gray-500">\${division.invalidCount} (\${dision.autoFixableCount} potentially fixable) invalid numbers out of \${division.totalNumbers}</p>
                                     </div>
                                 </a>
                                 <div class="text-center sm:text-right">
@@ -738,12 +738,12 @@ async function main() {
 
             console.log(`Processing phone numbers for ${uniqueSubdivisions.length} subdivisions in ${divisionName}.`);
 
-            // Testing: only get two subdivisions from each main division for now
+            // Testing: only get one subdivisions from each main division for now
             let subdivisionsProcessed = 0;
             for (const subdivision of uniqueSubdivisions) {
-                // if (subdivisionsProcessed >= 2) {
-                //     break;
-                // }
+                if (subdivisionsProcessed >= 1) {
+                    break;
+                }
 
                 const elements = await fetchOsmDataForDivision(subdivision);
                 const { invalidNumbers, totalNumbers } = validateNumbers(elements, countryData.countryCode);
