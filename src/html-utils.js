@@ -299,7 +299,7 @@ function generateMainIndexHtml(countryStats, dataTimestamp) {
                 </div>
                 <div class="text-center sm:text-right">
                     <p class="text-2xl font-bold text-gray-800">${validPercentage.toFixed(2)}<span class="text-base font-normal">%</span></p>
-                    <p class="text-xs text-gray-500">of total</p>
+                    <p class="text-xs text-gray-500">invalid</p>
                 </div>
             </a>
         `;
@@ -438,22 +438,22 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
 
             function renderList() {
 
-                const divisionNames = Object.keys(groupedDivisionStats);
-                // Determines if we need groups (UK/ZA) or a flat list (Lesotho)
-                const isGrouped = divisionNames.length > 1; 
+                const TARGET_LI_CLASS = 'bg-white rounded-xl shadow-lg p-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 transition-transform transform hover:scale-105';
 
-                // Capture current open state (Only relevant for Grouped view)
+                // Determine if we need to render groups (i.e., multiple keys in the stats object)
+                const divisionNames = Object.keys(groupedDivisionStats);
+                const isGrouped = divisionNames.length > 1;
+
+                // Capture current open state
                 const currentlyOpenDivisions = new Set();
-                if (isGrouped) {
-                    listContainer.querySelectorAll('details').forEach(details => {
-                        if (details.open) {
-                            const divisionHeader = details.querySelector('h3');
-                            if (divisionHeader) {
-                                currentlyOpenDivisions.add(divisionHeader.textContent.trim());
-                            }
+                listContainer.querySelectorAll('details').forEach(details => {
+                    if (details.open) {
+                        const divisionHeader = details.querySelector('h3');
+                        if (divisionHeader) {
+                            currentlyOpenDivisions.add(divisionHeader.textContent.trim());
                         }
-                    });
-                }
+                    }
+                });
 
                 listContainer.innerHTML = '';
 
@@ -493,7 +493,7 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
 
                         if (isGrouped) {
                             // --- RENDER GROUPED (UK/ZA) ---
-                            const detailsGroup = document.createElement('details');
+                            let detailsGroup = document.createElement('details'); 
                             detailsGroup.className = 'group mt-8 border border-gray-200 rounded-xl shadow-lg';
 
                             // Restore open state after sort
@@ -503,6 +503,7 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                         
                             const summaryHeader = document.createElement('summary');
                             summaryHeader.className = 'list-none cursor-pointer p-6 flex transition-colors rounded-t-xl group/summary bg-gray-50 hover:bg-gray-100'; 
+
                             const summaryContent = document.createElement('div');
                             summaryContent.className = 'flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 w-full';
                             
@@ -542,7 +543,8 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                             
                             const percentageLabel = document.createElement('p');
                             percentageLabel.className = 'text-xs text-gray-500';
-                            percentageLabel.textContent = 'of total';
+                            // This label is for the group header percentage
+                            percentageLabel.textContent = 'invalid'; 
                             
                             rightSide.appendChild(percentageText);
                             rightSide.appendChild(percentageLabel);
@@ -554,7 +556,6 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
 
                             detailsGroup.appendChild(summaryHeader);
                             
-                            // The UL for items within the details group
                             ul = document.createElement('ul'); 
                             ul.className = 'space-y-4 p-4 border-t border-gray-200';
 
@@ -563,7 +564,6 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
 
                         } else {
                             // --- RENDER FLAT LIST (Lesotho) ---
-                            // Append items directly to the list container
                             ul = listContainer; 
                         }
 
@@ -572,20 +572,12 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                             const safeDivisionName = division.name.replace(/\\s+|\\//g, '-').toLowerCase();
                             const percentage = division.totalNumbers > 0 ? (division.invalidCount / division.totalNumbers) * 100 : 0;
                             const validPercentage = Math.max(0, Math.min(100, percentage));
-
                             const backgroundColor = getBackgroundColor(validPercentage);
 
                             const li = document.createElement('li');
                             
-                            // Conditional Styling: Use full box styling only for grouped items
-                            if (isGrouped) {
-                                // Full styling for grouped items (boxes inside the division group box)
-                                li.className = 'bg-white rounded-xl shadow-lg p-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 transition-transform transform hover:scale-105';
-                            } else {
-                                // Light styling for flat list (clean lines inside the main report box)
-                                // The main listContainer has 'space-y-4' for spacing
-                                li.className = 'p-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 transition-colors hover:bg-gray-100 border-b border-gray-200';
-                            }
+                            // Apply the requested class unconditionally
+                            li.className = TARGET_LI_CLASS;
 
                             li.innerHTML = \`
                                 <a href="\${safeCountryName}/\${safeDivisionName}.html" class="flex-grow flex items-center space-x-4">
@@ -597,7 +589,7 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                                 </a>
                                 <div class="text-center sm:text-right">
                                     <p class="text-2xl font-bold text-gray-800">\${validPercentage.toFixed(2)}<span class="text-base font-normal">%</span></p>
-                                    <p class="text-xs text-gray-500">of total</p>
+                                    <p class="text-xs text-gray-500">invalid</p>
                                 </div>
                             \`;
                             ul.appendChild(li);
@@ -606,18 +598,10 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                     }
                 }
 
-                // If the list is a flat list, remove the border-bottom from the last item for a cleaner look
-                if (!isGrouped) {
-                    const lastLi = listContainer.lastElementChild;
-                    if (lastLi) {
-                        lastLi.classList.remove('border-b', 'border-gray-200');
-                    }
-                }
-
                 if (listContainer.querySelectorAll('li').length === 0) {
                     listContainer.innerHTML = '';
                     const li = document.createElement('li');
-                    li.className = 'bg-white rounded-xl shadow-lg p-6 text-center text-gray-500';
+                    li.className = 'p-6 text-center text-gray-500 rounded-xl';
                     li.textContent = 'No subdivisions with invalid numbers found.';
                     listContainer.appendChild(li);
                 }
