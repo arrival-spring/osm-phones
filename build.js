@@ -15,7 +15,8 @@ const COUNTRIES = {
             'Wales': 3600058437,
             'Northern Ireland': 3600156393
         },
-        countryCode: 'GB'
+        countryCode: 'GB',
+        locale: 'en-GB'
     },
     'South Africa': {
         name: 'South Africa',
@@ -30,7 +31,8 @@ const COUNTRIES = {
             'Northern Cape': 3600086720,
             'Western Cape': 3600080501,
         },
-        countryCode: 'ZA'
+        countryCode: 'ZA',
+        locale: 'en-ZA'
     }
 };
 
@@ -250,27 +252,37 @@ function getFeatureTypeName(item) {
     }
 }
 
-function createStatsBox(total, invalid, fixable) {
-    const totalPercentage = total > 0 ? ((invalid / total) * 100).toFixed(2) : '0.00';
-    const fixablePercentage = invalid > 0 ? ((fixable / invalid) * 100).toFixed(2) : '0.00';
+function createStatsBox(total, invalid, fixable, locale) {
+    const percentageOptions = {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    };
+    const totalPercentageNumber = total > 0 ? (invalid / total) * 100 : 0;
+    const fixablePercentageNumber = invalid > 0 ? (fixable / invalid) * 100 : 0;
+
+    const formattedTotal = total.toLocaleString(locale);
+    const formattedInvalid = invalid.toLocaleString(locale);
+    const formattedFixable = fixable.toLocaleString(locale);
+
+    const formattedTotalPercentage = totalPercentageNumber.toLocaleString(locale, percentageOptions);
+    const formattedFixablePercentage = fixablePercentageNumber.toLocaleString(locale, percentageOptions);
 
     return `
         <div class="bg-white rounded-xl shadow-lg p-8 grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
             <div>
-                <p class="text-4xl font-extrabold text-gray-800">${total.toLocaleString()}</p>
+                <p class="text-4xl font-extrabold text-gray-800">${formattedTotal}</p>
                 <p class="text-sm text-gray-500">Numbers Checked</p>
             </div>
             <div>
-                <p class="text-4xl font-extrabold text-blue-700">${invalid.toLocaleString()}</p>
+                <p class="text-4xl font-extrabold text-blue-700">${formattedInvalid}</p>
                 <p class="text-gray-500">Invalid Numbers</p>
-                <p class="text-sm text-gray-400">${totalPercentage.toLocaleString()}% of total</p>
+                <p class="text-sm text-gray-400">${formattedTotalPercentage}% of total</p>
             </div>
             <div>
-                <p class="text-4xl font-extrabold text-green-700">${fixable.toLocaleString()}</p>
+                <p class="text-4xl font-extrabold text-green-700">${formattedFixable}</p>
                 <p class="text-gray-500">Potentially Fixable</p>
-                <p class="text-sm text-gray-400">${fixablePercentage.toLocaleString()}% of invalid</p>
+                <p class="text-sm text-gray-400">${formattedFixablePercentage}% of invalid</p>
             </div>
-            
         </div>
     `;
 }
@@ -342,7 +354,7 @@ function createFooter(dataTimestamp) {
     `
 }
 
-async function generateHtmlReport(countryName, division, invalidNumbers, totalNumbers, dataTimestamp) {
+async function generateHtmlReport(countryName, division, invalidNumbers, totalNumbers, dataTimestamp, locale) {
     const safeDivisionName = safeName(division.name);
     const safeCountryName = safeName(countryName);
     const filePath = path.join(PUBLIC_DIR, safeCountryName, `${safeDivisionName}.html`);
@@ -435,7 +447,7 @@ async function generateHtmlReport(countryName, division, invalidNumbers, totalNu
                 <h1 class="text-4xl font-extrabold text-gray-900">Phone Number Report</h1>
                 <h2 class="text-2xl font-semibold text-gray-700 mt-2">${division.name}</h2>
             </header>
-            ${createStatsBox(totalNumbers, invalidNumbers.length, autofixableNumbers.length)}
+            ${createStatsBox(totalNumbers, invalidNumbers.length, autofixableNumbers.length, locale)}
             <div class="text-center">
                 <h2 class="text-2xl font-semibold text-gray-900">Fixable numbers</h2>
                 <p class="text-sm text-gray-500 mt-2">These numbers appear to be valid numbers but are formatted incorrectly. The suggested fix assumes that they are indeed numbers for this country. Not all 'auto' fixes are necessarily valid, so please do not blindly click on all the fix links without first verifying the number.</p>
@@ -548,7 +560,7 @@ function generateMainIndexHtml(countryStats, dataTimestamp) {
     console.log('Main index.html generated.');
 }
 
-function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, dataTimestamp) {
+function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, dataTimestamp, locale) {
     const safeCountryName = safeName(countryName);
     const renderListScript = `
         <script>
@@ -696,7 +708,7 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                 <h1 class="text-4xl font-extrabold text-gray-900">OSM Phone Number Validation</h1>
                 <p class="text-sm text-gray-500">A report on invalid phone numbers in OpenStreetMap data for ${countryName}.</p>
             </header>
-            ${createStatsBox(totalTotalNumbers, totalInvalidCount, totalAutofixableCount)}
+            ${createStatsBox(totalTotalNumbers, totalInvalidCount, totalAutofixableCount, locale)}
             <div class="bg-white rounded-xl shadow-lg p-6">
                 <div class="flex flex-col sm:flex-row justify-between items-center mb-6">
                     <h2 class="text-2xl font-bold text-gray-900">Divisional Reports</h2>
@@ -798,7 +810,7 @@ async function main() {
                 totalAutofixableCount += autoFixableCount;
                 totalTotalNumbers += totalNumbers;
 
-                await generateHtmlReport(countryName, subdivision, invalidNumbers, totalNumbers, dataTimestamp);
+                await generateHtmlReport(countryName, subdivision, invalidNumbers, totalNumbers, dataTimestamp, countryData.locale);
 
                 subdivisionsProcessed++;
             }
@@ -811,7 +823,7 @@ async function main() {
             totalNumbers: totalTotalNumbers
         });
 
-        generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, dataTimestamp);
+        generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, dataTimestamp, countryData.locale);
     }
 
     generateMainIndexHtml(countryStats, dataTimestamp);
