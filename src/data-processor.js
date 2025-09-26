@@ -38,7 +38,76 @@ function getFeatureTypeName(item) {
 }
 
 /**
- * Validates phone numbers using libphonenumber-js.
+ * Strips phone number extensions (x, ext, etc.) and non-dialable characters 
+ * to isolate the core number for comparison.
+ * @param {string} numberStr 
+ * @returns {string} The core number string without the extension.
+ */
+function stripExtension(numberStr) {
+    // Regex matches common extension prefixes: x, ext, extension, etc.
+    // It captures everything before the extension marker.
+    const extensionRegex = /^(.*?)(?:[xX]|[eE][xX][tT]|\/|\s*\(ext\)\s*).*$/;
+    const match = numberStr.match(extensionRegex);
+    
+    // If an extension is found, return the part before it (trimmed).
+    if (match && match[1]) {
+        return match[1].trim();
+    }
+    // Otherwise, return the original string.
+    return numberStr;
+}
+
+/**
+ * Validates a single phone number string using libphonenumber-js.
+ * @param {string} numberStr - The phone number string to validate.
+ * @param {string} countryCode - The country code for validation.
+ * @returns {{isInvalid: boolean, suggestedFix: string, autoFixable: boolean}}
+ */
+function processSingleNumber(numberStr, countryCode) {
+    let suggestedFix = 'No fix available';
+    let autoFixable = true;
+    let isInvalid = false;
+
+    try {
+        const phoneNumber = parsePhoneNumber(numberStr, countryCode);
+
+        // Strip the extension from the original string for normalization
+        const numberToValidate = stripExtension(numberStr);
+        const normalizedOriginal = numberToValidate.replace(/\s/g, '');
+        
+        let normalizedParsed = '';
+        
+        if (phoneNumber) {
+            // The suggested fix should include the original extension if one exists.
+            const extension = phoneNumber.ext ? ` x${phoneNumber.ext}` : '';
+            suggestedFix = phoneNumber.format('INTERNATIONAL') + extension;
+        }
+
+        if (phoneNumber && phoneNumber.isValid()) {
+            normalizedParsed = phoneNumber.number.replace(/\s/g, '');
+        }
+
+        // Compare the stripped original number to the normalized parsed number
+        isInvalid = normalizedOriginal !== normalizedParsed;
+
+        if (isInvalid) {
+            if (!phoneNumber || !phoneNumber.isValid()) {
+                autoFixable = false;
+            }
+        }
+    } catch (e) {
+        // Parsing failed due to an exception (unfixable invalid number)
+        isInvalid = true;
+        autoFixable = false;
+        suggestedFix = 'No fix available';
+    }
+    
+    return { isInvalid, suggestedFix, autoFixable };
+}
+
+/**
+ * Validates phone numbers using libphonenumber-js, marking tags as invalid if
+ * they contain bad separators (comma, slash, 'or') or invalid numbers.
  * @param {Array<Object>} elements - OSM elements with phone tags.
  * @param {string} countryCode - The country code for validation.
  * @returns {{invalidNumbers: Array<Object>, totalNumbers: number}}
@@ -46,6 +115,13 @@ function getFeatureTypeName(item) {
 function validateNumbers(elements, countryCode) {
     const invalidItemsMap = new Map();
     let totalNumbers = 0;
+
+    // Define the regex for separators that are definitively "bad" and should trigger a fix report.
+    const BAD_SEPARATOR_REGEX = /(\s*,\s*)|(\s*\/\s*)|(\s+or\s+)/gi;
+
+    // This regex is used for splitting. It catches ALL valid and invalid separators:
+    // Raw semicolon (';'), semicolon with optional space ('; ?'), comma, slash, or 'or'.
+    const UNIVERSAL_SPLIT_REGEX = /(; ?)|(\s*,\s*)|(\s*\/\s*)|(\s+or\s+)/gi;
 
     elements.forEach(element => {
         if (element.tags) {
@@ -55,82 +131,79 @@ function validateNumbers(elements, countryCode) {
 
             let website = websiteTags.map(tag => tags[tag]).find(url => url);
             if (website && !website.startsWith('http://') && !website.startsWith('https://')) {
-                website = `http://${website}`;
+                website = `http://${website}`; // Otherwise it won't be clickable later
             }
 
             const lat = element.lat || (element.center && element.center.lat);
             const lon = element.lon || (element.center && element.center.lon);
             const name = tags.name;
             const key = `${element.type}-${element.id}`;
-
-            let foundInvalidNumber = false;
+            const baseItem = {
+                type: element.type, id: element.id, osmUrl: `https://www.openstreetmap.org/${element.type}/${element.id}`,
+                tag: null, website: website, lat: lat, lon: lon, name: name, allTags: tags,
+                invalidNumbers: [], suggestedFixes: [],
+            };
 
             for (const tag of phoneTags) {
                 if (tags[tag]) {
-                    const numbers = tags[tag].split(';').map(s => s.trim());
+                    const originalTagValue = tags[tag].trim(); 
+                    
+                    // Check if a bad separator was used
+                    const hasBadSeparator = originalTagValue.match(BAD_SEPARATOR_REGEX);
+
+                    // Single-step splitting: The regex finds all separators and removes them.
+                    const numbers = originalTagValue
+                        .split(UNIVERSAL_SPLIT_REGEX)
+                        .map(s => s ? s.trim() : '') // Handle potential nulls/undefined from split regex
+                        .filter(s => s.length > 0);
+                    
+                    const suggestedNumbersList = [];
+                    let hasIndividualInvalidNumber = false;
+                    
                     numbers.forEach(numberStr => {
                         totalNumbers++;
-                        try {
-                            const phoneNumber = parsePhoneNumber(numberStr, countryCode);
+                        
+                        const validationResult = processSingleNumber(numberStr, countryCode);
+                        const { isInvalid, suggestedFix, autoFixable } = validationResult;
+                        
+                        suggestedNumbersList.push(suggestedFix);
 
-                            const normalizedOriginal = numberStr.replace(/\s/g, '');
-                            let normalizedParsed = '';
-                            if (phoneNumber && phoneNumber.isValid()) {
-                                normalizedParsed = phoneNumber.number.replace(/\s/g, '');
-                            }
+                        if (isInvalid) {
+                            hasIndividualInvalidNumber = true;
 
-                            const isInvalid = normalizedOriginal !== normalizedParsed;
-
-                            if (isInvalid) {
-                                foundInvalidNumber = true;
-                                if (!invalidItemsMap.has(key)) {
-                                    invalidItemsMap.set(key, {
-                                        type: element.type,
-                                        id: element.id,
-                                        osmUrl: `https://www.openstreetmap.org/${element.type}/${element.id}`,
-                                        tag: tag,
-                                        website: website,
-                                        lat: lat,
-                                        lon: lon,
-                                        name: name,
-                                        allTags: tags,
-                                        invalidNumbers: [],
-                                        suggestedFixes: [],
-                                        autoFixable: true
-                                    });
-                                }
-                                const item = invalidItemsMap.get(key);
-                                item.invalidNumbers.push(numberStr);
-                                item.suggestedFixes.push(phoneNumber ? phoneNumber.format('INTERNATIONAL') : 'No fix available');
-                                if (!phoneNumber || !phoneNumber.isValid()) {
-                                    item.autoFixable = false;
-                                }
-                            }
-                        } catch (e) {
-                            foundInvalidNumber = true;
                             if (!invalidItemsMap.has(key)) {
-                                invalidItemsMap.set(key, {
-                                    type: element.type,
-                                    id: element.id,
-                                    osmUrl: `https://www.openstreetmap.org/${element.type}/${element.id}`,
-                                    tag: tag,
-                                    website: website,
-                                    lat: lat,
-                                    lon: lon,
-                                    name: name,
-                                    allTags: tags,
-                                    invalidNumbers: [],
-                                    suggestedFixes: [],
-                                    autoFixable: false,
-                                    error: e.message
-                                });
+                                invalidItemsMap.set(key, { ...baseItem, tag: tag, autoFixable: true });
                             }
                             const item = invalidItemsMap.get(key);
+                            
                             item.invalidNumbers.push(numberStr);
-                            item.suggestedFixes.push('No fix available');
-                            item.autoFixable = false;
+                            item.suggestedFixes.push(suggestedFix);
+                            
+                            if (!autoFixable) {
+                                item.autoFixable = false;
+                            }
                         }
                     });
+
+
+                    // 2. Final check for invalidity due to bad separators
+                    if (hasIndividualInvalidNumber || hasBadSeparator) {
+                        
+                        // Default fix separator is the raw semicolon (';').
+                        const suggestedTagValue = suggestedNumbersList.join(';'); 
+                        
+                        if (!invalidItemsMap.has(key)) {
+                            const isAutoFixable = !hasIndividualInvalidNumber;
+                            invalidItemsMap.set(key, { ...baseItem, tag: tag, autoFixable: isAutoFixable });
+                        }
+                        const item = invalidItemsMap.get(key);
+                        
+                        if (hasBadSeparator) {
+                            item.invalidNumbers.push(originalTagValue);
+                            item.suggestedFixes.push(suggestedTagValue);
+                            item.autoFixable = item.autoFixable === false ? false : true;
+                        }
+                    }
                 }
             }
         }
