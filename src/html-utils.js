@@ -561,7 +561,7 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                             
                             detailsGroup.appendChild(summaryHeader);
                             
-                            const ul = document.createElement('ul');
+                            ul = document.createElement('ul');
                             ul.className = 'space-y-4 p-4 border-t border-gray-200';
 
                             detailsGroup.appendChild(ul);
