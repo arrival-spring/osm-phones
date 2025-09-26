@@ -7,7 +7,7 @@ const { OVERPASS_API_URL } = require('./constants');
  * @param {number} retries - Number of retries left.
  * @returns {Promise<Array<{name: string, id: number}>>}
  */
-async function fetchAdminLevel6(divisionAreaId, divisionName, retries = 3) {
+async function fetchAdminLevels(divisionAreaId, divisionName, admin_level, retries = 3) {
     console.log(`Fetching all subdivisions for ${divisionName}...`);
     const { default: fetch } = await import('node-fetch');
 
@@ -16,7 +16,7 @@ async function fetchAdminLevel6(divisionAreaId, divisionName, retries = 3) {
     const query = `
         [out:json][timeout:${queryTimeout}];
         area(${divisionAreaId})->.division;
-        rel(area.division)["admin_level"="6"]["name"];
+        rel(area.division)["admin_level"="${admin_level}"]["name"];
         out body;
     `;
 
@@ -32,7 +32,7 @@ async function fetchAdminLevel6(divisionAreaId, divisionName, retries = 3) {
                 const retryAfter = response.headers.get('Retry-After') || 60;
                 console.warn(`Overpass API rate limit or gateway timeout hit (error ${response.status}). Retrying in ${retryAfter} seconds... (${retries} retries left)`);
                 await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
-                return fetchAdminLevel6(divisionAreaId, divisionName, retries - 1);
+                return fetchAdminLevels(divisionAreaId, divisionName, admin_level, retries - 1);
             } else {
                 throw new Error(`Overpass API response error: ${response.statusText}`);
             }
@@ -107,6 +107,6 @@ async function fetchOsmDataForDivision(division, retries = 3) {
 }
 
 module.exports = {
-    fetchAdminLevel6,
+    fetchAdminLevels: fetchAdminLevels,
     fetchOsmDataForDivision,
 };
