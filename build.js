@@ -572,9 +572,13 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                             }
                             const backgroundColor = getBackgroundColor(validPercentage);
 
-                            const li = document.createElement('li');
-                            li.className = 'bg-white rounded-xl shadow-lg p-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 transition-transform transform hover:scale-105';
-                            li.innerHTML = \`
+                            const details = document.createElement('details');
+                            details.className = 'bg-white rounded-xl shadow-lg transition-transform transform hover:scale-105'; 
+                            
+                            const summary = document.createElement('summary');
+                            summary.className = 'list-none cursor-pointer p-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0';
+                            
+                            summary.innerHTML = \`
                                 <a href="\${safeCountryName}/\${safeDivisionName}.html" class="flex-grow flex items-center space-x-4">
                                     <div class="h-12 w-12 rounded-full flex-shrink-0" style="background-color: \${backgroundColor};"></div>
                                     <div class="flex-grow">
@@ -587,6 +591,23 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                                     <p class="text-xs text-gray-500">of total</p>
                                 </div>
                             \`;
+
+                            const contentDiv = document.createElement('div');
+                            contentDiv.className = 'px-6 pb-6 pt-4 border-t border-gray-200';
+                            contentDiv.innerHTML = \`
+                                <p class="text-md font-semibold text-gray-700">Detailed Statistics:</p>
+                                <ul class="list-disc list-inside space-y-1 mt-2 text-sm text-gray-600">
+                                    <li><span class="font-bold">Autofixable Numbers:</span> \${division.autoFixableCount}</li>
+                                    <li><span class="font-bold">Total Numbers Processed:</span> \${division.totalNumbers}</li>
+                                </ul>
+                            \`;
+
+                            details.appendChild(summary);
+                            details.appendChild(contentDiv); 
+
+                            const li = document.createElement('li');
+                            li.appendChild(details);
+
                             ul.appendChild(li);
                         });
                         listContainer.appendChild(ul);
@@ -644,12 +665,12 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
             <div class="bg-white rounded-xl shadow-lg p-6">
                 <div class="flex flex-col sm:flex-row justify-between items-center mb-6">
                     <h2 class="text-2xl font-bold text-gray-900">Divisional Reports</h2>
-                    <div class="flex items-center space-x-4 mt-4 sm:mt-0">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 mt-4 sm:mt-0">
                         <div class="flex items-center">
                             <input type="checkbox" id="hide-empty" checked class="h-4 w-4 rounded text-blue-600 focus:ring-blue-500 border-gray-300">
                             <label for="hide-empty" class="ml-2 text-sm font-medium text-gray-700">Hide divisions with no issues</label>
                         </div>
-                        <div class="flex items-center space-x-2">
+                        <div class="flex flex-wrap items-center space-x-2">
                             <span class="mr-2 text-sm font-medium text-gray-700">Sort by:</span>
                             <button id="sort-percentage" data-sort="percentage" class="sort-btn px-4 py-2 rounded-md text-sm font-medium transition-colors">Invalid Percentage</button>
                             <button id="sort-invalid" data-sort="invalidCount" class="sort-btn px-4 py-2 rounded-md text-sm font-medium transition-colors">Invalid Count</button>
