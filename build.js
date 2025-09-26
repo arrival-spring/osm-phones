@@ -632,7 +632,7 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                                     <div class="h-12 w-12 rounded-full flex-shrink-0" style="background-color: \${backgroundColor};"></div>
                                     <div class="flex-grow">
                                         <h3 class="text-xl font-bold text-gray-900">\${division.name}</h3>
-                                        <p class="text-sm text-gray-500">\${division.invalidCount} (\${dision.autoFixableCount} potentially fixable) invalid numbers out of \${division.totalNumbers}</p>
+                                        <p class="text-sm text-gray-500">\${division.invalidCount} (\${division.autoFixableCount} potentially fixable) invalid numbers out of \${division.totalNumbers}</p>
                                     </div>
                                 </a>
                                 <div class="text-center sm:text-right">
