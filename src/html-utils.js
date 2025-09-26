@@ -295,7 +295,7 @@ function generateMainIndexHtml(countryStats, dataTimestamp) {
                     <div class="h-12 w-12 rounded-full flex-shrink-0" style="background-color: ${backgroundColor};"></div>
                     <div class="flex-grow">
                         <h3 class="text-xl font-bold text-gray-900">${country.name}</h3>
-                        <p class="text-sm text-gray-500">${country.invalidCount} invalid numbers out of ${country.totalNumbers}</p>
+                        <p class="text-sm text-gray-500">${country.invalidCount} invalid numbers (${country.autoFixableCount} potentially fixable) out of ${country.totalNumbers}</p>
                     </div>
                 </div>
                 <div class="text-center sm:text-right">
