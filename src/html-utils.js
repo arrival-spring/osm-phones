@@ -4,6 +4,7 @@ const path = require('path');
 const { PUBLIC_DIR } = require('./constants');
 const { safeName, getFeatureTypeName } = require('./data-processor');
 
+const favicon = '<link rel="icon" href="data:image/svg+xml,&lt;svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22&gt;&lt;text y=%22.9em%22 font-size=%2290%22&gt;📞&lt;/text&gt;&lt;/svg&gt;">';
 /**
  * Creates the HTML box displaying statistics.
  * @param {number} total - Total phone numbers
@@ -205,6 +206,7 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Phone Number Report for ${subdivision.name}</title>
+        ${favicon}
         <script src="https://cdn.tailwindcss.com"></script>
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -310,6 +312,7 @@ function generateMainIndexHtml(countryStats, dataTimestamp) {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>OSM Phone Number Validation Reports</title>
+        ${favicon}
         <script src="https://cdn.tailwindcss.com"></script>
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -641,6 +644,7 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>OSM Phone Number Validation Report - ${countryName}</title>
+        ${favicon}
         <script src="https://cdn.tailwindcss.com"></script>
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
