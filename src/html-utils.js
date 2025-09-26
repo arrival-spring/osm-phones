@@ -384,7 +384,7 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                 return \`hsl(\${hue}, 70%, 50%)\`;
             }
 
-            // Calculates the color for the division group header
+            // Calculates the colour for the division group header
             function getGroupBackgroundColorClient(invalidCount, totalNumbers) {
                 if (totalNumbers === 0) return 'hsl(0, 0%, 90%)';
                 const percentage = (invalidCount / totalNumbers) * 100;
@@ -495,7 +495,7 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                         
                         const statsLine = document.createElement('p');
                         statsLine.className = 'text-sm text-gray-500'; 
-                        statsLine.textContent = \`${groupInvalidFormatted} invalid numbers (\${groupFixableFormatted} potentially fixable) out of ${groupTotalFormatted}\`;
+                        statsLine.textContent = \`\${groupInvalidFormatted} invalid numbers (\${groupFixableFormatted} potentially fixable) out of \${groupTotalFormatted}\`;
 
                         divisionNameContainer.appendChild(divisionHeader);
                         divisionNameContainer.appendChild(statsLine);
@@ -508,7 +508,7 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                         
                         const percentageText = document.createElement('p');
                         percentageText.className = 'text-2xl font-bold text-gray-800';
-                        percentageText.innerHTML = \`${groupPercentage.toFixed(2)}<span class="text-base font-normal">%</span>\`;
+                        percentageText.innerHTML = \`\${groupPercentage.toFixed(2)}<span class="text-base font-normal">%</span>\`;
                         
                         const percentageLabel = document.createElement('p');
                         percentageLabel.className = 'text-xs text-gray-500';
