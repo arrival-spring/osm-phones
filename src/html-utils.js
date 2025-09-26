@@ -295,7 +295,7 @@ function generateMainIndexHtml(countryStats, dataTimestamp) {
                     <div class="h-12 w-12 rounded-full flex-shrink-0" style="background-color: ${backgroundColor};"></div>
                     <div class="flex-grow">
                         <h3 class="text-xl font-bold text-gray-900">${country.name}</h3>
-                        <p class="text-sm text-gray-500">${country.invalidCount} invalid numbers out of ${country.totalNumbers}</p>
+                        <p class="text-sm text-gray-500">${country.invalidCount} invalid numbers (${country.autoFixableCount} potentially fixable) out of ${country.totalNumbers}</p>
                     </div>
                 </div>
                 <div class="text-center sm:text-right">
@@ -437,9 +437,29 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
             }
 
             function renderList() {
+
+                const divisionNames = Object.keys(groupedDivisionStats);
+                // Determines if we need groups (UK/ZA) or a flat list (Lesotho)
+                const isGrouped = divisionNames.length > 1; 
+
+                // Capture current open state (Only relevant for Grouped view)
+                const currentlyOpenDivisions = new Set();
+                if (isGrouped) {
+                    listContainer.querySelectorAll('details').forEach(details => {
+                        if (details.open) {
+                            const divisionHeader = details.querySelector('h3');
+                            if (divisionHeader) {
+                                currentlyOpenDivisions.add(divisionHeader.textContent.trim());
+                            }
+                        }
+                    });
+                }
+
                 listContainer.innerHTML = '';
+
+                // For flat list append items directly to the 'listContainer'.
                 
-                for (const divisionName in groupedDivisionStats) {
+                for (const divisionName of divisionNames) {
                     let sortedData = [...groupedDivisionStats[divisionName]];
                     
                     if (hideEmptyCheckbox.checked) {
@@ -447,14 +467,16 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                     }
                     
                     if (sortedData.length > 0) {
-                        
+
+                        // --- Group Stats Calculation ---
                         const groupStats = calculatedDivisionTotals[divisionName];
                         const groupInvalidFormatted = formatNumber(groupStats.invalid);
                         const groupTotalFormatted = formatNumber(groupStats.total);
-                        const groupFixableFormatted = formatNumber(groupStats.fixable); // NEW: Get formatted fixable count
+                        const groupFixableFormatted = formatNumber(groupStats.fixable); 
                         const groupPercentage = groupStats.total > 0 ? (groupStats.invalid / groupStats.total) * 100 : 0;
                         const groupBgColor = getGroupBackgroundColorClient(groupStats.invalid, groupStats.total);
-                        
+                        // --- End Group Stats Calculation ---
+
                         sortedData.sort((a, b) => {
                             if (currentSort === 'percentage') {
                                 const percentageA = a.totalNumbers > 0 ? (a.invalidCount / a.totalNumbers) : 0;
@@ -467,83 +489,104 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                             }
                         });
 
-                        const detailsGroup = document.createElement('details');
-                        detailsGroup.className = 'group mt-8 border border-gray-200 rounded-xl shadow-lg';
-                        
-                        const summaryHeader = document.createElement('summary');
-                        summaryHeader.className = 'list-none cursor-pointer p-6 flex transition-colors rounded-t-xl group/summary bg-gray-50 hover:bg-gray-100'; 
+                        let ul; // The container where the list items will be appended.
 
-                        const summaryContent = document.createElement('div');
-                        summaryContent.className = 'flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 w-full';
-                        
-                        const leftSide = document.createElement('div');
-                        leftSide.className = 'flex-grow flex items-center space-x-4 w-full sm:w-auto'; // space-x-4 to match list items
-                        
-                        const iconCircle = document.createElement('div'); 
-                        iconCircle.className = 'h-12 w-12 rounded-full flex-shrink-0 flex items-center justify-center';
-                        iconCircle.style.backgroundColor = groupBgColor;
-                        
-                        const collapseIcon = createCollapseIcon();
-                        iconCircle.appendChild(collapseIcon); // Icon inside circle
-                        
-                        const divisionNameContainer = document.createElement('div');
-                        divisionNameContainer.className = 'flex-grow'; 
-                        
-                        const divisionHeader = document.createElement('h3');
-                        divisionHeader.className = 'text-2xl font-bold text-gray-900'; // text-2xl
-                        divisionHeader.textContent = divisionName;
-                        
-                        const statsLine = document.createElement('p');
-                        statsLine.className = 'text-sm text-gray-500'; 
-                        statsLine.textContent = \`\${groupInvalidFormatted} invalid numbers (\${groupFixableFormatted} potentially fixable) out of \${groupTotalFormatted}\`;
+                        if (isGrouped) {
+                            // --- RENDER GROUPED (UK/ZA) ---
+                            const detailsGroup = document.createElement('details');
+                            detailsGroup.className = 'group mt-8 border border-gray-200 rounded-xl shadow-lg';
 
-                        divisionNameContainer.appendChild(divisionHeader);
-                        divisionNameContainer.appendChild(statsLine);
+                            // Restore open state after sort
+                            if (currentlyOpenDivisions.has(divisionName)) {
+                                detailsGroup.open = true;
+                            }
                         
-                        leftSide.appendChild(iconCircle); // Circle with icon
-                        leftSide.appendChild(divisionNameContainer);
-                        
-                        const rightSide = document.createElement('div');
-                        rightSide.className = 'text-center sm:text-right flex-shrink-0 w-full sm:w-auto';
-                        
-                        const percentageText = document.createElement('p');
-                        percentageText.className = 'text-2xl font-bold text-gray-800';
-                        percentageText.innerHTML = \`\${groupPercentage.toFixed(2)}<span class="text-base font-normal">%</span>\`;
-                        
-                        const percentageLabel = document.createElement('p');
-                        percentageLabel.className = 'text-xs text-gray-500';
-                        percentageLabel.textContent = 'of total';
-                        
-                        rightSide.appendChild(percentageText);
-                        rightSide.appendChild(percentageLabel);
-                        
-                        // Assemble the summary header
-                        summaryContent.appendChild(leftSide);
-                        summaryContent.appendChild(rightSide);
-                        
-                        summaryHeader.appendChild(summaryContent);
-                        
-                        detailsGroup.appendChild(summaryHeader);
-                        
-                        const ul = document.createElement('ul');
-                        ul.className = 'space-y-4 p-4 border-t border-gray-200';
+                            const summaryHeader = document.createElement('summary');
+                            summaryHeader.className = 'list-none cursor-pointer p-6 flex transition-colors rounded-t-xl group/summary bg-gray-50 hover:bg-gray-100'; 
+                            const summaryContent = document.createElement('div');
+                            summaryContent.className = 'flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 w-full';
+                            
+                            const leftSide = document.createElement('div');
+                            leftSide.className = 'flex-grow flex items-center space-x-4 w-full sm:w-auto'; 
+                            
+                            const iconCircle = document.createElement('div'); 
+                            iconCircle.className = 'h-12 w-12 rounded-full flex-shrink-0 flex items-center justify-center';
+                            iconCircle.style.backgroundColor = groupBgColor;
+                            
+                            const collapseIcon = createCollapseIcon();
+                            iconCircle.appendChild(collapseIcon); 
+                            
+                            const divisionNameContainer = document.createElement('div');
+                            divisionNameContainer.className = 'flex-grow'; 
+                            
+                            const divisionHeader = document.createElement('h3');
+                            divisionHeader.className = 'text-2xl font-bold text-gray-900'; 
+                            divisionHeader.textContent = divisionName;
+                            
+                            const statsLine = document.createElement('p');
+                            statsLine.className = 'text-sm text-gray-500'; 
+                            statsLine.textContent = \`\${groupInvalidFormatted} invalid numbers (\${groupFixableFormatted} potentially fixable) out of \${groupTotalFormatted}\`;
 
+                            divisionNameContainer.appendChild(divisionHeader);
+                            divisionNameContainer.appendChild(statsLine);
+                            
+                            leftSide.appendChild(iconCircle); 
+                            leftSide.appendChild(divisionNameContainer);
+                            
+                            const rightSide = document.createElement('div');
+                            rightSide.className = 'text-center sm:text-right flex-shrink-0 w-full sm:w-auto';
+                            
+                            const percentageText = document.createElement('p');
+                            percentageText.className = 'text-2xl font-bold text-gray-800';
+                            percentageText.innerHTML = \`\${groupPercentage.toFixed(2)}<span class="text-base font-normal">%</span>\`;
+                            
+                            const percentageLabel = document.createElement('p');
+                            percentageLabel.className = 'text-xs text-gray-500';
+                            percentageLabel.textContent = 'of total';
+                            
+                            rightSide.appendChild(percentageText);
+                            rightSide.appendChild(percentageLabel);
+                            
+                            summaryContent.appendChild(leftSide);
+                            summaryContent.appendChild(rightSide);
+                            
+                            summaryHeader.appendChild(summaryContent);
+
+                            detailsGroup.appendChild(summaryHeader);
+                            
+                            // The UL for items within the details group
+                            ul = document.createElement('ul'); 
+                            ul.className = 'space-y-4 p-4 border-t border-gray-200';
+
+                            detailsGroup.appendChild(ul);
+                            listContainer.appendChild(detailsGroup);
+
+                        } else {
+                            // --- RENDER FLAT LIST (Lesotho) ---
+                            // Append items directly to the list container
+                            ul = listContainer; 
+                        }
+
+                        // --- LIST ITEM RENDERING (Common Logic) ---
                         sortedData.forEach(division => {                            
                             const safeDivisionName = division.name.replace(/\\s+|\\//g, '-').toLowerCase();
                             const percentage = division.totalNumbers > 0 ? (division.invalidCount / division.totalNumbers) * 100 : 0;
                             const validPercentage = Math.max(0, Math.min(100, percentage));
 
-                            function getBackgroundColor(percent) {
-                                if (percent > 2) {
-                                    return \`hsl(0, 70%, 50%)\`;
-                                }
-                                const hue = ((2 - percent) / 2) * 120;
-                                return \`hsl(\${hue}, 70%, 50%)\`;
-                            }
                             const backgroundColor = getBackgroundColor(validPercentage);
 
                             const li = document.createElement('li');
-                            li.className = 'bg-white rounded-xl shadow-lg p-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 transition-transform transform hover:scale-105';
+                            
+                            // Conditional Styling: Use full box styling only for grouped items
+                            if (isGrouped) {
+                                // Full styling for grouped items (boxes inside the division group box)
+                                li.className = 'bg-white rounded-xl shadow-lg p-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 transition-transform transform hover:scale-105';
+                            } else {
+                                // Light styling for flat list (clean lines inside the main report box)
+                                // The main listContainer has 'space-y-4' for spacing
+                                li.className = 'p-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 transition-colors hover:bg-gray-100 border-b border-gray-200';
+                            }
+
                             li.innerHTML = \`
                                 <a href="\${safeCountryName}/\${safeDivisionName}.html" class="flex-grow flex items-center space-x-4">
                                     <div class="h-12 w-12 rounded-full flex-shrink-0" style="background-color: \${backgroundColor};"></div>
@@ -559,14 +602,20 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                             \`;
                             ul.appendChild(li);
                         });
-
-                        detailsGroup.appendChild(ul);
-                        
-                        listContainer.appendChild(detailsGroup);
+                        // --- END LIST ITEM RENDERING ---
                     }
                 }
 
-                if (listContainer.innerHTML === '') {
+                // If the list is a flat list, remove the border-bottom from the last item for a cleaner look
+                if (!isGrouped) {
+                    const lastLi = listContainer.lastElementChild;
+                    if (lastLi) {
+                        lastLi.classList.remove('border-b', 'border-gray-200');
+                    }
+                }
+
+                if (listContainer.querySelectorAll('li').length === 0) {
+                    listContainer.innerHTML = '';
                     const li = document.createElement('li');
                     li.className = 'bg-white rounded-xl shadow-lg p-6 text-center text-gray-500';
                     li.textContent = 'No subdivisions with invalid numbers found.';
@@ -574,14 +623,14 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                 }
                 updateButtonStyles();
             }
-            
+
             sortButtons.forEach(button => {
                 button.addEventListener('click', () => {
                     currentSort = button.dataset.sort;
                     renderList();
                 });
             });
-            
+
             hideEmptyCheckbox.addEventListener('change', renderList);
 
             renderList();
