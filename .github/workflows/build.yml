@@ -8,6 +8,10 @@ on:
     # Run at midnight (00:00) UTC every day
     - cron: '0 0 * * *'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
   pages: write
