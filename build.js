@@ -594,13 +594,22 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                             }
                         });
 
+                        const detailsGroup = document.createElement('details');
+                        detailsGroup.className = 'mt-8 border border-gray-200 rounded-xl shadow-lg';
+                        
+                        const summaryHeader = document.createElement('summary');
+                        summaryHeader.className = 'list-none cursor-pointer p-4 bg-gray-50 hover:bg-gray-100 transition-colors rounded-t-xl'; 
+
                         const divisionHeader = document.createElement('h2');
-                        divisionHeader.className = 'text-2xl font-bold text-gray-900 mt-8 mb-4';
+                        divisionHeader.className = 'text-2xl font-bold text-gray-900'; 
                         divisionHeader.textContent = divisionName;
-                        listContainer.appendChild(divisionHeader);
+                        
+                        summaryHeader.appendChild(divisionHeader);
+                        
+                        detailsGroup.appendChild(summaryHeader);
                         
                         const ul = document.createElement('ul');
-                        ul.className = 'space-y-4';
+                        ul.className = 'space-y-4 p-4 border-t border-gray-200';
 
                         sortedData.forEach(division => {
                             const safeDivisionName = division.name.replace(/\\s+|\\//g, '-').toLowerCase();
@@ -616,13 +625,9 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                             }
                             const backgroundColor = getBackgroundColor(validPercentage);
 
-                            const details = document.createElement('details');
-                            details.className = 'bg-white rounded-xl shadow-lg transition-transform transform hover:scale-105'; 
-                            
-                            const summary = document.createElement('summary');
-                            summary.className = 'list-none cursor-pointer p-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0';
-                            
-                            summary.innerHTML = \`
+                            const li = document.createElement('li');
+                            li.className = 'bg-white rounded-xl shadow-lg p-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 transition-transform transform hover:scale-105';
+                            li.innerHTML = \`
                                 <a href="\${safeCountryName}/\${safeDivisionName}.html" class="flex-grow flex items-center space-x-4">
                                     <div class="h-12 w-12 rounded-full flex-shrink-0" style="background-color: \${backgroundColor};"></div>
                                     <div class="flex-grow">
@@ -635,26 +640,12 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                                     <p class="text-xs text-gray-500">of total</p>
                                 </div>
                             \`;
-
-                            const contentDiv = document.createElement('div');
-                            contentDiv.className = 'px-6 pb-6 pt-4 border-t border-gray-200';
-                            contentDiv.innerHTML = \`
-                                <p class="text-md font-semibold text-gray-700">Detailed Statistics:</p>
-                                <ul class="list-disc list-inside space-y-1 mt-2 text-sm text-gray-600">
-                                    <li><span class="font-bold">Autofixable Numbers:</span> \${division.autoFixableCount}</li>
-                                    <li><span class="font-bold">Total Numbers Processed:</span> \${division.totalNumbers}</li>
-                                </ul>
-                            \`;
-
-                            details.appendChild(summary);
-                            details.appendChild(contentDiv); 
-
-                            const li = document.createElement('li');
-                            li.appendChild(details);
-
                             ul.appendChild(li);
                         });
-                        listContainer.appendChild(ul);
+
+                        detailsGroup.appendChild(ul);
+                        
+                        listContainer.appendChild(detailsGroup);
                     }
                 }
 
