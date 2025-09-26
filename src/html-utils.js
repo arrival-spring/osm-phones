@@ -297,7 +297,7 @@ function generateMainIndexHtml(countryStats, dataTimestamp) {
                 </div>
                 <div class="text-center sm:text-right">
                     <p class="text-2xl font-bold text-gray-800">${validPercentage.toFixed(2)}<span class="text-base font-normal">%</span></p>
-                    <p class="text-xs text-gray-500">of total</p>
+                    <p class="text-xs text-gray-500">invalid</p>
                 </div>
             </a>
         `;
@@ -539,7 +539,7 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                             
                             const percentageLabel = document.createElement('p');
                             percentageLabel.className = 'text-xs text-gray-500';
-                            percentageLabel.textContent = 'of total';
+                            percentageLabel.textContent = 'invalid';
                             
                             rightSide.appendChild(percentageText);
                             rightSide.appendChild(percentageLabel);
@@ -594,7 +594,7 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                                 </a>
                                 <div class="text-center sm:text-right">
                                     <p class="text-2xl font-bold text-gray-800">\${validPercentage.toFixed(2)}<span class="text-base font-normal">%</span></p>
-                                    <p class="text-xs text-gray-500">of total</p>
+                                    <p class="text-xs text-gray-500">invalid</p>
                                 </div>
                             \`;
                             ul.appendChild(li);
