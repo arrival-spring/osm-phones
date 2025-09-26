@@ -571,6 +571,20 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                 });
             }
 
+            // Function to create the collapsible icon (right-pointing arrow)
+            function createCollapseIcon() {
+                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                svg.setAttribute('class', 'h-6 w-6 transform transition-transform duration-200 group-open:rotate-90');
+                svg.setAttribute('fill', 'currentColor');
+                svg.setAttribute('viewBox', '0 0 20 20');
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('fill-rule', 'evenodd');
+                path.setAttribute('d', 'M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z');
+                path.setAttribute('clip-rule', 'evenodd');
+                svg.appendChild(path);
+                return svg;
+            }
+
             function renderList() {
                 listContainer.innerHTML = '';
                 
@@ -595,12 +609,15 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                         });
 
                         const detailsGroup = document.createElement('details');
-                        detailsGroup.className = 'mt-8 border border-gray-200 rounded-xl shadow-lg';
+                        detailsGroup.className = 'group mt-8 border border-gray-200 rounded-xl shadow-lg';
                         
                         const summaryHeader = document.createElement('summary');
-                        summaryHeader.className = 'list-none cursor-pointer p-4 bg-gray-50 hover:bg-gray-100 transition-colors rounded-t-xl'; 
+                        summaryHeader.className = 'flex items-center space-x-2 justify-between list-none cursor-pointer p-4 bg-gray-50 hover:bg-gray-100 transition-colors rounded-t-xl'; 
 
-                        const divisionHeader = document.createElement('h2');
+                        const collapseIcon = createCollapseIcon();
+                        summaryHeader.prepend(collapseIcon);
+
+                        const divisionHeader = document.createElement('span');
                         divisionHeader.className = 'text-2xl font-bold text-gray-900'; 
                         divisionHeader.textContent = divisionName;
                         
