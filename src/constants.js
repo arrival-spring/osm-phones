@@ -6,7 +6,7 @@ const OVERPASS_API_URL = 'https://overpass-api.de/api/interpreter';
 const COUNTRIES = {
     'United Kingdom': {
         name: 'United Kingdom',
-        subdivisions: {
+        divisions: {
             'England': 3600058447,
             'Scotland': 3600058446,
             'Wales': 3600058437,
@@ -17,7 +17,7 @@ const COUNTRIES = {
     },
     'South Africa': {
         name: 'South Africa',
-        subdivisions: {
+        divisions: {
             'Eastern Cape': 3604782250,
             'Free State': 3600092417,
             'Gauteng': 3600349344,
