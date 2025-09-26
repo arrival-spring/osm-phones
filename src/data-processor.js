@@ -48,7 +48,7 @@ function stripExtension(numberStr) {
     // It captures everything before the extension marker.
     const extensionRegex = /^(.*?)(?:[xX]|[eE][xX][tT]|\/|\s*\(ext\)\s*).*$/;
     const match = numberStr.match(extensionRegex);
-    
+
     // If an extension is found, return the part before it (trimmed).
     if (match && match[1]) {
         return match[1].trim();
@@ -74,9 +74,9 @@ function processSingleNumber(numberStr, countryCode) {
         // Strip the extension from the original string for normalization
         const numberToValidate = stripExtension(numberStr);
         const normalizedOriginal = numberToValidate.replace(/\s/g, '');
-        
+
         let normalizedParsed = '';
-        
+
         if (phoneNumber) {
             // The suggested fix should include the original extension if one exists.
             const extension = phoneNumber.ext ? ` x${phoneNumber.ext}` : '';
@@ -101,7 +101,7 @@ function processSingleNumber(numberStr, countryCode) {
         autoFixable = false;
         suggestedFix = 'No fix available';
     }
-    
+
     return { isInvalid, suggestedFix, autoFixable };
 }
 
@@ -117,11 +117,11 @@ function validateNumbers(elements, countryCode) {
     let totalNumbers = 0;
 
     // Define the regex for separators that are definitively "bad" and should trigger a fix report.
-    const BAD_SEPARATOR_REGEX = /(\s*,\s*)|(\s*\/\s*)|(\s+or\s+)/gi;
+    const BAD_SEPARATOR_REGEX = /(\s*,\s*)|(\s*\/\s*)|(\s+or\s+)|(\s+and\s+)/gi;
 
     // This regex is used for splitting. It catches ALL valid and invalid separators:
-    // Raw semicolon (';'), semicolon with optional space ('; ?'), comma, slash, or 'or'.
-    const UNIVERSAL_SPLIT_REGEX = /(; ?)|(\s*,\s*)|(\s*\/\s*)|(\s+or\s+)/gi;
+    // Raw semicolon (';'), semicolon with optional space ('; ?'), comma, slash, 'or' or 'and'.
+    const UNIVERSAL_SPLIT_REGEX = /(; ?)|(\s*,\s*)|(\s*\/\s*)|(\s+or\s+)|(\s+and\s+)/gi;
 
     elements.forEach(element => {
         if (element.tags) {
@@ -139,15 +139,23 @@ function validateNumbers(elements, countryCode) {
             const name = tags.name;
             const key = `${element.type}-${element.id}`;
             const baseItem = {
-                type: element.type, id: element.id, osmUrl: `https://www.openstreetmap.org/${element.type}/${element.id}`,
-                tag: null, website: website, lat: lat, lon: lon, name: name, allTags: tags,
-                invalidNumbers: [], suggestedFixes: [],
+                type: element.type,
+                id: element.id,
+                osmUrl: `https://www.openstreetmap.org/${element.type}/${element.id}`,
+                tag: null,
+                website: website,
+                lat: lat,
+                lon: lon,
+                name: name,
+                allTags: tags,
+                invalidNumbers: [],
+                suggestedFixes: [],
             };
 
             for (const tag of phoneTags) {
                 if (tags[tag]) {
-                    const originalTagValue = tags[tag].trim(); 
-                    
+                    const originalTagValue = tags[tag].trim();
+
                     // Check if a bad separator was used
                     const hasBadSeparator = originalTagValue.match(BAD_SEPARATOR_REGEX);
 
@@ -156,16 +164,16 @@ function validateNumbers(elements, countryCode) {
                         .split(UNIVERSAL_SPLIT_REGEX)
                         .map(s => s ? s.trim() : '') // Handle potential nulls/undefined from split regex
                         .filter(s => s.length > 0);
-                    
+
                     const suggestedNumbersList = [];
                     let hasIndividualInvalidNumber = false;
-                    
+
                     numbers.forEach(numberStr => {
                         totalNumbers++;
-                        
+
                         const validationResult = processSingleNumber(numberStr, countryCode);
                         const { isInvalid, suggestedFix, autoFixable } = validationResult;
-                        
+
                         suggestedNumbersList.push(suggestedFix);
 
                         if (isInvalid) {
@@ -175,10 +183,10 @@ function validateNumbers(elements, countryCode) {
                                 invalidItemsMap.set(key, { ...baseItem, tag: tag, autoFixable: true });
                             }
                             const item = invalidItemsMap.get(key);
-                            
+
                             item.invalidNumbers.push(numberStr);
                             item.suggestedFixes.push(suggestedFix);
-                            
+
                             if (!autoFixable) {
                                 item.autoFixable = false;
                             }
@@ -188,16 +196,16 @@ function validateNumbers(elements, countryCode) {
 
                     // 2. Final check for invalidity due to bad separators
                     if (hasIndividualInvalidNumber || hasBadSeparator) {
-                        
+
                         // Default fix separator is the raw semicolon (';').
-                        const suggestedTagValue = suggestedNumbersList.join(';'); 
-                        
+                        const suggestedTagValue = suggestedNumbersList.join(';');
+
                         if (!invalidItemsMap.has(key)) {
                             const isAutoFixable = !hasIndividualInvalidNumber;
                             invalidItemsMap.set(key, { ...baseItem, tag: tag, autoFixable: isAutoFixable });
                         }
                         const item = invalidItemsMap.get(key);
-                        
+
                         if (hasBadSeparator) {
                             item.invalidNumbers.push(originalTagValue);
                             item.suggestedFixes.push(suggestedTagValue);
