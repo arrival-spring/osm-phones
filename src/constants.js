@@ -4,8 +4,8 @@ const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 const OVERPASS_API_URL = 'https://overpass-api.de/api/interpreter';
 
 const COUNTRIES = {
-    'United Kingdom': {
-        name: 'United Kingdom',
+    'Lesotho': {
+        name: 'Lesotho',
         divisions: {
             'Lesotho': 3602093234,
         },
