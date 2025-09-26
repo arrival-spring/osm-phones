@@ -284,17 +284,61 @@ function createFooter(dataTimestamp) {
     });
     const formattedTime = dataTimestamp.toLocaleTimeString('en-GB', {
         hour: '2-digit',
-        minute: '2-digit'
+        minute: '2-digit',
+        timeZone: 'UTC'
     });
 
-    // Calculating hours ago
-    const now = new Date();
-    const millisecondsAgo = now - dataTimestamp;
-    const hoursAgo = Math.floor(millisecondsAgo / (1000 * 60 * 60));
-
     return `
-    <p class="text-sm text-gray-500 mt-2">Data sourced on ${formattedDate} at ${formattedTime} UTC (${hoursAgo} hours ago)</p>
+    <p id="data-timestamp-container" 
+       class="text-sm text-gray-500 mt-2"
+       data-timestamp="${dataTimestamp.getTime()}">
+        Data sourced on ${formattedDate} at ${formattedTime} UTC 
+        (<span id="time-ago-display">calculating...</span>)
+    </p>
     <p class="text-sm text-gray-500 mt-2">Got a suggestion or an issue? <a href="https://github.com/arrival-spring/osm-phones/" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:text-blue-700 underline transition-colors">Let me know on GitHub</a>.</p>
+    <script>
+        function updateTimeAgo() {
+            const container = document.getElementById('data-timestamp-container');
+            const displayElement = document.getElementById('time-ago-display');
+
+            if (!container || !displayElement) {
+                return;
+            }
+
+            const dataTimestampMs = parseInt(container.getAttribute('data-timestamp'), 10);
+            if (isNaN(dataTimestampMs)) {
+                displayElement.textContent = 'error in time calculation';
+                return;
+            }
+
+            const dataDate = new Date(dataTimestampMs);
+            const now = new Date();
+            
+            const millisecondsAgo = now.getTime() - dataDate.getTime();
+            
+            const totalMinutes = Math.floor(millisecondsAgo / (1000 * 60));
+            
+            let timeAgoText;
+
+            if (totalMinutes < 1) {
+                timeAgoText = 'just now';
+            } else if (totalMinutes < 60) {
+                timeAgoText = \`\${totalMinutes} minute\${totalMinutes > 1 ? 's' : ''} ago\`;
+            } else {
+                // Calculate hours and minutes for better readability
+                const hours = Math.floor(totalMinutes / 60);
+                timeAgoText = \`\${hours} hour\${hours > 1 ? 's' : ''} ago\`;
+            }
+
+            displayElement.textContent = timeAgoText;
+        }
+
+        // Run immediately when the script loads
+        updateTimeAgo();
+
+        // Set an interval to run every 60 seconds (1 minute) to keep the time updated
+        setInterval(updateTimeAgo, 60000);
+    </script>
     `
 }
 
