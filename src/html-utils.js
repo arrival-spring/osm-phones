@@ -1,257 +1,17 @@
-const fs = require('fs');
 const { promises: fsPromises } = require('fs');
+const fs = require('fs');
 const path = require('path');
-const { parsePhoneNumber } = require('libphonenumber-js');
+const { PUBLIC_DIR } = require('./constants');
+const { safeName, getFeatureTypeName } = require('./data-processor');
 
-const PUBLIC_DIR = path.join(__dirname, 'public');
-const OVERPASS_API_URL = 'https://overpass-api.de/api/interpreter';
-
-const COUNTRIES = {
-    'United Kingdom': {
-        name: 'United Kingdom',
-        subdivisions: {
-            'England': 3600058447,
-            'Scotland': 3600058446,
-            'Wales': 3600058437,
-            'Northern Ireland': 3600156393
-        },
-        countryCode: 'GB',
-        locale: 'en-GB'
-    },
-    'South Africa': {
-        name: 'South Africa',
-        subdivisions: {
-            'Eastern Cape': 3604782250,
-            'Free State': 3600092417,
-            'Gauteng': 3600349344,
-            'KwaZulu-Natal': 3600349390,
-            'Limpopo': 3600349547,
-            'Mpumalanga': 3600349556,
-            'North West': 3600349519,
-            'Northern Cape': 3600086720,
-            'Western Cape': 3600080501,
-        },
-        countryCode: 'ZA',
-        locale: 'en-ZA'
-    }
-};
-
-function safeName(name) {
-    return name.replace(/\s+|\//g, '-').toLowerCase();
-}
-
-async function fetchAdminLevel6(divisionAreaId, divisionName, retries = 3) {
-    console.log(`Fetching all subdivisions for ${divisionName}...`);
-    const { default: fetch } = await import('node-fetch');
-
-    const queryTimeout = 180;
-
-    const query = `
-        [out:json][timeout:${queryTimeout}];
-        area(${divisionAreaId})->.division;
-        rel(area.division)["admin_level"="6"]["name"];
-        out body;
-    `;
-
-    try {
-        const response = await fetch(OVERPASS_API_URL, {
-            method: 'POST',
-            body: `data=${encodeURIComponent(query)}`,
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        });
-
-        if (response.status === 429 || response.status === 504) {
-            if (retries > 0) {
-                const retryAfter = response.headers.get('Retry-After') || 60;
-                console.warn(`Overpass API rate limit or gateway timeout hit (error ${response.status}). Retrying in ${retryAfter} seconds... (${retries} retries left)`);
-                await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
-                return fetchAdminLevel6(divisionAreaId, divisionName, retries - 1);
-            } else {
-                throw new Error(`Overpass API response error: ${response.statusText}`);
-            }
-        }
-
-        if (!response.ok) {
-            throw new Error(`Overpass API response error: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        const subdivisions = data.elements.map(el => ({
-            name: el.tags.name,
-            id: el.id
-        }));
-
-        const uniqueSubdivisions = [...new Map(subdivisions.map(item => [item.name, item])).values()];
-        return uniqueSubdivisions;
-    } catch (error) {
-        console.error(`Error fetching subdivisions for ${divisionName}:`, error);
-        return [];
-    }
-}
-
-async function fetchOsmDataForDivision(division, retries = 3) {
-    console.log(`Fetching data for division: ${division.name} (ID: ${division.id})...`);
-    const { default: fetch } = await import('node-fetch');
-
-    const areaId = division.id + 3600000000;
-    const queryTimeout = 600;
-
-    const overpassQuery = `
-        [out:json][timeout:${queryTimeout}];
-        area(${areaId})->.division;
-        (
-          nwr(area.division)["phone"~".*"];
-          nwr(area.division)["contact:phone"~".*"];
-        );
-        out body geom;
-    `;
-
-    try {
-        const response = await fetch(OVERPASS_API_URL, {
-            method: 'POST',
-            body: `data=${encodeURIComponent(overpassQuery)}`,
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        });
-
-        if (response.status === 429 || response.status === 504) {
-            if (retries > 0) {
-                const retryAfter = response.headers.get('Retry-After') || 60;
-                console.warn(`Overpass API rate limit or gateway timeout hit (error ${response.status}). Retrying in ${retryAfter} seconds... (${retries} retries left)`);
-                await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
-                return await fetchOsmDataForDivision(division, retries - 1);
-            }
-        }
-
-        if (!response.ok) {
-            throw new Error(`Overpass API response error: ${response.statusText}`);
-        }
-        const data = await response.json();
-        return data.elements;
-    } catch (error) {
-        console.error(`Error fetching OSM data for ${division.name}:`, error);
-        return [];
-    }
-}
-
-function validateNumbers(elements, countryCode) {
-    const invalidItemsMap = new Map();
-    let totalNumbers = 0;
-
-    elements.forEach(element => {
-        if (element.tags) {
-            const tags = element.tags;
-            const phoneTags = ['phone', 'contact:phone'];
-            const websiteTags = ['website', 'contact:website'];
-
-            let website = websiteTags.map(tag => tags[tag]).find(url => url);
-            if (website && !website.startsWith('http://') && !website.startsWith('https://')) {
-                website = `http://${website}`;
-            }
-
-            const lat = element.lat || (element.center && element.center.lat);
-            const lon = element.lon || (element.center && element.center.lon);
-            const name = tags.name;
-            const key = `${element.type}-${element.id}`;
-
-            let foundInvalidNumber = false;
-
-            for (const tag of phoneTags) {
-                if (tags[tag]) {
-                    const numbers = tags[tag].split(';').map(s => s.trim());
-                    numbers.forEach(numberStr => {
-                        totalNumbers++;
-                        try {
-                            const phoneNumber = parsePhoneNumber(numberStr, countryCode);
-
-                            const normalizedOriginal = numberStr.replace(/\s/g, '');
-                            let normalizedParsed = '';
-                            if (phoneNumber && phoneNumber.isValid()) {
-                                normalizedParsed = phoneNumber.number.replace(/\s/g, '');
-                            }
-
-                            const isInvalid = normalizedOriginal !== normalizedParsed;
-
-                            if (isInvalid) {
-                                foundInvalidNumber = true;
-                                if (!invalidItemsMap.has(key)) {
-                                    invalidItemsMap.set(key, {
-                                        type: element.type,
-                                        id: element.id,
-                                        osmUrl: `https://www.openstreetmap.org/${element.type}/${element.id}`,
-                                        tag: tag,
-                                        website: website,
-                                        lat: lat,
-                                        lon: lon,
-                                        name: name,
-                                        allTags: tags,
-                                        invalidNumbers: [],
-                                        suggestedFixes: [],
-                                        autoFixable: true
-                                    });
-                                }
-                                const item = invalidItemsMap.get(key);
-                                item.invalidNumbers.push(numberStr);
-                                item.suggestedFixes.push(phoneNumber ? phoneNumber.format('INTERNATIONAL') : 'No fix available');
-                                if (!phoneNumber || !phoneNumber.isValid()) {
-                                    item.autoFixable = false;
-                                }
-                            }
-                        } catch (e) {
-                            foundInvalidNumber = true;
-                            if (!invalidItemsMap.has(key)) {
-                                invalidItemsMap.set(key, {
-                                    type: element.type,
-                                    id: element.id,
-                                    osmUrl: `https://www.openstreetmap.org/${element.type}/${element.id}`,
-                                    tag: tag,
-                                    website: website,
-                                    lat: lat,
-                                    lon: lon,
-                                    name: name,
-                                    allTags: tags,
-                                    invalidNumbers: [],
-                                    suggestedFixes: [],
-                                    autoFixable: false,
-                                    error: e.message
-                                });
-                            }
-                            const item = invalidItemsMap.get(key);
-                            item.invalidNumbers.push(numberStr);
-                            item.suggestedFixes.push('No fix available');
-                            item.autoFixable = false;
-                        }
-                    });
-                }
-            }
-        }
-    });
-
-    return { invalidNumbers: Array.from(invalidItemsMap.values()), totalNumbers };
-}
-
-function getFeatureTypeName(item) {
-    if (item.name) {
-        return `${item.name}`;
-    }
-
-    const featureTags = ['amenity', 'shop', 'tourism', 'leisure', 'emergency', 'building', 'craft', 'aeroway', 'railway', 'healthcare', 'highway', 'military', 'man_made', 'public_transport'];
-    let featureType = null;
-    for (const tag of featureTags) {
-        if (item.allTags[tag]) {
-            featureType = item.allTags[tag];
-            break;
-        }
-    }
-
-    if (featureType) {
-        const formattedType = featureType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-        return `${formattedType}`;
-    } else {
-        const formattedType = item.type.replace(/\b\w/g, c => c.toUpperCase());
-        return `OSM ${formattedType}`;
-    }
-}
-
+/**
+ * Creates the HTML box displaying statistics.
+ * @param {number} total - Total phone numbers
+ * @param {number} invalid - Number of invalid numbers
+ * @param {number} fixable - Number of autofixable numbers
+ * @param {string} locale - Locale to display numbers in
+ * @returns {string}
+ */
 function createStatsBox(total, invalid, fixable, locale) {
     const percentageOptions = {
         minimumFractionDigits: 2,
@@ -287,6 +47,11 @@ function createStatsBox(total, invalid, fixable, locale) {
     `;
 }
 
+/**
+ * Creates the HTML footer with data timestamp and GitHub link.
+ * @param {Date} dataTimestamp
+ * @returns {string}
+ */
 function createFooter(dataTimestamp) {
     // Formatting the date and time
     const formattedDate = dataTimestamp.toLocaleDateString('en-GB', {
@@ -354,65 +119,79 @@ function createFooter(dataTimestamp) {
     `
 }
 
-async function generateHtmlReport(countryName, division, invalidNumbers, totalNumbers, dataTimestamp, locale) {
-    const safeDivisionName = safeName(division.name);
-    const safeCountryName = safeName(countryName);
-    const filePath = path.join(PUBLIC_DIR, safeCountryName, `${safeDivisionName}.html`);
-
-    const autofixableNumbers = invalidNumbers.filter(item => item.autoFixable);
-    const manualFixNumbers = invalidNumbers.filter(item => !item.autoFixable);
-
+/**
+ * Creates the HTML content for a single invalid number item.
+ * @param {Object} item - The invalid number data item.
+ * @returns {string}
+ */
+function createListItem(item) {
     const josmBaseUrl = 'http://127.0.0.1:8111/load_object';
     const idBaseUrl = 'https://www.openstreetmap.org/edit?editor=id&map=19/';
 
-    function createListItem(item) {
-        const phoneNumber = item.invalidNumbers.join('; ');
-        const fixedNumber = item.suggestedFixes.join('; ');
-        const idEditUrl = `${idBaseUrl}${item.lat}/${item.lon}&${item.type}=${item.id}`;
-        const josmEditUrl = `${josmBaseUrl}?objects=${item.type}${item.id}`;
-        const josmFixUrl = item.autoFixable ? `${josmEditUrl}&addtags=${item.tag}=${encodeURIComponent(fixedNumber)}` : null;
+    const phoneNumber = item.invalidNumbers.join('; ');
+    const fixedNumber = item.suggestedFixes.join('; ');
+    const idEditUrl = `${idBaseUrl}${item.lat}/${item.lon}&${item.type}=${item.id}`;
+    const josmEditUrl = `${josmBaseUrl}?objects=${item.type}${item.id}`;
+    const josmFixUrl = item.autoFixable ? `${josmEditUrl}&addtags=${item.tag}=${encodeURIComponent(fixedNumber)}` : null;
 
-        const idEditButton = `<a href="${idEditUrl}" class="inline-flex items-center rounded-full bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-colors" target="_blank">Edit in iD</a>`;
-        const josmEditButton = `<a href="#" onclick="fixWithJosm('${josmEditUrl}', event)" class="inline-flex items-center rounded-full bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-colors">Edit in JOSM</a>`;
-        const josmFixButton = josmFixUrl ? `<a href="#" onclick="fixWithJosm('${josmFixUrl}', event)" class="inline-flex items-center rounded-full bg-yellow-200 px-3 py-1.5 text-sm font-semibold text-yello-800 shadow-sm hover:bg-yellow-300 transition-colors">Fix in JOSM</a>` : '';
-        const websiteButton = item.website ? `<a href="${item.website}" class="inline-flex items-center rounded-full bg-green-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-green-600 transition-colors" target="_blank">Website</a>` : '';
+    const idEditButton = `<a href="${idEditUrl}" class="inline-flex items-center rounded-full bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-colors" target="_blank">Edit in iD</a>`;
+    const josmEditButton = `<a href="#" onclick="fixWithJosm('${josmEditUrl}', event)" class="inline-flex items-center rounded-full bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-colors">Edit in JOSM</a>`;
+    const josmFixButton = josmFixUrl ? `<a href="#" onclick="fixWithJosm('${josmFixUrl}', event)" class="inline-flex items-center rounded-full bg-yellow-200 px-3 py-1.5 text-sm font-semibold text-yello-800 shadow-sm hover:bg-yellow-300 transition-colors">Fix in JOSM</a>` : '';
+    const websiteButton = item.website ? `<a href="${item.website}" class="inline-flex items-center rounded-full bg-green-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-green-600 transition-colors" target="_blank">Website</a>` : '';
 
-        const errorMessage = item.error ? `<p class="text-sm text-red-500 mt-1"><span class="font-bold">Reason:</span> ${item.error}</p>` : '';
+    const errorMessage = item.error ? `<p class="text-sm text-red-500 mt-1"><span class="font-bold">Reason:</span> ${item.error}</p>` : '';
 
-        return `
-            <li class="bg-white rounded-xl shadow-md p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
-                <div>
-                    <h3 class="text-lg font-bold text-gray-900">
-                        <a href="${item.osmUrl}" target="_blank" rel="noopener noreferrer" class="hover:text-gray-950 underline transition-colors">${getFeatureTypeName(item)}</a>
-                    </h3>
-                    <div class="grid grid-cols-[max-content,1fr] gap-x-4">
-                        <div class="col-span-1">
-                            <span class="font-semibold">Phone:</span>
-                        </div>
-                        <div class="col-span-1">
-                            <span>${phoneNumber}</span>
-                        </div>
-                        ${item.autoFixable ? `
-                        <div class="col-span-1">
-                            <span class="font-semibold">Suggested fix:</span>
-                        </div>
-                        <div class="col-span-1">
-                            <span>${fixedNumber}</span>
-                        </div>
-                        ` : ''}
+    return `
+        <li class="bg-white rounded-xl shadow-md p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
+            <div>
+                <h3 class="text-lg font-bold text-gray-900">
+                    <a href="${item.osmUrl}" target="_blank" rel="noopener noreferrer" class="hover:text-gray-950 underline transition-colors">${getFeatureTypeName(item)}</a>
+                </h3>
+                <div class="grid grid-cols-[max-content,1fr] gap-x-4">
+                    <div class="col-span-1">
+                        <span class="font-semibold">Phone:</span>
                     </div>
-                    ${errorMessage}
+                    <div class="col-span-1">
+                        <span>${phoneNumber}</span>
+                    </div>
+                    ${item.autoFixable ? `
+                    <div class="col-span-1">
+                        <span class="font-semibold">Suggested fix:</span>
+                    </div>
+                    <div class="col-span-1">
+                        <span>${fixedNumber}</span>
+                    </div>
+                    ` : ''}
                 </div>
-                
-                <div class="flex-shrink-0 flex flex-wrap items-center gap-2">
-                    ${websiteButton}
-                    ${josmFixButton}
-                    ${idEditButton}
-                    ${josmEditButton}
-                </div>
-            </li>
-        `;
-    }
+                ${errorMessage}
+            </div>
+            
+            <div class="flex-shrink-0 flex flex-wrap items-center gap-2">
+                ${websiteButton}
+                ${josmFixButton}
+                ${idEditButton}
+                ${josmEditButton}
+            </div>
+        </li>
+    `;
+}
+
+/**
+ * Generates the HTML report for a single subdivision.
+ * @param {string} countryName
+ * @param {Object} subdivision - The subdivision object.
+ * @param {Array<Object>} invalidNumbers - List of invalid items.
+ * @param {number} totalNumbers - Total number of phone tags checked.
+ * @param {Date} dataTimestamp
+ * @param {string} locale
+ */
+async function generateHtmlReport(countryName, subdivision, invalidNumbers, totalNumbers, dataTimestamp, locale) {
+    const safeSubdivisionName = safeName(subdivision.name);
+    const safeCountryName = safeName(countryName);
+    const filePath = path.join(PUBLIC_DIR, safeCountryName, `${safeSubdivisionName}.html`);
+
+    const autofixableNumbers = invalidNumbers.filter(item => item.autoFixable);
+    const manualFixNumbers = invalidNumbers.filter(item => !item.autoFixable);
 
     const fixableListContent = autofixableNumbers.length > 0 ?
         autofixableNumbers.map(createListItem).join('') :
@@ -428,7 +207,7 @@ async function generateHtmlReport(countryName, division, invalidNumbers, totalNu
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Phone Number Report for ${division.name}</title>
+        <title>Phone Number Report for ${subdivision.name}</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -445,7 +224,7 @@ async function generateHtmlReport(countryName, division, invalidNumbers, totalNu
                     <span class="align-middle">Back to country page</span>
                 </a>
                 <h1 class="text-4xl font-extrabold text-gray-900">Phone Number Report</h1>
-                <h2 class="text-2xl font-semibold text-gray-700 mt-2">${division.name}</h2>
+                <h2 class="text-2xl font-semibold text-gray-700 mt-2">${subdivision.name}</h2>
             </header>
             ${createStatsBox(totalNumbers, invalidNumbers.length, autofixableNumbers.length, locale)}
             <div class="text-center">
@@ -486,9 +265,14 @@ async function generateHtmlReport(countryName, division, invalidNumbers, totalNu
     </html>
     `;
     await fsPromises.writeFile(filePath, htmlContent);
-    console.log(`Generated report for ${division.name} at ${filePath}`);
+    console.log(`Generated report for ${subdivision.name} at ${filePath}`);
 }
 
+/**
+ * Generates the main index.html file listing all countries.
+ * @param {Array<Object>} countryStats - List of country statistics.
+ * @param {Date} dataTimestamp
+ */
 function generateMainIndexHtml(countryStats, dataTimestamp) {
     const listContent = countryStats.map(country => {
         const safeCountryName = safeName(country.name);
@@ -560,6 +344,16 @@ function generateMainIndexHtml(countryStats, dataTimestamp) {
     console.log('Main index.html generated.');
 }
 
+/**
+ * Generates the country index page with a list of its subdivisions.
+ * @param {string} countryName
+ * @param {Object} groupedDivisionStats
+ * @param {number} totalInvalidCount
+ * @param {number} totalAutofixableCount
+ * @param {number} totalTotalNumbers
+ * @param {Date} dataTimestamp
+ * @param {string} locale
+ */
 function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, dataTimestamp, locale) {
     const safeCountryName = safeName(countryName);
     const renderListScript = `
@@ -758,94 +552,10 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
     console.log(`Report for ${countryName} generated at ${pageFileName}.`);
 }
 
-async function main() {
-    if (!fs.existsSync(PUBLIC_DIR)) {
-        fs.mkdirSync(PUBLIC_DIR);
-    }
-
-    console.log('Starting full build process...');
-
-    const dataTimestamp = new Date();
-    const countryStats = [];
-
-    for (const countryKey in COUNTRIES) {
-        const countryData = COUNTRIES[countryKey];
-        const countryName = countryData.name;
-
-        console.log(`Starting fetching divisions for ${countryName}...`);
-
-        const countryDir = path.join(PUBLIC_DIR, safeName(countryName));
-        if (!fs.existsSync(countryDir)) {
-            fs.mkdirSync(countryDir, { recursive: true });
-        }
-
-        let totalInvalidCount = 0;
-        let totalAutofixableCount = 0;
-        let totalTotalNumbers = 0;
-        const groupedDivisionStats = {};
-
-        for (const divisionName in countryData.subdivisions) {
-            const divisionAreaId = countryData.subdivisions[divisionName];
-            console.log(`Processing divisions for ${divisionName}...`);
-
-            const subdivisions = await fetchAdminLevel6(divisionAreaId, divisionName);
-            groupedDivisionStats[divisionName] = [];
-
-            const processedSubDivisions = new Set();
-            const uniqueSubdivisions = subdivisions.filter(subdivision => {
-                if (processedSubDivisions.has(subdivision.name)) {
-                    return false;
-                }
-                processedSubDivisions.add(subdivision.name);
-                return true;
-            });
-
-            console.log(`Processing phone numbers for ${uniqueSubdivisions.length} subdivisions in ${divisionName}.`);
-
-            // Testing: only get one subdivisions from each main division for now
-            let subdivisionsProcessed = 0;
-            for (const subdivision of uniqueSubdivisions) {
-                if (subdivisionsProcessed >= 1) {
-                    break;
-                }
-
-                const elements = await fetchOsmDataForDivision(subdivision);
-                const { invalidNumbers, totalNumbers } = validateNumbers(elements, countryData.countryCode);
-
-                const autoFixableCount = invalidNumbers.filter(item => item.autoFixable).length;
-
-                const stats = {
-                    name: subdivision.name,
-                    invalidCount: invalidNumbers.length,
-                    autoFixableCount: autoFixableCount,
-                    totalNumbers: totalNumbers
-                };
-
-                groupedDivisionStats[divisionName].push(stats);
-
-                totalInvalidCount += invalidNumbers.length;
-                totalAutofixableCount += autoFixableCount;
-                totalTotalNumbers += totalNumbers;
-
-                await generateHtmlReport(countryName, subdivision, invalidNumbers, totalNumbers, dataTimestamp, countryData.locale);
-
-                subdivisionsProcessed++;
-            }
-        }
-
-        countryStats.push({
-            name: countryName,
-            invalidCount: totalInvalidCount,
-            autoFixableCount: totalAutofixableCount,
-            totalNumbers: totalTotalNumbers
-        });
-
-        generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, dataTimestamp, countryData.locale);
-    }
-
-    generateMainIndexHtml(countryStats, dataTimestamp);
-
-    console.log('Full build process completed successfully.');
-}
-
-main();
+module.exports = {
+    createStatsBox,
+    createFooter,
+    generateHtmlReport,
+    generateMainIndexHtml,
+    generateCountryIndexHtml,
+};
