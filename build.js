@@ -624,7 +624,7 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                         detailsGroup.className = 'group mt-8 border border-gray-200 rounded-xl shadow-lg';
                         
                         const summaryHeader = document.createElement('summary');
-                        summaryHeader.className = 'flex items-center space-x-2 justify-between list-none cursor-pointer p-4 bg-gray-50 hover:bg-gray-100 transition-colors rounded-t-xl'; 
+                        summaryHeader.className = 'flex items-center space-x-2 list-none cursor-pointer p-4 bg-gray-50 hover:bg-gray-100 transition-colors rounded-t-xl'; 
 
                         const collapseIcon = createCollapseIcon();
                         summaryHeader.prepend(collapseIcon);
