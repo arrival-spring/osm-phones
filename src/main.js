@@ -35,9 +35,9 @@ async function main() {
         let totalTotalNumbers = 0;
         const groupedDivisionStats = {};
 
-        for (const divisionName in countryData.subdivisions) {
-            const divisionAreaId = countryData.subdivisions[divisionName];
-            console.log(`Processing divisions for ${divisionName}...`);
+        for (const divisionName in countryData.divisions) {
+            const divisionAreaId = countryData.divisions[divisionName];
+            console.log(`Processing subdivisions for ${divisionName}...`);
 
             const subdivisions = await fetchAdminLevel6(divisionAreaId, divisionName);
             groupedDivisionStats[divisionName] = [];
