@@ -1,6 +1,6 @@
 const path = require('path');
 
-const PUBLIC_DIR = path.join(__dirname, 'public');
+const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 const OVERPASS_API_URL = 'https://overpass-api.de/api/interpreter';
 
 const COUNTRIES = {
