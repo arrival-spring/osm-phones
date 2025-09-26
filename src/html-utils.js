@@ -364,6 +364,50 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
             const sortButtons = document.querySelectorAll('.sort-btn');
             const hideEmptyCheckbox = document.getElementById('hide-empty');
             let currentSort = 'percentage';
+            const locale = '${locale}'; 
+
+            // Utility function for consistent number formatting
+            function formatNumber(num) {
+                return num.toLocaleString(locale, { 
+                    useGrouping: true, 
+                    minimumFractionDigits: 0, 
+                    maximumFractionDigits: 0 
+                });
+            }
+            
+            // Client-side color calculation logic (duplicated for client script access)
+            function getBackgroundColor(percent) {
+                if (percent > 2) {
+                    return \`hsl(0, 70%, 50%)\`;
+                }
+                const hue = ((2 - percent) / 2) * 120;
+                return \`hsl(\${hue}, 70%, 50%)\`;
+            }
+
+            // Calculates the color for the division group header
+            function getGroupBackgroundColorClient(invalidCount, totalNumbers) {
+                if (totalNumbers === 0) return 'hsl(0, 0%, 90%)';
+                const percentage = (invalidCount / totalNumbers) * 100;
+                return getBackgroundColor(percentage);
+            }
+
+            // Pre-calculate total stats for each division group 
+            const calculatedDivisionTotals = {};
+            for (const divisionName in groupedDivisionStats) {
+                let groupInvalid = 0;
+                let groupTotal = 0;
+                let groupFixable = 0; // NEW: Initialize fixable count
+                groupedDivisionStats[divisionName].forEach(stat => {
+                    groupInvalid += stat.invalidCount;
+                    groupTotal += stat.totalNumbers;
+                    groupFixable += stat.autoFixableCount; // NEW: Sum fixable count
+                });
+                calculatedDivisionTotals[divisionName] = {
+                    invalid: groupInvalid,
+                    total: groupTotal,
+                    fixable: groupFixable // NEW: Add fixable count
+                };
+            }
 
             function updateButtonStyles() {
                 sortButtons.forEach(button => {
@@ -380,7 +424,8 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
             // Function to create the collapsible icon (right-pointing arrow)
             function createCollapseIcon() {
                 const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                svg.setAttribute('class', 'h-6 w-6 transform transition-transform duration-200 group-open:rotate-90');
+                // Use white text for the icon inside the colored circle
+                svg.setAttribute('class', 'h-6 w-6 transform transition-transform duration-200 group-open:rotate-90 group-hover/summary:scale-110 text-white'); 
                 svg.setAttribute('fill', 'currentColor');
                 svg.setAttribute('viewBox', '0 0 20 20');
                 const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -402,6 +447,14 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                     }
                     
                     if (sortedData.length > 0) {
+                        
+                        const groupStats = calculatedDivisionTotals[divisionName];
+                        const groupInvalidFormatted = formatNumber(groupStats.invalid);
+                        const groupTotalFormatted = formatNumber(groupStats.total);
+                        const groupFixableFormatted = formatNumber(groupStats.fixable); // NEW: Get formatted fixable count
+                        const groupPercentage = groupStats.total > 0 ? (groupStats.invalid / groupStats.total) * 100 : 0;
+                        const groupBgColor = getGroupBackgroundColorClient(groupStats.invalid, groupStats.total);
+                        
                         sortedData.sort((a, b) => {
                             if (currentSort === 'percentage') {
                                 const percentageA = a.totalNumbers > 0 ? (a.invalidCount / a.totalNumbers) : 0;
@@ -418,23 +471,64 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                         detailsGroup.className = 'group mt-8 border border-gray-200 rounded-xl shadow-lg';
                         
                         const summaryHeader = document.createElement('summary');
-                        summaryHeader.className = 'flex items-center space-x-2 list-none cursor-pointer p-4 bg-gray-50 hover:bg-gray-100 transition-colors rounded-t-xl'; 
+                        summaryHeader.className = 'list-none cursor-pointer p-6 flex transition-colors rounded-t-xl group/summary bg-gray-50 hover:bg-gray-100'; 
 
+                        const summaryContent = document.createElement('div');
+                        summaryContent.className = 'flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 w-full';
+                        
+                        const leftSide = document.createElement('div');
+                        leftSide.className = 'flex-grow flex items-center space-x-4 w-full sm:w-auto'; // space-x-4 to match list items
+                        
+                        const iconCircle = document.createElement('div'); 
+                        iconCircle.className = 'h-12 w-12 rounded-full flex-shrink-0 flex items-center justify-center';
+                        iconCircle.style.backgroundColor = groupBgColor;
+                        
                         const collapseIcon = createCollapseIcon();
-                        summaryHeader.prepend(collapseIcon);
-
-                        const divisionHeader = document.createElement('span');
-                        divisionHeader.className = 'text-2xl font-bold text-gray-900'; 
+                        iconCircle.appendChild(collapseIcon); // Icon inside circle
+                        
+                        const divisionNameContainer = document.createElement('div');
+                        divisionNameContainer.className = 'flex-grow'; 
+                        
+                        const divisionHeader = document.createElement('h3');
+                        divisionHeader.className = 'text-2xl font-bold text-gray-900'; // text-2xl
                         divisionHeader.textContent = divisionName;
                         
-                        summaryHeader.appendChild(divisionHeader);
+                        const statsLine = document.createElement('p');
+                        statsLine.className = 'text-sm text-gray-500'; 
+                        statsLine.textContent = \`${groupInvalidFormatted} invalid numbers (\${groupFixableFormatted} potentially fixable) out of ${groupTotalFormatted}\`;
+
+                        divisionNameContainer.appendChild(divisionHeader);
+                        divisionNameContainer.appendChild(statsLine);
+                        
+                        leftSide.appendChild(iconCircle); // Circle with icon
+                        leftSide.appendChild(divisionNameContainer);
+                        
+                        const rightSide = document.createElement('div');
+                        rightSide.className = 'text-center sm:text-right flex-shrink-0 w-full sm:w-auto';
+                        
+                        const percentageText = document.createElement('p');
+                        percentageText.className = 'text-2xl font-bold text-gray-800';
+                        percentageText.innerHTML = \`${groupPercentage.toFixed(2)}<span class="text-base font-normal">%</span>\`;
+                        
+                        const percentageLabel = document.createElement('p');
+                        percentageLabel.className = 'text-xs text-gray-500';
+                        percentageLabel.textContent = 'of total';
+                        
+                        rightSide.appendChild(percentageText);
+                        rightSide.appendChild(percentageLabel);
+                        
+                        // Assemble the summary header
+                        summaryContent.appendChild(leftSide);
+                        summaryContent.appendChild(rightSide);
+                        
+                        summaryHeader.appendChild(summaryContent);
                         
                         detailsGroup.appendChild(summaryHeader);
                         
                         const ul = document.createElement('ul');
                         ul.className = 'space-y-4 p-4 border-t border-gray-200';
 
-                        sortedData.forEach(division => {
+                        sortedData.forEach(division => {                            
                             const safeDivisionName = division.name.replace(/\\s+|\\//g, '-').toLowerCase();
                             const percentage = division.totalNumbers > 0 ? (division.invalidCount / division.totalNumbers) * 100 : 0;
                             const validPercentage = Math.max(0, Math.min(100, percentage));
@@ -455,7 +549,7 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                                     <div class="h-12 w-12 rounded-full flex-shrink-0" style="background-color: \${backgroundColor};"></div>
                                     <div class="flex-grow">
                                         <h3 class="text-xl font-bold text-gray-900">\${division.name}</h3>
-                                        <p class="text-sm text-gray-500">\${division.invalidCount} invalid numbers (\${division.autoFixableCount} potentially fixable) out of \${division.totalNumbers}</p>
+                                        <p class="text-sm text-gray-500">\${formatNumber(division.invalidCount)} invalid numbers (\${formatNumber(division.autoFixableCount)} potentially fixable) out of \${formatNumber(division.totalNumbers)}</p>
                                     </div>
                                 </a>
                                 <div class="text-center sm:text-right">
