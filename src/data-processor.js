@@ -162,7 +162,7 @@ function validateNumbers(elements, countryCode) {
                     // Single-step splitting: The regex finds all separators and removes them.
                     const numbers = originalTagValue
                         .split(UNIVERSAL_SPLIT_REGEX)
-                        .map(s => s ? s.trim())
+                        .map(s => s.trim())
                         .filter(s => s.length > 0);
 
                     const suggestedNumbersList = [];
