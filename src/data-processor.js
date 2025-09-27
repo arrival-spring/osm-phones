@@ -46,7 +46,7 @@ function getFeatureTypeName(item) {
 function stripExtension(numberStr) {
     // Regex matches common extension prefixes: x, ext, extension, etc.
     // It captures everything before the extension marker.
-    const extensionRegex = /^(.*?)(?:[xX]|[eE][xX][tT]|\/|\s*\(ext\)\s*).*$/;
+    const extensionRegex = /^(.*?)(?:[xX]|[eE][xX][tT]|\s*\(ext\)\s*).*$/;
     const match = numberStr.match(extensionRegex);
 
     // If an extension is found, return the part before it (trimmed).
@@ -175,6 +175,8 @@ function validateNumbers(elements, countryCode) {
                         const { isInvalid, suggestedFix, autoFixable } = validationResult;
 
                         suggestedNumbersList.push(suggestedFix);
+                        // Always push suggested fixes, in case of one valid, one invalid number
+                        item.suggestedFixes.push(suggestedFix);
 
                         if (isInvalid) {
                             hasIndividualInvalidNumber = true;
@@ -185,7 +187,6 @@ function validateNumbers(elements, countryCode) {
                             const item = invalidItemsMap.get(key);
 
                             item.invalidNumbers.push(numberStr);
-                            item.suggestedFixes.push(suggestedFix);
 
                             if (!autoFixable) {
                                 item.autoFixable = false;
@@ -197,8 +198,7 @@ function validateNumbers(elements, countryCode) {
                     // 2. Final check for invalidity due to bad separators
                     if (hasIndividualInvalidNumber || hasBadSeparator) {
 
-                        // Default fix separator is the raw semicolon (';').
-                        const suggestedTagValue = suggestedNumbersList.join(';');
+                        const suggestedTagValue = suggestedNumbersList.join('; ');
 
                         if (!invalidItemsMap.has(key)) {
                             const isAutoFixable = !hasIndividualInvalidNumber;

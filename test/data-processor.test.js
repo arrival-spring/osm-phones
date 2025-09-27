@@ -1,0 +1,147 @@
+const {
+    stripExtension,
+    processSingleNumber,
+    validateNumbers,
+    getFeatureTypeName
+} = require('../src/data-processor');
+
+const SAMPLE_COUNTRY_CODE_GB = 'GB';
+const SAMPLE_COUNTRY_CODE_ZA = 'ZA';
+
+// =====================================================================
+// stripExtension Tests
+// =====================================================================
+describe('stripExtension', () => {
+    test('should strip an extension prefixed by "x"', () => {
+        expect(stripExtension('020 7946 0000 x123')).toBe('020 7946 0000');
+    });
+
+    test('should strip an extension prefixed by "ext"', () => {
+        expect(stripExtension('+44 20 7946 0000 ext. 456')).toBe('+44 20 7946 0000');
+    });
+
+    test('should return the original string if no extension is present', () => {
+        expect(stripExtension('0800 123 4567')).toBe('0800 123 4567');
+    });
+});
+
+// =====================================================================
+// processSingleNumber Tests
+// =====================================================================
+describe('processSingleNumber', () => {
+    // --- GB Tests (London number: 020 7946 0000) ---
+
+    test('GB: consider no spacing to be valid', () => {
+        const result = processSingleNumber('+442079460000', SAMPLE_COUNTRY_CODE_GB);
+        expect(result.isInvalid).toBe(false);
+    });
+
+    test('GB: correctly validate and format a simple valid local number', () => {
+        const result = processSingleNumber('02079460000', SAMPLE_COUNTRY_CODE_GB);
+        expect(result.isInvalid).toBe(false);
+        expect(result.suggestedFix).toBe('+44 20 7946 0000');
+        expect(result.autoFixable).toBe(true);
+    });
+
+    test('GB: correctly validate and format an international valid number', () => {
+        const result = processSingleNumber('+44 20 7946 0000', SAMPLE_COUNTRY_CODE_GB);
+        expect(result.isInvalid).toBe(false);
+        expect(result.suggestedFix).toBe('+44 20 7946 0000');
+    });
+
+    test('GB: flag a valid number with bad internal spacing as invalid but autoFixable', () => {
+        const result = processSingleNumber('020 7946  0000', SAMPLE_COUNTRY_CODE_GB);
+        expect(result.isInvalid).toBe(true);
+        expect(result.autoFixable).toBe(true);
+        expect(result.suggestedFix).toBe('+44 20 7946 0000');
+    });
+
+    // --- ZA Tests (Johannesburg number: 011 555 1234) ---
+
+    test('ZA: correctly validate and format a simple valid local number', () => {
+        // Local ZA format including trunk prefix '0'
+        const result = processSingleNumber('011 555 1234', SAMPLE_COUNTRY_CODE_ZA);
+        expect(result.isInvalid).toBe(false);
+        expect(result.suggestedFix).toBe('+27 11 555 1234');
+        expect(result.autoFixable).toBe(true);
+    });
+
+    test('ZA: correctly validate and format an international valid number', () => {
+        const result = processSingleNumber('+27 11 555 1234', SAMPLE_COUNTRY_CODE_ZA);
+        expect(result.isInvalid).toBe(false);
+        expect(result.suggestedFix).toBe('+27 11 555 1234');
+    });
+
+    test('ZA: flag a clearly invalid (too short) number as invalid and unfixable', () => {
+        const result = processSingleNumber('011 555', SAMPLE_COUNTRY_CODE_ZA);
+        expect(result.isInvalid).toBe(true);
+        expect(result.autoFixable).toBe(false);
+        expect(result.suggestedFix).toBe('No fix available');
+    });
+});
+
+// =====================================================================
+// validateNumbers Tests
+// =====================================================================
+describe('validateNumbers', () => {
+    const mockElements = [{
+        type: 'node',
+        id: 101,
+        lat: 51.5,
+        lon: 0.1,
+        tags: {
+            name: 'London Pub',
+            phone: '020 7946 0000, +442079460001', // Bad separator (comma)
+            amenity: 'pub'
+        }
+    }, {
+        type: 'way',
+        id: 202,
+        tags: {
+            name: 'London Hotel',
+            // Missing a digit, and contains an extension
+            'contact:phone': '020 1234 567 x10; 020 5555 1234', 
+            tourism: 'hotel',
+            'contact:website': 'http://capetownhotel.com'
+        }
+    }];
+
+    test('should correctly find and count total numbers processed across all elements', () => {
+        // London Pub: 2 numbers. London Hotel: 2 numbers = 4 total
+        const result = validateNumbers(mockElements, SAMPLE_COUNTRY_CODE_GB);
+        expect(result.totalNumbers).toBe(4);
+    });
+
+    test('should identify invalid items due to bad separators', () => {
+        const result = validateNumbers(mockElements, SAMPLE_COUNTRY_CODE_GB);
+        expect(result.invalidNumbers.length).toBe(1);
+
+        // Check the 'London Pub' node
+        const londonPub = result.invalidNumbers.find(item => item.id === 101);
+        expect(londonPub).toBeDefined();
+        // The original tag value is added because of the bad separator (comma)
+        expect(londonPub.invalidNumbers).toContain('020 7946 0000, +442079460001');
+        expect(londonPub.autoFixable).toBe(true); // Separator fix is auto-fixable
+        
+        // Suggested fix: correctly formatted numbers joined by semicolon
+        expect(londonPub.suggestedFixes.join('; ')).toBe('+44 20 7946 0000; +44 20 7946 0001'); 
+    });
+    
+    test('should identify invalid items due to invalid number', () => {
+        const result = validateNumbers(mockElements, SAMPLE_COUNTRY_CODE_GB);
+        
+        // Check the 'London Hotel' way
+        const londonHotel = result.invalidNumbers.find(item => item.id === 202);
+        expect(londonHotel).toBeDefined();
+
+        // One number is invalid (020 1234 567 x10)
+        expect(londonHotel.invalidNumbers).toEqual(['020 1234 567 x10']);
+        // Invalid number makes the whole item unfixable
+        expect(londonHotel.autoFixable).toBe(false); 
+        
+        // Suggested fix includes the fixed valid number and 'No fix available' for the invalid one
+        expect(londonHotel.suggestedFixes.join('; ')).toBe('No fix available; +44 20 5555 1234');
+        // Check for website tag inclusion
+        expect(londonHotel.website).toBe('http://londonhotel.com');
+    });
+});
