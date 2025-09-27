@@ -85,6 +85,7 @@ async function main() {
 
         countryStats.push({
             name: countryName,
+            locale: countryData.locale,
             invalidCount: totalInvalidCount,
             autoFixableCount: totalAutofixableCount,
             totalNumbers: totalTotalNumbers

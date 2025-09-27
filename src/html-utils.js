@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const { PUBLIC_DIR } = require('./constants');
 const { safeName, getFeatureTypeName } = require('./data-processor');
+const { translate } = require('./i18n');
 
 const githubLink = "https://github.com/arrival-spring/osm-phones/"
 const favicon = '<link rel="icon" href="data:image/svg+xml,&lt;svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22&gt;&lt;text y=%22.9em%22 font-size=%2290%22&gt;📞&lt;/text&gt;&lt;/svg&gt;">';
@@ -34,17 +35,17 @@ function createStatsBox(total, invalid, fixable, locale) {
         <div class="bg-white rounded-xl shadow-lg p-8 grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
             <div>
                 <p class="text-4xl font-extrabold text-gray-800">${formattedTotal}</p>
-                <p class="text-sm text-gray-500">Numbers Checked</p>
+                <p class="text-sm text-gray-500">${translate('numbersChecked', locale)}</p>
             </div>
             <div>
                 <p class="text-4xl font-extrabold text-blue-700">${formattedInvalid}</p>
-                <p class="text-gray-500">Invalid Numbers</p>
-                <p class="text-sm text-gray-400">${formattedTotalPercentage}% of total</p>
+                <p class="text-gray-500">${translate('invalidNumbers', locale)}</p>
+                <p class="text-sm text-gray-400">${translate('invalidPercentageOfTotal', locale, [formattedTotalPercentage])}</p>
             </div>
             <div>
                 <p class="text-4xl font-extrabold text-green-700">${formattedFixable}</p>
-                <p class="text-gray-500">Potentially Fixable</p>
-                <p class="text-sm text-gray-400">${formattedFixablePercentage}% of invalid</p>
+                <p class="text-gray-500">${translate('potentiallyFixable', locale)}</p>
+                <p class="text-sm text-gray-400">${translate('fixablePercentageOfInvalid', locale, [formattedFixablePercentage])}</p>
             </div>
         </div>
     `;
@@ -55,7 +56,7 @@ function createStatsBox(total, invalid, fixable, locale) {
  * @param {string} locale - Locale to format the date in
  * @returns {string}
  */
-function createFooter(locale='en-GB') {
+function createFooter(locale = 'en-GB') {
     const dataTimestamp = new Date();
     // Formatting the date and time
     const formattedDate = dataTimestamp.toLocaleDateString(locale, {
@@ -69,14 +70,17 @@ function createFooter(locale='en-GB') {
         timeZone: 'UTC'
     });
 
+    const initialTimeAgoText = translate('calculating', locale);
+    const footerText = translate('dataSourcedTemplate', locale, [formattedDate, formattedTime, 'UTC', `<span id="time-ago-display">${initialTimeAgoText}</span>`]);
+
     return `
     <p id="data-timestamp-container" 
        class="text-sm text-gray-500 mt-2"
        data-timestamp="${dataTimestamp.getTime()}">
-        Data sourced on ${formattedDate} at ${formattedTime} UTC 
-        (<span id="time-ago-display">calculating...</span>)
+        ${footerText} 
     </p>
-    <p class="text-sm text-gray-500 mt-2">Got a suggestion or an issue? <a href="${githubLink}" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:text-blue-700 underline transition-colors">Let me know on GitHub</a>.</p>
+    <p class="text-sm text-gray-500 mt-2">${translate('suggestionIssueLink', locale)} <a href="${githubLink}" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:text-blue-700 underline transition-colors">${translate('letMeKnowOnGitHub', locale)}</a>.</p>
+    
     <script>
         function updateTimeAgo() {
             const container = document.getElementById('data-timestamp-container');
@@ -88,7 +92,7 @@ function createFooter(locale='en-GB') {
 
             const dataTimestampMs = parseInt(container.getAttribute('data-timestamp'), 10);
             if (isNaN(dataTimestampMs)) {
-                displayElement.textContent = 'error in time calculation';
+                displayElement.textContent = '${translate('timeAgoError', locale)}';
                 return;
             }
 
@@ -102,22 +106,24 @@ function createFooter(locale='en-GB') {
             let timeAgoText;
 
             if (totalMinutes < 1) {
-                timeAgoText = 'just now';
+                // Just Now
+                timeAgoText = '${translate('timeAgoJustNow', locale)}';
             } else if (totalMinutes < 60) {
-                timeAgoText = \`\${totalMinutes} minute\${totalMinutes > 1 ? 's' : ''} ago\`;
+                // Minutes: Choose singular or plural key
+                const key = totalMinutes === 1 ? 'timeAgoMinute' : 'timeAgoMinutesPlural';
+                // Note: The template must be passed as a string literal here for the client-side script
+                timeAgoText = '${translate("' + key + '", locale, ["' + totalMinutes + '"])}';
             } else {
-                // Calculate hours and minutes for better readability
+                // Hours: Choose singular or plural key
                 const hours = Math.floor(totalMinutes / 60);
-                timeAgoText = \`\${hours} hour\${hours > 1 ? 's' : ''} ago\`;
+                const key = hours === 1 ? 'timeAgoHour' : 'timeAgoHoursPlural';
+                timeAgoText = '${translate("' + key + '", locale, ["' + hours + '"])}';
             }
 
             displayElement.textContent = timeAgoText;
         }
 
-        // Run immediately when the script loads
         updateTimeAgo();
-
-        // Set an interval to run every 60 seconds (1 minute) to keep the time updated
         setInterval(updateTimeAgo, 60000);
     </script>
     `
@@ -126,9 +132,10 @@ function createFooter(locale='en-GB') {
 /**
  * Creates the HTML content for a single invalid number item.
  * @param {Object} item - The invalid number data item.
+ * @param {string} locale - The locale for the text
  * @returns {string}
  */
-function createListItem(item) {
+function createListItem(item, locale) {
     const josmBaseUrl = 'http://127.0.0.1:8111/load_object';
     const idBaseUrl = 'https://www.openstreetmap.org/edit?editor=id&map=19/';
 
@@ -138,10 +145,10 @@ function createListItem(item) {
     const josmEditUrl = `${josmBaseUrl}?objects=${item.type}${item.id}`;
     const josmFixUrl = item.autoFixable ? `${josmEditUrl}&addtags=${item.tag}=${encodeURIComponent(fixedNumber)}` : null;
 
-    const idEditButton = `<a href="${idEditUrl}" class="inline-flex items-center rounded-full bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-colors" target="_blank">Edit in iD</a>`;
-    const josmEditButton = `<a href="#" onclick="fixWithJosm('${josmEditUrl}', event)" class="inline-flex items-center rounded-full bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-colors">Edit in JOSM</a>`;
-    const josmFixButton = josmFixUrl ? `<a href="#" onclick="fixWithJosm('${josmFixUrl}', event)" class="inline-flex items-center rounded-full bg-yellow-200 px-3 py-1.5 text-sm font-semibold text-yello-800 shadow-sm hover:bg-yellow-300 transition-colors">Fix in JOSM</a>` : '';
-    const websiteButton = item.website ? `<a href="${item.website}" class="inline-flex items-center rounded-full bg-green-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-green-600 transition-colors" target="_blank">Website</a>` : '';
+    const idEditButton = `<a href="${idEditUrl}" class="inline-flex items-center rounded-full bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-colors" target="_blank">${translate('editInID', locale)}</a>`;
+    const josmEditButton = `<a href="#" onclick="fixWithJosm('${josmEditUrl}', event)" class="inline-flex items-center rounded-full bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-colors">${translate('editInJOSM', locale)}</a>`;
+    const josmFixButton = josmFixUrl ? `<a href="#" onclick="fixWithJosm('${josmFixUrl}', event)" class="inline-flex items-center rounded-full bg-yellow-200 px-3 py-1.5 text-sm font-semibold text-yello-800 shadow-sm hover:bg-yellow-300 transition-colors">${translate('fixInJOSM', locale)}</a>` : '';
+    const websiteButton = item.website ? `<a href="${item.website}" class="inline-flex items-center rounded-full bg-green-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-green-600 transition-colors" target="_blank">${translate('website', locale)}</a>` : '';
 
     return `
         <li class="bg-white rounded-xl shadow-md p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
@@ -151,14 +158,14 @@ function createListItem(item) {
                 </h3>
                 <div class="grid grid-cols-[max-content,1fr] gap-x-4">
                     <div class="col-span-1">
-                        <span class="font-semibold">Phone:</span>
+                        <span class="font-semibold">${translate('phone', locale)}</span>
                     </div>
                     <div class="col-span-1">
                         <span>${phoneNumber}</span>
                     </div>
                     ${item.autoFixable ? `
                     <div class="col-span-1">
-                        <span class="font-semibold">Suggested fix:</span>
+                        <span class="font-semibold">${translate('suggestedFix', locale)}</span>
                     </div>
                     <div class="col-span-1">
                         <span>${fixedNumber}</span>
@@ -194,20 +201,20 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
     const manualFixNumbers = invalidNumbers.filter(item => !item.autoFixable);
 
     const fixableListContent = autofixableNumbers.length > 0 ?
-        autofixableNumbers.map(createListItem).join('') :
-        `<li class="bg-white rounded-xl shadow-md p-6 text-center text-gray-500">No automatically fixable phone numbers found in this subdivision.</li>`;
+        autofixableNumbers.map(item => createListItem(item, locale)).join('') :
+        `<li class="bg-white rounded-xl shadow-md p-6 text-center text-gray-500">${translate('noAutoFixable', locale)}</li>`;
 
     const invalidListContent = manualFixNumbers.length > 0 ?
-        manualFixNumbers.map(createListItem).join('') :
-        `<li class="bg-white rounded-xl shadow-md p-6 text-center text-gray-500">No invalid phone numbers found in this subdivision.</li>`;
+        manualFixNumbers.map(item => createListItem(item, locale)).join('') :
+        `<li class="bg-white rounded-xl shadow-md p-6 text-center text-gray-500">${translate('noInvalidNumbers', locale)}</li>`;
 
     const htmlContent = `
     <!DOCTYPE html>
-    <html lang="en">
+    <html lang="${locale}"> 
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Phone Number Report for ${subdivision.name}</title>
+        <title>${translate('countryReportTitle', locale, [countryName])}</title>
         ${favicon}
         <script src="https://cdn.tailwindcss.com"></script>
         <style>
@@ -222,22 +229,22 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline-block align-middle mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                     </svg>
-                    <span class="align-middle">Back to country page</span>
+                    <span class="align-middle">${translate('backToCountryPage', locale)}</span>
                 </a>
-                <h1 class="text-4xl font-extrabold text-gray-900">Phone Number Report</h1>
+                <h1 class="text-4xl font-extrabold text-gray-900">${translate('phoneNumberReport', locale)}</h1>
                 <h2 class="text-2xl font-semibold text-gray-700 mt-2">${subdivision.name}</h2>
             </header>
             ${createStatsBox(totalNumbers, invalidNumbers.length, autofixableNumbers.length, locale)}
             <div class="text-center">
-                <h2 class="text-2xl font-semibold text-gray-900">Fixable numbers</h2>
-                <p class="text-sm text-gray-500 mt-2">These numbers appear to be valid numbers but are formatted incorrectly. The suggested fix assumes that they are indeed numbers for this country. Not all 'auto' fixes are necessarily valid, so please do not blindly click on all the fix links without first verifying the number.</p>
+                <h2 class="text-2xl font-semibold text-gray-900">${translate('fixableNumbersHeader', locale)}</h2>
+                <p class="text-sm text-gray-500 mt-2">${translate('fixableNumbersDescription', locale)}</p>
             </div>
             <ul class="space-y-4">
                 ${fixableListContent}
             </ul>
             <div class="text-center">
-                <h2 class="text-2xl font-semibold text-gray-900">Invalid numbers</h2>
-                <p class="text-sm text-gray-500 mt-2">These numbers are all invalid in some way; maybe they are too long or too short, or perhaps they're missing an area code. The website could be used to check for a valid number, or a survey may be necessary.</p>
+                <h2 class="text-2xl font-semibold text-gray-900">${translate('invalidNumbersHeader', locale)}</h2>
+                <p class="text-sm text-gray-500 mt-2">${translate('invalidNumbersDescription', locale)}</p>
             </div>
             <ul class="space-y-4">
                 ${invalidListContent}
@@ -270,15 +277,22 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
 }
 
 /**
- * Generates the main index.html file listing all countries.
- * @param {Array<Object>} countryStats - List of country statistics.
+ * Generates the main index.html file listing all country reports.
+ * @param {Array<Object>} countryStats - Array of country statistic objects, including country.locale.
+ * @param {string} locale - The primary locale for the main page structure (e.g., 'en').
  */
-function generateMainIndexHtml(countryStats) {
+function generateMainIndexHtml(countryStats, locale='en-GB') {
+    
+    // We will use the 'locale' parameter (e.g., 'en') for the page structure.
+    
     const listContent = countryStats.map(country => {
         const safeCountryName = safeName(country.name);
         const countryPageName = `${safeCountryName}.html`;
         const percentage = country.totalNumbers > 0 ? (country.invalidCount / country.totalNumbers) * 100 : 0;
         const validPercentage = Math.max(0, Math.min(100, percentage));
+
+        // Use the country's specific locale for number formatting and description text
+        const itemLocale = country.locale || locale; // Fallback to the main page locale
 
         function getBackgroundColor(percent) {
             if (percent > 2) {
@@ -289,18 +303,26 @@ function generateMainIndexHtml(countryStats) {
         }
         const backgroundColor = getBackgroundColor(validPercentage);
 
+        // Format numbers using the *country's* specific locale
+        const formattedInvalid = country.invalidCount.toLocaleString(itemLocale);
+        const formattedFixable = country.autoFixableCount.toLocaleString(itemLocale);
+        const formattedTotal = country.totalNumbers.toLocaleString(itemLocale);
+
+        // Use the country's specific locale for the description translation
+        const description = translate('invalidNumbersOutOf', itemLocale, [formattedFixable, formattedTotal]);
+
         return `
             <a href="${countryPageName}" class="bg-white rounded-xl shadow-lg p-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 transition-transform transform hover:scale-105">
                 <div class="flex-grow flex items-center space-x-4">
                     <div class="h-12 w-12 rounded-full flex-shrink-0" style="background-color: ${backgroundColor};"></div>
                     <div class="flex-grow">
                         <h3 class="text-xl font-bold text-gray-900">${country.name}</h3>
-                        <p class="text-sm text-gray-500">${country.invalidCount} invalid numbers (${country.autoFixableCount} potentially fixable) out of ${country.totalNumbers}</p>
+                        <p class="text-sm text-gray-500">${formattedInvalid} ${description}</p>
                     </div>
                 </div>
                 <div class="text-center sm:text-right">
-                    <p class="text-2xl font-bold text-gray-800">${validPercentage.toFixed(2)}<span class="text-base font-normal">%</span></p>
-                    <p class="text-xs text-gray-500">invalid</p>
+                    <p class="text-2xl font-bold text-gray-800">${validPercentage.toLocaleString(itemLocale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<span class="text-base font-normal">%</span></p>
+                    <p class="text-xs text-gray-500">${translate('invalid', itemLocale)}</p>
                 </div>
             </a>
         `;
@@ -308,11 +330,11 @@ function generateMainIndexHtml(countryStats) {
 
     const htmlContent = `
     <!DOCTYPE html>
-    <html lang="en">
+    <html lang="${locale}">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>OSM Phone Number Validation Reports</title>
+        <title>${translate('mainIndexTitle', locale)}</title>
         ${favicon}
         <script src="https://cdn.tailwindcss.com"></script>
         <style>
@@ -323,19 +345,19 @@ function generateMainIndexHtml(countryStats) {
     <body class="p-8">
         <div class="max-w-5xl mx-auto space-y-8">
             <header class="text-center space-y-2">
-                <h1 class="text-4xl font-extrabold text-gray-900">OSM Phone Number Validation</h1>
-                <p class="text-sm text-gray-500">A report on invalid phone numbers in OpenStreetMap data for various countries.</p>
+                <h1 class="text-4xl font-extrabold text-gray-900">${translate('osmPhoneNumberValidation', locale)}</h1>
+                <p class="text-sm text-gray-500">${translate('reportSubtitle', locale)}</p>
             </header>
             <div class="bg-white rounded-xl shadow-lg p-6">
                 <div class="flex flex-col sm:flex-row justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold text-gray-900">Country Reports</h2>
+                    <h2 class="text-2xl font-bold text-gray-900">${translate('countryReports', locale)}</h2>
                 </div>
                 <div class="space-y-4">
                     ${listContent}
                 </div>
             </div>
             <div class="bg-white rounded-xl shadow-lg p-2 text-center">
-                ${createFooter()}
+                ${createFooter(locale)}
             </div>
         </div>
     </body>
@@ -356,6 +378,21 @@ function generateMainIndexHtml(countryStats) {
  */
 function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, locale) {
     const safeCountryName = safeName(countryName);
+
+    // --- Server-side translation of dynamic client script strings ---
+    // These strings are translated on the server and embedded as literals in the script.
+    const T = {
+        invalidNumbersOutOf: translate('invalidNumbersOutOf', locale), // e.g., "%i invalid numbers (%f potentially fixable) out of %t"
+        invalid: translate('invalid', locale),
+        hideEmptyDivisions: translate('hideEmptyDivisions', locale),
+        sortBy: translate('sortBy', locale),
+        invalidPercentage: translate('invalidPercentage', locale),
+        invalidCount: translate('invalidCount', locale),
+        name: translate('name', locale),
+        noSubdivisionsFound: translate('noSubdivisionsFound', locale)
+    };
+    // -----------------------------------------------------------------
+
     const renderListScript = `
         <script>
             const groupedDivisionStats = ${JSON.stringify(groupedDivisionStats)};
@@ -366,8 +403,16 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
             let currentSort = 'percentage';
             const locale = '${locale}'; 
 
+            // Embedded translated string literals from the server-side 'T' object
+            const T_CLIENT = {
+                invalidNumbersOutOf: \`${T.invalidNumbersOutOf}\`,
+                invalid: \`${T.invalid}\`,
+                noSubdivisionsFound: \`${T.noSubdivisionsFound}\`
+            };
+            
             // Utility function for consistent number formatting
             function formatNumber(num) {
+                // Ensure the number formatting respects the locale for grouping
                 return num.toLocaleString(locale, { 
                     useGrouping: true, 
                     minimumFractionDigits: 0, 
@@ -396,16 +441,16 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
             for (const divisionName in groupedDivisionStats) {
                 let groupInvalid = 0;
                 let groupTotal = 0;
-                let groupFixable = 0; // NEW: Initialize fixable count
+                let groupFixable = 0;
                 groupedDivisionStats[divisionName].forEach(stat => {
                     groupInvalid += stat.invalidCount;
                     groupTotal += stat.totalNumbers;
-                    groupFixable += stat.autoFixableCount; // NEW: Sum fixable count
+                    groupFixable += stat.autoFixableCount;
                 });
                 calculatedDivisionTotals[divisionName] = {
                     invalid: groupInvalid,
                     total: groupTotal,
-                    fixable: groupFixable // NEW: Add fixable count
+                    fixable: groupFixable
                 };
             }
 
@@ -424,7 +469,6 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
             // Function to create the collapsible icon (right-pointing arrow)
             function createCollapseIcon() {
                 const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                // Use white text for the icon inside the colored circle
                 svg.setAttribute('class', 'h-6 w-6 transform transition-transform duration-200 group-open:rotate-90 group-hover/summary:scale-110 text-white'); 
                 svg.setAttribute('fill', 'currentColor');
                 svg.setAttribute('viewBox', '0 0 20 20');
@@ -440,7 +484,6 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
 
                 const TARGET_LI_CLASS = 'bg-white rounded-xl shadow-lg p-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 transition-transform transform hover:scale-105';
 
-                // Determine if we need to render groups (i.e., multiple keys in the stats object)
                 const divisionNames = Object.keys(groupedDivisionStats);
                 const isGrouped = divisionNames.length > 1;
 
@@ -457,24 +500,37 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
 
                 listContainer.innerHTML = '';
 
-                // For flat list append items directly to the 'listContainer'.
-                
                 for (const divisionName of divisionNames) {
                     let sortedData = [...groupedDivisionStats[divisionName]];
-                    
+
                     if (hideEmptyCheckbox.checked) {
                         sortedData = sortedData.filter(division => division.invalidCount > 0);
                     }
-                    
+
                     if (sortedData.length > 0) {
 
                         // --- Group Stats Calculation ---
+                        const percentageOptions = {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                        };
+
                         const groupStats = calculatedDivisionTotals[divisionName];
                         const groupInvalidFormatted = formatNumber(groupStats.invalid);
                         const groupTotalFormatted = formatNumber(groupStats.total);
                         const groupFixableFormatted = formatNumber(groupStats.fixable); 
-                        const groupPercentage = groupStats.total > 0 ? (groupStats.invalid / groupStats.total) * 100 : 0;
+
+                        const groupPercentageNumber = groupStats.total > 0 ? (groupStats.invalid / groupStats.total) * 100 : 0;
+                        const formattedGroupPercentage = groupPercentageNumber.toLocaleString(locale, percentageOptions);
+
                         const groupBgColor = getGroupBackgroundColorClient(groupStats.invalid, groupStats.total);
+                        
+                        // Client-side substitution using the embedded template literal
+                        const groupStatsLine = T_CLIENT.invalidNumbersOutOf
+                            .replace('%i', groupInvalidFormatted)
+                            .replace('%f', groupFixableFormatted)
+                            .replace('%t', groupTotalFormatted);
+
                         // --- End Group Stats Calculation ---
 
                         sortedData.sort((a, b) => {
@@ -489,10 +545,10 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                             }
                         });
 
-                        let ul; // The container where the list items will be appended.
+                        let ul;
 
                         if (isGrouped) {
-                            // --- RENDER GROUPED (UK/ZA) ---
+                            // --- RENDER GROUPED ---
                             let detailsGroup = document.createElement('details'); 
                             detailsGroup.className = 'group mt-8 border border-gray-200 rounded-xl shadow-lg';
 
@@ -500,62 +556,62 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                             if (currentlyOpenDivisions.has(divisionName)) {
                                 detailsGroup.open = true;
                             }
-                        
+
                             const summaryHeader = document.createElement('summary');
                             summaryHeader.className = 'list-none cursor-pointer p-6 flex transition-colors rounded-t-xl group/summary bg-gray-50 hover:bg-gray-100'; 
 
                             const summaryContent = document.createElement('div');
                             summaryContent.className = 'flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 w-full';
-                            
+
                             const leftSide = document.createElement('div');
                             leftSide.className = 'flex-grow flex items-center space-x-4 w-full sm:w-auto'; 
-                            
+
                             const iconCircle = document.createElement('div'); 
                             iconCircle.className = 'h-12 w-12 rounded-full flex-shrink-0 flex items-center justify-center';
                             iconCircle.style.backgroundColor = groupBgColor;
-                            
+
                             const collapseIcon = createCollapseIcon();
                             iconCircle.appendChild(collapseIcon); 
-                            
+
                             const divisionNameContainer = document.createElement('div');
                             divisionNameContainer.className = 'flex-grow'; 
-                            
+
                             const divisionHeader = document.createElement('h3');
                             divisionHeader.className = 'text-2xl font-bold text-gray-900'; 
                             divisionHeader.textContent = divisionName;
-                            
+
                             const statsLine = document.createElement('p');
                             statsLine.className = 'text-sm text-gray-500'; 
-                            statsLine.textContent = \`\${groupInvalidFormatted} invalid numbers (\${groupFixableFormatted} potentially fixable) out of \${groupTotalFormatted}\`;
+                            // Use the dynamically generated translated string
+                            statsLine.textContent = groupStatsLine;
 
                             divisionNameContainer.appendChild(divisionHeader);
                             divisionNameContainer.appendChild(statsLine);
-                            
+
                             leftSide.appendChild(iconCircle); 
                             leftSide.appendChild(divisionNameContainer);
-                            
+
                             const rightSide = document.createElement('div');
                             rightSide.className = 'text-center sm:text-right flex-shrink-0 w-full sm:w-auto';
-                            
+
                             const percentageText = document.createElement('p');
                             percentageText.className = 'text-2xl font-bold text-gray-800';
-                            percentageText.innerHTML = \`\${groupPercentage.toFixed(2)}<span class="text-base font-normal">%</span>\`;
-                            
+                            percentageText.innerHTML = \`\${formattedGroupPercentage}<span class="text-base font-normal">%</span>\`;
+
                             const percentageLabel = document.createElement('p');
                             percentageLabel.className = 'text-xs text-gray-500';
-                            // This label is for the group header percentage
-                            percentageLabel.textContent = 'invalid'; 
-                            
+                            percentageLabel.textContent = T_CLIENT.invalid; 
+
                             rightSide.appendChild(percentageText);
                             rightSide.appendChild(percentageLabel);
-                            
+
                             summaryContent.appendChild(leftSide);
                             summaryContent.appendChild(rightSide);
-                            
+
                             summaryHeader.appendChild(summaryContent);
 
                             detailsGroup.appendChild(summaryHeader);
-                            
+
                             ul = document.createElement('ul'); 
                             ul.className = 'space-y-4 p-4 border-t border-gray-200';
 
@@ -563,20 +619,29 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                             listContainer.appendChild(detailsGroup);
 
                         } else {
-                            // --- RENDER FLAT LIST (Lesotho) ---
+                            // --- RENDER FLAT LIST ---
                             ul = listContainer; 
                         }
 
                         // --- LIST ITEM RENDERING (Common Logic) ---
-                        sortedData.forEach(division => {                            
+                        sortedData.forEach(division => {
                             const safeDivisionName = division.name.replace(/\\s+|\\//g, '-').toLowerCase();
                             const percentage = division.totalNumbers > 0 ? (division.invalidCount / division.totalNumbers) * 100 : 0;
                             const validPercentage = Math.max(0, Math.min(100, percentage));
                             const backgroundColor = getBackgroundColor(validPercentage);
 
-                            const li = document.createElement('li');
+                            const formattedInvalidCount = formatNumber(division.invalidCount);
+                            const formattedFixableCount = formatNumber(division.autoFixableCount);
+                            const formattedTotalCount = formatNumber(division.totalNumbers);
                             
-                            // Apply the requested class unconditionally
+                            // Client-side substitution using the embedded template literal
+                            const itemStatsLine = T_CLIENT.invalidNumbersOutOf
+                                .replace('%i', formattedInvalidCount)
+                                .replace('%f', formattedFixableCount)
+                                .replace('%t', formattedTotalCount);
+
+
+                            const li = document.createElement('li');
                             li.className = TARGET_LI_CLASS;
 
                             li.innerHTML = \`
@@ -584,12 +649,12 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                                     <div class="h-12 w-12 rounded-full flex-shrink-0" style="background-color: \${backgroundColor};"></div>
                                     <div class="flex-grow">
                                         <h3 class="text-xl font-bold text-gray-900">\${division.name}</h3>
-                                        <p class="text-sm text-gray-500">\${formatNumber(division.invalidCount)} invalid numbers (\${formatNumber(division.autoFixableCount)} potentially fixable) out of \${formatNumber(division.totalNumbers)}</p>
+                                        <p class="text-sm text-gray-500">\${itemStatsLine}</p>
                                     </div>
                                 </a>
                                 <div class="text-center sm:text-right">
                                     <p class="text-2xl font-bold text-gray-800">\${validPercentage.toFixed(2)}<span class="text-base font-normal">%</span></p>
-                                    <p class="text-xs text-gray-500">invalid</p>
+                                    <p class="text-xs text-gray-500">\${T_CLIENT.invalid}</p>
                                 </div>
                             \`;
                             ul.appendChild(li);
@@ -602,7 +667,8 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                     listContainer.innerHTML = '';
                     const li = document.createElement('li');
                     li.className = 'p-6 text-center text-gray-500 rounded-xl';
-                    li.textContent = 'No subdivisions with invalid numbers found.';
+                    // Use the translated fallback message
+                    li.textContent = T_CLIENT.noSubdivisionsFound;
                     listContainer.appendChild(li);
                 }
                 updateButtonStyles();
@@ -623,11 +689,11 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
 
     const htmlContent = `
     <!DOCTYPE html>
-    <html lang="en">
+    <html lang="${locale}">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>OSM Phone Number Validation Report - ${countryName}</title>
+        <title>${translate('countryReportTitle', locale, [countryName])}</title>
         ${favicon}
         <script src="https://cdn.tailwindcss.com"></script>
         <style>
@@ -642,25 +708,25 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline-block align-middle mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                     </svg>
-                    <span class="align-middle">Back to all countries</span>
+                    <span class="align-middle">${translate('backToAllCountries', locale)}</span>
                 </a>
-                <h1 class="text-4xl font-extrabold text-gray-900">OSM Phone Number Validation</h1>
-                <p class="text-sm text-gray-500">A report on invalid phone numbers in OpenStreetMap data for ${countryName}.</p>
+                <h1 class="text-4xl font-extrabold text-gray-900">${translate('osmPhoneNumberValidation', locale)}</h1>
+                <p class="text-sm text-gray-500">${translate('reportSubtitleFor', locale, [countryName])}</p>
             </header>
             ${createStatsBox(totalTotalNumbers, totalInvalidCount, totalAutofixableCount, locale)}
             <div class="bg-white rounded-xl shadow-lg p-6">
                 <div class="flex flex-col sm:flex-row justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold text-gray-900">Divisional Reports</h2>
+                    <h2 class="text-2xl font-bold text-gray-900">${translate('divisionalReports', locale)}</h2>
                     <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 mt-4 sm:mt-0">
                         <div class="flex items-center">
                             <input type="checkbox" id="hide-empty" checked class="h-4 w-4 rounded text-blue-600 focus:ring-blue-500 border-gray-300">
-                            <label for="hide-empty" class="ml-2 text-sm font-medium text-gray-700">Hide divisions with no issues</label>
+                            <label for="hide-empty" class="ml-2 text-sm font-medium text-gray-700">${translate('hideEmptyDivisions', locale)}</label>
                         </div>
                         <div class="flex flex-wrap items-center space-x-2">
-                            <span class="mr-2 text-sm font-medium text-gray-700">Sort by:</span>
-                            <button id="sort-percentage" data-sort="percentage" class="sort-btn px-4 py-2 rounded-md text-sm font-medium transition-colors">Invalid Percentage</button>
-                            <button id="sort-invalid" data-sort="invalidCount" class="sort-btn px-4 py-2 rounded-md text-sm font-medium transition-colors">Invalid Count</button>
-                            <button id="sort-name" data-sort="name" class="sort-btn px-4 py-2 rounded-md text-sm font-medium transition-colors">Name</button>
+                            <span class="mr-2 text-sm font-medium text-gray-700">${translate('sortBy', locale)}</span>
+                            <button id="sort-percentage" data-sort="percentage" class="sort-btn px-4 py-2 rounded-md text-sm font-medium transition-colors">${translate('invalidPercentage', locale)}</button>
+                            <button id="sort-invalid" data-sort="invalidCount" class="sort-btn px-4 py-2 rounded-md text-sm font-medium transition-colors">${translate('invalidCount', locale)}</button>
+                            <button id="sort-name" data-sort="name" class="sort-btn px-4 py-2 rounded-md text-sm font-medium transition-colors">${translate('name', locale)}</button>
                         </div>
                     </div>
                 </div>
