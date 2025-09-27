@@ -3,7 +3,7 @@ const path = require('path');
 const { MASTER_KEYS } = require('./i18n.master');
 
 // Helper to load all translation files
-const localesDir = path.join(__dirname, 'locales');
+const localesDir = path.join(__dirname, '../locales');
 const translationFiles = fs.readdirSync(localesDir)
     .filter(file => file.endsWith('.json'))
     .map(file => ({
