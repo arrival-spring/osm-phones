@@ -3,8 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 const locales = {};
-// IMPORTANT: Update this path if you place your 'locales' folder elsewhere
-const LOCALE_DIR = path.join(__dirname, 'locales');
+const LOCALE_DIR = path.join(__dirname, '../locales');
 const DEFAULT_LOCALE = 'en';
 
 // Load all translation files
