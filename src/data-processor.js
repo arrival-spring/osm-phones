@@ -223,5 +223,7 @@ function validateNumbers(elements, countryCode) {
 module.exports = {
     safeName,
     validateNumbers,
-    getFeatureTypeName
+    getFeatureTypeName,
+    stripExtension,
+    processSingleNumber 
 };
