@@ -68,6 +68,9 @@ function processSingleNumber(numberStr, countryCode) {
     let autoFixable = true;
     let isInvalid = false;
 
+    const NON_STANDARD_EXT_PREFIX_REGEX = /([eE][xX][tT])|(\s*\([eE][xX][tT]\)\s*)/;
+    const hasNonStandardExtension = NON_STANDARD_EXT_PREFIX_REGEX.test(numberStr);
+
     try {
         const phoneNumber = parsePhoneNumber(numberStr, countryCode);
 
@@ -85,15 +88,16 @@ function processSingleNumber(numberStr, countryCode) {
 
         if (phoneNumber && phoneNumber.isValid()) {
             normalizedParsed = phoneNumber.number.replace(/\s/g, '');
-        }
 
-        // Compare the stripped original number to the normalized parsed number
-        isInvalid = normalizedOriginal !== normalizedParsed;
+            isInvalid = normalizedOriginal !== normalizedParsed;
 
-        if (isInvalid) {
-            if (!phoneNumber || !phoneNumber.isValid()) {
-                autoFixable = false;
+            if (phoneNumber.ext && hasNonStandardExtension) {
+                isInvalid = true;
             }
+        } else {
+            // The number is fundamentally invalid (e.g., too few digits)
+            isInvalid = true;
+            autoFixable = false;
         }
     } catch (e) {
         // Parsing failed due to an exception (unfixable invalid number)
