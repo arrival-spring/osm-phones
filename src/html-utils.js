@@ -74,24 +74,17 @@ function createFooter(locale = 'en-GB', translations) {
     });
 
     // Use translation keys for static text, with fallbacks to hardcoded text
-    const dataSourcedTemplate = translations['dataSourcedTemplate'] || 'Data sourced on %d at %t %z (%a)';
+    const dataSourcedTemplate = translate('dataSourcedTemplate', locale, [formattedDate, formattedTime, 'UTC', translate('timeAgoJustNow', locale)]);
     const suggestionIssueLink = translate('suggestionIssueLink', locale);
-    const letMeKnowOnGitHub = translate('letMeKnowOnGitHub');
-    const timeAgoJustNow = translate('timeAgoJustNow');
+    const letMeKnowOnGitHub = translate('letMeKnowOnGitHub', locale);
 
-    const initialTimeAgoText = translate('calculating', locale);
     const footerText = translate('dataSourcedTemplate', locale, [formattedDate, formattedTime, 'UTC', `<span id="time-ago-display">${initialTimeAgoText}</span>`]);
 
     return `
     <p id="data-timestamp-container" 
        class="text-sm text-gray-500 mt-2"
        data-timestamp="${dataTimestamp.getTime()}">
-        ${dataSourcedTemplate
-            .replace('%d', formattedDate)
-            .replace('%t', formattedTime)
-            .replace('%z', 'UTC')
-            .replace('%a', timeAgoJustNow)
-        }
+        ${dataSourcedTemplate}
     </p>
     <p class="text-sm text-gray-500 mt-2">${suggestionIssueLink} <a href="${githubLink}" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:text-blue-700 underline transition-colors">${letMeKnowOnGitHub}</a>.</p>
     
@@ -352,7 +345,7 @@ function generateMainIndexHtml(countryStats, locale = 'en-GB', translations) {
                     <div class="h-12 w-12 rounded-full flex-shrink-0" style="background-color: ${backgroundColor};"></div>
                     <div class="flex-grow">
                         <h3 class="text-xl font-bold text-gray-900">${country.name}</h3>
-                        <p class="text-sm text-gray-500">${formattedInvalid} ${description}</p>
+                        <p class="text-sm text-gray-500">${description}</p>
                     </div>
                 </div>
                 <div class="text-center sm:text-right">
@@ -748,7 +741,7 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                     <span class="align-middle">${translate('backToAllCountries', locale)}</span>
                 </a>
                 <h1 class="text-4xl font-extrabold text-gray-900">${translate('osmPhoneNumberValidation', locale)}</h1>
-                <p class="text-sm text-gray-500">${translate('reportSubtitleFor', locale, [countryName])}</p>
+                <p class="text-sm text-gray-500">${translate('reportSubtitle', locale, [countryName])}</p>
             </header>
             ${createStatsBox(totalTotalNumbers, totalInvalidCount, totalAutofixableCount, locale)}
             <div class="bg-white rounded-xl shadow-lg p-6">

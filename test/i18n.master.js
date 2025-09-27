@@ -53,7 +53,7 @@ const MASTER_KEYS = {
 
     // Page Titles (uses %s for country name)
     'mainIndexTitle': [], // Static title
-    'countryReportTitle': ['%s']
+    'countryReportTitle': ['%c']
 };
 
 module.exports = { MASTER_KEYS };
