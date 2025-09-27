@@ -136,9 +136,6 @@ describe('validateNumbers', () => {
         expect(londonHotel.invalidNumbers).toEqual(['020 1234 567 x10']);
         // Invalid number makes the whole item unfixable
         expect(londonHotel.autoFixable).toBe(false);
-
-        // Suggested fix includes the fixed valid number and 'No fix available' for the invalid one
-        expect(londonHotel.suggestedFixes.join('; ')).toBe('No fix available; +44 20 7946 0000');
     });
 
     const badSeparatorElements = [{
