@@ -54,8 +54,10 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Run build script
-        run: node src/main.js
+      - name: Generate Reports and Build Production CSS
+        run: |
+          node src/main.js
+          npm run build:css
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
