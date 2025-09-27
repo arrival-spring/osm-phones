@@ -169,22 +169,22 @@ describe('validateNumbers', () => {
         const node200 = result.invalidNumbers.find(item => item.id = 200);
         expect(node200).toBeDefined();
         expect(node200.autoFixable).toBe(true);
-        expect(node200.suggestedFixes.join('; ')).tobe('+44 1389 123456; +44 1389 123457')
+        expect(node200.suggestedFixes.join('; ')).toBe('+44 1389 123456; +44 1389 123457')
 
         const node201 = result.invalidNumbers.find(item => item.id = 201);
         expect(node201).toBeDefined();
         expect(node201.autoFixable).toBe(true);
-        expect(node201.suggestedFixes.join('; ')).tobe('+44 1389 123456; +44 1389 123457')
+        expect(node201.suggestedFixes.join('; ')).toBe('+44 1389 123456; +44 1389 123457')
 
         const node202 = result.invalidNumbers.find(item => item.id = 202);
         expect(node202).toBeDefined();
         expect(node202.autoFixable).toBe(true);
-        expect(node202.suggestedFixes.join('; ')).tobe('+44 1389 123456; +44 1389 123457')
+        expect(node202.suggestedFixes.join('; ')).toBe('+44 1389 123456; +44 1389 123457')
 
         const node203 = result.invalidNumbers.find(item => item.id = 203);
         expect(node203).toBeDefined();
         expect(node203.autoFixable).toBe(true);
-        expect(node203.suggestedFixes.join('; ')).tobe('+44 1389 123456; +44 1389 123457')
+        expect(node203.suggestedFixes.join('; ')).toBe('+44 1389 123456; +44 1389 123457')
     });
 
     const websiteElements = [{
