@@ -55,9 +55,9 @@ async function main() {
             // Testing: only get one subdivisions from each main division for now
             let subdivisionsProcessed = 0;
             for (const subdivision of uniqueSubdivisions) {
-                // if (subdivisionsProcessed >= 2) {
-                //     break;
-                // }
+                if (subdivisionsProcessed >= 2) {
+                    break;
+                }
 
                 const elements = await fetchOsmDataForDivision(subdivision);
                 const { invalidNumbers, totalNumbers } = validateNumbers(elements, countryData.countryCode);
