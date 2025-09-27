@@ -121,7 +121,7 @@ function validateNumbers(elements, countryCode) {
 
     // This regex is used for splitting. It catches ALL valid and invalid separators:
     // Raw semicolon (';'), semicolon with optional space ('; ?'), comma, slash, 'or' or 'and'.
-    const UNIVERSAL_SPLIT_REGEX = /(; ?)|(\s*,\s*)|(\s*\/\s*)|(\s+or\s+)|(\s+and\s+)/gi;
+    const UNIVERSAL_SPLIT_REGEX = /(?:; ?)|(?:\s*,\s*)|(?:\s*\/\s*)|(?:\s+or\s+)|(?:\s+and\s+)/gi;
 
     elements.forEach(element => {
         if (element.tags) {
@@ -162,7 +162,7 @@ function validateNumbers(elements, countryCode) {
                     // Single-step splitting: The regex finds all separators and removes them.
                     const numbers = originalTagValue
                         .split(UNIVERSAL_SPLIT_REGEX)
-                        .map(s => s ? s.trim() : '') // Handle potential nulls/undefined from split regex
+                        .map(s => s ? s.trim())
                         .filter(s => s.length > 0);
 
                     const suggestedNumbersList = [];
