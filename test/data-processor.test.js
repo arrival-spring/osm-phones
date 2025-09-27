@@ -142,8 +142,8 @@ describe('validateNumbers', () => {
         const londonHotel = result.invalidNumbers.find(item => item.id === 202);
         expect(londonHotel).toBeDefined();
 
-        // One number is invalid (020 1234 567 x10)
-        expect(londonHotel.invalidNumbers).toEqual('020 1234 567 x10');
+        // One number is invalid (020 1234 567 x10), give the whole string (to be displayed on the webpage)
+        expect(londonHotel.invalidNumbers).toEqual('020 1234 567 x10; +44 20 7946 0000');
         // Invalid number makes the whole item unfixable
         expect(londonHotel.autoFixable).toBe(false);
     });
