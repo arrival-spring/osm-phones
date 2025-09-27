@@ -19,7 +19,10 @@ function getFeatureTypeName(item) {
         return `${item.name}`;
     }
 
-    const featureTags = ['amenity', 'shop', 'tourism', 'leisure', 'emergency', 'building', 'craft', 'aeroway', 'railway', 'healthcare', 'highway', 'military', 'man_made', 'public_transport'];
+    const featureTags = [
+        'amenity', 'shop', 'tourism', 'leisure', 'emergency', 'building',
+        'craft', 'aeroway', 'railway', 'healthcare', 'highway', 'military',
+        'man_made', 'public_transport', 'landuse', 'barrier'];
     let featureType = null;
     for (const tag of featureTags) {
         if (item.allTags[tag]) {
