@@ -50,5 +50,5 @@
   "timeAgoHoursPlural": "%n ore fa",
 
   "mainIndexTitle": "Rapporti di Validazione dei Numeri di Telefono OSM",
-  "countryReportTitle": "Rapporto di Validazione Numeri di Telefono OSM - %s"
+  "countryReportTitle": "Rapporto di Validazione Numeri di Telefono OSM - %c"
 }

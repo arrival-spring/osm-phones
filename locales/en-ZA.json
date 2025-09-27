@@ -50,5 +50,5 @@
   "timeAgoHoursPlural": "%n hours ago",
 
   "mainIndexTitle": "OSM Phone Number Validation Reports",
-  "countryReportTitle": "OSM Phone Number Validation Report - %s"
+  "countryReportTitle": "OSM Phone Number Validation Report - %c"
 }
