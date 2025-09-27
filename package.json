@@ -10,7 +10,7 @@
   "scripts": {
     "start": "node src/main.js",
     "test": "jest",
-    "build:css": "npx tailwindcss -i src/input.css -o public/styles.css --minify" 
+    "build:css": "./node_modules/.bin/tailwindcss -i src/input.css -o public/styles.css --minify" 
   },
   "devDependencies": {
     "jest": "^30.1.3",
