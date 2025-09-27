@@ -193,7 +193,7 @@ function validateNumbers(elements, countryCode) {
                     });
 
 
-                    // 2. Final check for invalidity due to bad separators
+                    // Final check for invalidity due to bad separators
                     if (hasIndividualInvalidNumber || hasBadSeparator) {
 
                         const suggestedTagValue = suggestedNumbersList.join('; ');
@@ -204,9 +204,10 @@ function validateNumbers(elements, countryCode) {
                         }
                         const item = invalidItemsMap.get(key);
 
+                        item.suggestedFixes.push(suggestedTagValue);
+
                         if (hasBadSeparator) {
                             item.invalidNumbers.push(originalTagValue);
-                            item.suggestedFixes.push(suggestedTagValue);
                             item.autoFixable = item.autoFixable === false ? false : true;
                         }
                     }
