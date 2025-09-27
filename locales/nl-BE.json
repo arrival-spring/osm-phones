@@ -29,7 +29,7 @@
   "osmPhoneNumberValidation": "OSM Telefoonnummervalidatie",
   "reportSubtitle": "Een rapport over ongeldige telefoonnummers in OpenStreetMap-gegevens voor diverse landen.",
   "countryReports": "Landenrapporten",
-  "invalidNumbersOutOf": "%t nummers in totaal (%s mogelijk te corrigeren) zijn ongeldig",
+  "invalidNumbersOutOf": "%i ongeldige nummers (waarvan %f mogelijk te corrigeren) van de %t",
   "backToAllCountries": "Terug naar alle landen",
   "reportSubtitleForCountry": "Een rapport over ongeldige telefoonnummers in OpenStreetMap-gegevens voor %c.",
   "divisionalReports": "Rapporten per afdeling",
