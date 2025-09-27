@@ -9,7 +9,9 @@ function safeName(name) {
     return name.replace(/\s+|\//g, '-').toLowerCase();
 }
 
-function test
+function testFunction() {
+    return 'test function runs';
+}
 
 /**
  * Determines a readable feature name from OSM tags.
