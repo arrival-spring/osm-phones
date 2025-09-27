@@ -187,6 +187,21 @@ describe('validateNumbers', () => {
         expect(node203.suggestedFixes.join('; ')).toBe('+44 1389 123456; +44 1389 123457')
     });
 
+    const mixedInvalidElements = [{
+        type: 'node',
+        id: 300,
+        tags: {
+            'phone': '+44 1389 123456; 01389 123457'
+        }
+    }]
+    test('fix one invalid number and keep existing valid number', () => {
+        const result = validateNumbers(mixedInvalidElements, SAMPLE_COUNTRY_CODE_GB);
+        const node300 = result.invalidNumbers.find(item => item.id = 300);
+        expect(node300).toBeDefined();
+        expect(node300.autoFixable).toBe(true);
+        expect(node300.suggestedFixes.join('; ')).toBe('+44 1389 123456; +44 1389 123457')
+    });
+
     const websiteElements = [{
         type: 'node',
         id: 102,
