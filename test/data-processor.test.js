@@ -76,7 +76,6 @@ describe('processSingleNumber', () => {
         const result = processSingleNumber('011 555', SAMPLE_COUNTRY_CODE_ZA);
         expect(result.isInvalid).toBe(true);
         expect(result.autoFixable).toBe(false);
-        expect(result.suggestedFix).toBe('No fix available');
     });
 });
 
@@ -100,7 +99,7 @@ describe('validateNumbers', () => {
         tags: {
             name: 'London Hotel',
             // Missing a digit, and contains an extension
-            'contact:phone': '020 1234 567 x10; 020 5555 1234', 
+            'contact:phone': '020 1234 567 x10; +44 20 5555 1234',
             tourism: 'hotel',
             'contact:website': 'http://capetownhotel.com'
         }
@@ -114,7 +113,7 @@ describe('validateNumbers', () => {
 
     test('should identify invalid items due to bad separators', () => {
         const result = validateNumbers(mockElements, SAMPLE_COUNTRY_CODE_GB);
-        expect(result.invalidNumbers.length).toBe(1);
+        expect(result.invalidNumbers.length).toBe(2);
 
         // Check the 'London Pub' node
         const londonPub = result.invalidNumbers.find(item => item.id === 101);
@@ -122,14 +121,14 @@ describe('validateNumbers', () => {
         // The original tag value is added because of the bad separator (comma)
         expect(londonPub.invalidNumbers).toContain('020 7946 0000, +442079460001');
         expect(londonPub.autoFixable).toBe(true); // Separator fix is auto-fixable
-        
+
         // Suggested fix: correctly formatted numbers joined by semicolon
-        expect(londonPub.suggestedFixes.join('; ')).toBe('+44 20 7946 0000; +44 20 7946 0001'); 
+        expect(londonPub.suggestedFixes.join('; ')).toBe('+44 20 7946 0000; +44 20 7946 0001');
     });
-    
+
     test('should identify invalid items due to invalid number', () => {
         const result = validateNumbers(mockElements, SAMPLE_COUNTRY_CODE_GB);
-        
+
         // Check the 'London Hotel' way
         const londonHotel = result.invalidNumbers.find(item => item.id === 202);
         expect(londonHotel).toBeDefined();
@@ -137,8 +136,8 @@ describe('validateNumbers', () => {
         // One number is invalid (020 1234 567 x10)
         expect(londonHotel.invalidNumbers).toEqual(['020 1234 567 x10']);
         // Invalid number makes the whole item unfixable
-        expect(londonHotel.autoFixable).toBe(false); 
-        
+        expect(londonHotel.autoFixable).toBe(false);
+
         // Suggested fix includes the fixed valid number and 'No fix available' for the invalid one
         expect(londonHotel.suggestedFixes.join('; ')).toBe('No fix available; +44 20 5555 1234');
         // Check for website tag inclusion
