@@ -160,17 +160,17 @@ describe('validateNumbers', () => {
 
     test('autofix single invalid numbers', () => {
         const result = validateNumbers(singleNumberElements, SAMPLE_COUNTRY_CODE_GB);
-        const node400 = result.invalidNumbers.find(item => item.id = 400);
+        const node400 = result.invalidNumbers.find(item => item.id === 400);
         expect(node400).toBeDefined();
         expect(node400.autoFixable).toBe(true);
         expect(node400.suggestedFixes.join('; ')).toBe('+44 1389 123456')
 
-        const node401 = result.invalidNumbers.find(item => item.id = 401);
+        const node401 = result.invalidNumbers.find(item => item.id === 401);
         expect(node401).toBeDefined();
         expect(node401.autoFixable).toBe(true);
         expect(node401.suggestedFixes.join('; ')).toBe('+44 1389 123456')
 
-        const node402 = result.invalidNumbers.find(item => item.id = 402);
+        const node402 = result.invalidNumbers.find(item => item.id === 402);
         expect(node402).toBeDefined();
         expect(node402.autoFixable).toBe(true);
         expect(node402.suggestedFixes.join('; ')).toBe('+44 1389 123456')
@@ -204,22 +204,22 @@ describe('validateNumbers', () => {
 
     test('autofix incorrect separators', () => {
         const result = validateNumbers(badSeparatorElements, SAMPLE_COUNTRY_CODE_GB);
-        const node200 = result.invalidNumbers.find(item => item.id = 200);
+        const node200 = result.invalidNumbers.find(item => item.id === 200);
         expect(node200).toBeDefined();
         expect(node200.autoFixable).toBe(true);
         expect(node200.suggestedFixes.join('; ')).toBe('+44 1389 123456; +44 1389 123457')
 
-        const node201 = result.invalidNumbers.find(item => item.id = 201);
+        const node201 = result.invalidNumbers.find(item => item.id === 201);
         expect(node201).toBeDefined();
         expect(node201.autoFixable).toBe(true);
         expect(node201.suggestedFixes.join('; ')).toBe('+44 1389 123456; +44 1389 123457')
 
-        const node202 = result.invalidNumbers.find(item => item.id = 202);
+        const node202 = result.invalidNumbers.find(item => item.id === 202);
         expect(node202).toBeDefined();
         expect(node202.autoFixable).toBe(true);
         expect(node202.suggestedFixes.join('; ')).toBe('+44 1389 123456; +44 1389 123457')
 
-        const node203 = result.invalidNumbers.find(item => item.id = 203);
+        const node203 = result.invalidNumbers.find(item => item.id === 203);
         expect(node203).toBeDefined();
         expect(node203.autoFixable).toBe(true);
         expect(node203.suggestedFixes.join('; ')).toBe('+44 1389 123456; +44 1389 123457')
@@ -234,7 +234,7 @@ describe('validateNumbers', () => {
     }]
     test('fix one invalid number and keep existing valid number', () => {
         const result = validateNumbers(mixedInvalidElements, SAMPLE_COUNTRY_CODE_GB);
-        const node300 = result.invalidNumbers.find(item => item.id = 300);
+        const node300 = result.invalidNumbers.find(item => item.id === 300);
         expect(node300).toBeDefined();
         expect(node300.autoFixable).toBe(true);
         expect(node300.suggestedFixes.join('; ')).toBe('+44 1389 123456; +44 1389 123457')
