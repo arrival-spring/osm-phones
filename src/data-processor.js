@@ -46,7 +46,7 @@ function getFeatureTypeName(item) {
 function stripExtension(numberStr) {
     // Regex matches common extension prefixes: x, ext, extension, etc.
     // It captures everything before the extension marker.
-    const extensionRegex = /^(.*?)(?:[xX]|[eE][xX][tT]|\/|\s*\(ext\)\s*).*$/;
+    const extensionRegex = /^(.*?)(?:[xX]|[eE][xX][tT]|\s*\(ext\)\s*).*$/;
     const match = numberStr.match(extensionRegex);
 
     // If an extension is found, return the part before it (trimmed).
@@ -68,6 +68,9 @@ function processSingleNumber(numberStr, countryCode) {
     let autoFixable = true;
     let isInvalid = false;
 
+    const NON_STANDARD_EXT_PREFIX_REGEX = /([eE][xX][tT])|(\s*\([eE][xX][tT]\)\s*)/;
+    const hasNonStandardExtension = NON_STANDARD_EXT_PREFIX_REGEX.test(numberStr);
+
     try {
         const phoneNumber = parsePhoneNumber(numberStr, countryCode);
 
@@ -78,22 +81,31 @@ function processSingleNumber(numberStr, countryCode) {
         let normalizedParsed = '';
 
         if (phoneNumber) {
-            // The suggested fix should include the original extension if one exists.
+            // Use phoneNumber.number (E.164 format, guaranteed NO extension) 
+            // and re-parse it to get the correctly spaced 'INTERNATIONAL' format.
+            const coreNumberE164 = phoneNumber.number;
+            
+            // Re-parse the core number to get the spaced INTERNATIONAL format without the extension
+            // Note: This is required because format('INTERNATIONAL') on the original number might include the extension.
+            const coreFormatted = parsePhoneNumber(coreNumberE164).format('INTERNATIONAL');
+            
+            // Manually append the extension in the standard format (' x{ext}').
             const extension = phoneNumber.ext ? ` x${phoneNumber.ext}` : '';
-            suggestedFix = phoneNumber.format('INTERNATIONAL') + extension;
+            suggestedFix = coreFormatted + extension;
         }
 
         if (phoneNumber && phoneNumber.isValid()) {
             normalizedParsed = phoneNumber.number.replace(/\s/g, '');
-        }
 
-        // Compare the stripped original number to the normalized parsed number
-        isInvalid = normalizedOriginal !== normalizedParsed;
+            isInvalid = normalizedOriginal !== normalizedParsed;
 
-        if (isInvalid) {
-            if (!phoneNumber || !phoneNumber.isValid()) {
-                autoFixable = false;
+            if (phoneNumber.ext && hasNonStandardExtension) {
+                isInvalid = true;
             }
+        } else {
+            // The number is fundamentally invalid (e.g., too few digits)
+            isInvalid = true;
+            autoFixable = false;
         }
     } catch (e) {
         // Parsing failed due to an exception (unfixable invalid number)
@@ -148,7 +160,7 @@ function validateNumbers(elements, countryCode) {
                 lon: lon,
                 name: name,
                 allTags: tags,
-                invalidNumbers: [],
+                invalidNumbers: '',
                 suggestedFixes: [],
             };
 
@@ -184,8 +196,7 @@ function validateNumbers(elements, countryCode) {
                             }
                             const item = invalidItemsMap.get(key);
 
-                            item.invalidNumbers.push(numberStr);
-                            item.suggestedFixes.push(suggestedFix);
+                            item.invalidNumbers = originalTagValue;
 
                             if (!autoFixable) {
                                 item.autoFixable = false;
@@ -193,12 +204,10 @@ function validateNumbers(elements, countryCode) {
                         }
                     });
 
-
-                    // 2. Final check for invalidity due to bad separators
+                    // Final check for invalidity due to bad separators
                     if (hasIndividualInvalidNumber || hasBadSeparator) {
 
-                        // Default fix separator is the raw semicolon (';').
-                        const suggestedTagValue = suggestedNumbersList.join(';');
+                        const suggestedTagValue = suggestedNumbersList.join('; ');
 
                         if (!invalidItemsMap.has(key)) {
                             const isAutoFixable = !hasIndividualInvalidNumber;
@@ -206,9 +215,10 @@ function validateNumbers(elements, countryCode) {
                         }
                         const item = invalidItemsMap.get(key);
 
+                        item.suggestedFixes.push(suggestedTagValue);
+
                         if (hasBadSeparator) {
-                            item.invalidNumbers.push(originalTagValue);
-                            item.suggestedFixes.push(suggestedTagValue);
+                            item.invalidNumbers = originalTagValue;
                             item.autoFixable = item.autoFixable === false ? false : true;
                         }
                     }
@@ -223,5 +233,7 @@ function validateNumbers(elements, countryCode) {
 module.exports = {
     safeName,
     validateNumbers,
-    getFeatureTypeName
+    getFeatureTypeName,
+    stripExtension,
+    processSingleNumber
 };
