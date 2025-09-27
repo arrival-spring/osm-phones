@@ -99,9 +99,8 @@ describe('validateNumbers', () => {
         tags: {
             name: 'London Hotel',
             // Missing a digit, and contains an extension
-            'contact:phone': '020 1234 567 x10; +44 20 5555 1234',
+            'contact:phone': '020 1234 567 x10; +44 20 7946 0000',
             tourism: 'hotel',
-            'contact:website': 'http://capetownhotel.com'
         }
     }];
 
@@ -139,8 +138,37 @@ describe('validateNumbers', () => {
         expect(londonHotel.autoFixable).toBe(false);
 
         // Suggested fix includes the fixed valid number and 'No fix available' for the invalid one
-        expect(londonHotel.suggestedFixes.join('; ')).toBe('No fix available; +44 20 5555 1234');
-        // Check for website tag inclusion
-        expect(londonHotel.website).toBe('http://londonhotel.com');
+        expect(londonHotel.suggestedFixes.join('; ')).toBe('No fix available; +44 20 7946 0000');
     });
+
+    const websiteElements = [{
+        type: 'node',
+        id: 102,
+        tags: {
+            'website': 'www.pub.com'
+        }
+    },
+    {
+        type: 'node',
+        id: 103,
+        tags: {
+            'contact:website': 'https://bar.com'
+        }
+    }];
+
+    test('add scheme to website if it has none', () => {
+        const result = validateNumbers(websiteElements, SAMPLE_COUNTRY_CODE_GB);
+
+        const pub = result.invalidNumbers.find(item => item.id === 102);
+        expect(pub).toBeDefined();
+        expect(pub.website).toBe('http://www.pub.com');
+    });
+    test('contact:website is also detected', () => {
+        const result = validateNumbers(websiteElements, SAMPLE_COUNTRY_CODE_GB);
+
+        const bar = result.invalidNumbers.find(item => item.id === 103);
+        expect(bar).toBeDefined();
+        expect(bar.website).toBe('https://bar.com');
+    });
+
 });
