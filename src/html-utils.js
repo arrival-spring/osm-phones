@@ -78,8 +78,6 @@ function createFooter(locale = 'en-GB', translations) {
     const suggestionIssueLink = translate('suggestionIssueLink', locale);
     const letMeKnowOnGitHub = translate('letMeKnowOnGitHub', locale);
 
-    const footerText = translate('dataSourcedTemplate', locale, [formattedDate, formattedTime, 'UTC', `<span id="time-ago-display">${initialTimeAgoText}</span>`]);
-
     return `
     <p id="data-timestamp-container" 
        class="text-sm text-gray-500 mt-2"
