@@ -129,7 +129,7 @@ function createListItem(item) {
     const josmBaseUrl = 'http://127.0.0.1:8111/load_object';
     const idBaseUrl = 'https://www.openstreetmap.org/edit?editor=id&map=19/';
 
-    const phoneNumber = item.invalidNumbers.join('; ');
+    const phoneNumber = item.invalidNumbers;
     const fixedNumber = item.suggestedFixes.join('; ');
     const idEditUrl = `${idBaseUrl}${item.lat}/${item.lon}&${item.type}=${item.id}`;
     const josmEditUrl = `${josmBaseUrl}?objects=${item.type}${item.id}`;

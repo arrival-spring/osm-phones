@@ -56,6 +56,18 @@ describe('processSingleNumber', () => {
         expect(result.suggestedFix).toBe('+44 20 7946 0000');
     });
 
+    test('GB: flag a valid number with extension as valid', () => {
+        const result = processSingleNumber('+44 20 7946 0000 x123', SAMPLE_COUNTRY_CODE_GB);
+        expect(result.isInvalid).toBe(false);
+    });
+
+    test('GB: flag a valid number with non-standard extension as invalid but autoFixable', () => {
+        const result = processSingleNumber('+44 20 7946 0000 ext.123', SAMPLE_COUNTRY_CODE_GB);
+        expect(result.isInvalid).toBe(true);
+        expect(result.autoFixable).toBe(true);
+        expect(result.suggestedFix).toBe('+44 20 7946 0000 x123');
+    });
+
     // --- ZA Tests (Johannesburg number: 011 555 1234) ---
 
     test('ZA: correctly validate and format a simple valid local number', () => {
@@ -86,8 +98,6 @@ describe('validateNumbers', () => {
     const mockElements = [{
         type: 'node',
         id: 101,
-        lat: 51.5,
-        lon: 0.1,
         tags: {
             name: 'London Pub',
             phone: '020 7946 0000, +442079460001', // Bad separator (comma)
@@ -133,7 +143,7 @@ describe('validateNumbers', () => {
         expect(londonHotel).toBeDefined();
 
         // One number is invalid (020 1234 567 x10)
-        expect(londonHotel.invalidNumbers).toEqual(['020 1234 567 x10']);
+        expect(londonHotel.invalidNumbers).toEqual('020 1234 567 x10');
         // Invalid number makes the whole item unfixable
         expect(londonHotel.autoFixable).toBe(false);
     });
@@ -155,6 +165,12 @@ describe('validateNumbers', () => {
         id: 402,
         tags: {
             'phone': '+44 (0) (1389) 123456'
+        }
+    }, {
+        type: 'node',
+        id: 403,
+        tags: {
+            'phone': '+44 1389 123456 x104'
         }
     }];
 
@@ -231,13 +247,28 @@ describe('validateNumbers', () => {
         tags: {
             'phone': '+44 1389 123456; 01389 123457'
         }
-    }]
-    test('fix one invalid number and keep existing valid number', () => {
+    }, {
+        type: 'node',
+        id: 301,
+        tags: {
+            'phone': '+44 1389 123456; +44 1389'
+        }
+    }];
+
+    test('fix one fixable number and keep existing valid number', () => {
         const result = validateNumbers(mixedInvalidElements, SAMPLE_COUNTRY_CODE_GB);
         const node300 = result.invalidNumbers.find(item => item.id === 300);
         expect(node300).toBeDefined();
         expect(node300.autoFixable).toBe(true);
         expect(node300.suggestedFixes.join('; ')).toBe('+44 1389 123456; +44 1389 123457')
+    });
+
+    test('one valid and one invalid makes the whole thing invalid', () => {
+        const result = validateNumbers(mixedInvalidElements, SAMPLE_COUNTRY_CODE_GB);
+        const node301 = result.invalidNumbers.find(item => item.id === 301);
+        expect(node301).toBeDefined();
+        expect(node301.isInvalid).toBe(true);
+        expect(node301.autoFixable).toBe(false);
     });
 
     const websiteElements = [{

@@ -148,7 +148,7 @@ function validateNumbers(elements, countryCode) {
                 lon: lon,
                 name: name,
                 allTags: tags,
-                invalidNumbers: [],
+                invalidNumbers: '',
                 suggestedFixes: [],
             };
 
@@ -184,14 +184,13 @@ function validateNumbers(elements, countryCode) {
                             }
                             const item = invalidItemsMap.get(key);
 
-                            item.invalidNumbers.push(numberStr);
+                            item.invalidNumbers = originalTagValue;
 
                             if (!autoFixable) {
                                 item.autoFixable = false;
                             }
                         }
                     });
-
 
                     // Final check for invalidity due to bad separators
                     if (hasIndividualInvalidNumber || hasBadSeparator) {
@@ -207,7 +206,7 @@ function validateNumbers(elements, countryCode) {
                         item.suggestedFixes.push(suggestedTagValue);
 
                         if (hasBadSeparator) {
-                            item.invalidNumbers.push(originalTagValue);
+                            item.invalidNumbers = originalTagValue;
                             item.autoFixable = item.autoFixable === false ? false : true;
                         }
                     }
@@ -224,5 +223,5 @@ module.exports = {
     validateNumbers,
     getFeatureTypeName,
     stripExtension,
-    processSingleNumber 
+    processSingleNumber
 };
