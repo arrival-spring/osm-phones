@@ -4,7 +4,9 @@ const path = require('path');
 const { PUBLIC_DIR } = require('./constants');
 const { safeName, getFeatureTypeName } = require('./data-processor');
 
+const githubLink = "https://github.com/arrival-spring/osm-phones/"
 const favicon = '<link rel="icon" href="data:image/svg+xml,&lt;svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22&gt;&lt;text y=%22.9em%22 font-size=%2290%22&gt;📞&lt;/text&gt;&lt;/svg&gt;">';
+
 /**
  * Creates the HTML box displaying statistics.
  * @param {number} total - Total phone numbers
@@ -50,17 +52,18 @@ function createStatsBox(total, invalid, fixable, locale) {
 
 /**
  * Creates the HTML footer with data timestamp and GitHub link.
- * @param {Date} dataTimestamp
+ * @param {string} locale - Locale to format the date in
  * @returns {string}
  */
-function createFooter(dataTimestamp) {
+function createFooter(locale='en-GB') {
+    const dataTimestamp = new Date();
     // Formatting the date and time
-    const formattedDate = dataTimestamp.toLocaleDateString('en-GB', {
+    const formattedDate = dataTimestamp.toLocaleDateString(locale, {
         year: 'numeric',
         month: 'long',
         day: 'numeric'
     });
-    const formattedTime = dataTimestamp.toLocaleTimeString('en-GB', {
+    const formattedTime = dataTimestamp.toLocaleTimeString(locale, {
         hour: '2-digit',
         minute: '2-digit',
         timeZone: 'UTC'
@@ -73,7 +76,7 @@ function createFooter(dataTimestamp) {
         Data sourced on ${formattedDate} at ${formattedTime} UTC 
         (<span id="time-ago-display">calculating...</span>)
     </p>
-    <p class="text-sm text-gray-500 mt-2">Got a suggestion or an issue? <a href="https://github.com/arrival-spring/osm-phones/" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:text-blue-700 underline transition-colors">Let me know on GitHub</a>.</p>
+    <p class="text-sm text-gray-500 mt-2">Got a suggestion or an issue? <a href="${githubLink}" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:text-blue-700 underline transition-colors">Let me know on GitHub</a>.</p>
     <script>
         function updateTimeAgo() {
             const container = document.getElementById('data-timestamp-container');
@@ -180,10 +183,9 @@ function createListItem(item) {
  * @param {Object} subdivision - The subdivision object.
  * @param {Array<Object>} invalidNumbers - List of invalid items.
  * @param {number} totalNumbers - Total number of phone tags checked.
- * @param {Date} dataTimestamp
  * @param {string} locale
  */
-async function generateHtmlReport(countryName, subdivision, invalidNumbers, totalNumbers, dataTimestamp, locale) {
+async function generateHtmlReport(countryName, subdivision, invalidNumbers, totalNumbers, locale) {
     const safeSubdivisionName = safeName(subdivision.name);
     const safeCountryName = safeName(countryName);
     const filePath = path.join(PUBLIC_DIR, safeCountryName, `${safeSubdivisionName}.html`);
@@ -241,7 +243,7 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
                 ${invalidListContent}
             </ul>
             <div class="bg-white rounded-xl shadow-lg p-2 text-center">
-                ${createFooter(dataTimestamp)}
+                ${createFooter(locale)}
             </div>
         </div>
     <script>
@@ -270,9 +272,8 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
 /**
  * Generates the main index.html file listing all countries.
  * @param {Array<Object>} countryStats - List of country statistics.
- * @param {Date} dataTimestamp
  */
-function generateMainIndexHtml(countryStats, dataTimestamp) {
+function generateMainIndexHtml(countryStats) {
     const listContent = countryStats.map(country => {
         const safeCountryName = safeName(country.name);
         const countryPageName = `${safeCountryName}.html`;
@@ -334,7 +335,7 @@ function generateMainIndexHtml(countryStats, dataTimestamp) {
                 </div>
             </div>
             <div class="bg-white rounded-xl shadow-lg p-2 text-center">
-                ${createFooter(dataTimestamp)}
+                ${createFooter()}
             </div>
         </div>
     </body>
@@ -351,10 +352,9 @@ function generateMainIndexHtml(countryStats, dataTimestamp) {
  * @param {number} totalInvalidCount
  * @param {number} totalAutofixableCount
  * @param {number} totalTotalNumbers
- * @param {Date} dataTimestamp
  * @param {string} locale
  */
-function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, dataTimestamp, locale) {
+function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, locale) {
     const safeCountryName = safeName(countryName);
     const renderListScript = `
         <script>
@@ -668,7 +668,7 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                 </div>
             </div>
             <div class="bg-white rounded-xl shadow-lg p-2 text-center">
-                ${createFooter(dataTimestamp)}
+                ${createFooter(locale)}
             </div>
         </div>
         ${renderListScript}

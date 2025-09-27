@@ -16,7 +16,6 @@ async function main() {
 
     console.log('Starting full build process...');
 
-    const dataTimestamp = new Date();
     const countryStats = [];
 
     for (const countryKey in COUNTRIES) {
@@ -78,7 +77,7 @@ async function main() {
                 totalAutofixableCount += autoFixableCount;
                 totalTotalNumbers += totalNumbers;
 
-                await generateHtmlReport(countryName, subdivision, invalidNumbers, totalNumbers, dataTimestamp, countryData.locale);
+                await generateHtmlReport(countryName, subdivision, invalidNumbers, totalNumbers, countryData.locale);
 
                 subdivisionsProcessed++;
             }
@@ -91,10 +90,10 @@ async function main() {
             totalNumbers: totalTotalNumbers
         });
 
-        generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, dataTimestamp, countryData.locale);
+        generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, countryData.locale);
     }
 
-    generateMainIndexHtml(countryStats, dataTimestamp);
+    generateMainIndexHtml(countryStats);
 
     console.log('Full build process completed successfully.');
 }
