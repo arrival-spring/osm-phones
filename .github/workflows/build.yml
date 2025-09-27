@@ -51,9 +51,11 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Install Dependencies and Build Report
+      - name: Install Dependencies
+        run: npm install 
+
+      - name: Generate Reports and Build Production CSS
         run: |
-          npm install
           node src/main.js
           npm run build:css
 
