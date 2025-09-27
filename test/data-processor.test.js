@@ -141,18 +141,76 @@ describe('validateNumbers', () => {
         expect(londonHotel.suggestedFixes.join('; ')).toBe('No fix available; +44 20 7946 0000');
     });
 
+    const badSeparatorElements = [{
+        type: 'node',
+        id: 200,
+        tags: {
+            'phone': '+44 1389 123456 or +44 1389 123457'
+        }
+    }, {
+        type: 'node',
+        id: 201,
+        tags: {
+            'phone': '+44 1389 123456 and +44 1389 123457'
+        }
+    }, {
+        type: 'node',
+        id: 202,
+        tags: {
+            'phone': '+44 1389 123456, +44 1389 123457'
+        }
+    }, {
+        type: 'node',
+        id: 203,
+        tags: {
+            'phone': '+44 1389 123456/+44 1389 123457'
+        }
+    }];
+
+    test('autofix incorrect separators', () => {
+        const result = validateNumbers(badSeparatorElements, SAMPLE_COUNTRY_CODE_GB);
+        const node200 = result.invalidNumbers.find(item => item.id = 200);
+        expect(node200).toBeDefined();
+        expect(node200.autoFixable).toBe(true);
+        expect(node200.suggestedFixes.join('; ')).tobe('+44 1389 123456; +44 1389 123457')
+
+        const node201 = result.invalidNumbers.find(item => item.id = 201);
+        expect(node201).toBeDefined();
+        expect(node201.autoFixable).toBe(true);
+        expect(node201.suggestedFixes.join('; ')).tobe('+44 1389 123456; +44 1389 123457')
+
+        const node202 = result.invalidNumbers.find(item => item.id = 202);
+        expect(node202).toBeDefined();
+        expect(node202.autoFixable).toBe(true);
+        expect(node202.suggestedFixes.join('; ')).tobe('+44 1389 123456; +44 1389 123457')
+
+        const node203 = result.invalidNumbers.find(item => item.id = 203);
+        expect(node203).toBeDefined();
+        expect(node203.autoFixable).toBe(true);
+        expect(node203.suggestedFixes.join('; ')).tobe('+44 1389 123456; +44 1389 123457')
+    });
+
     const websiteElements = [{
         type: 'node',
         id: 102,
         tags: {
+            'phone': '1234', // needs invalid phone to be included in results
             'website': 'www.pub.com'
         }
-    },
-    {
+    }, {
         type: 'node',
         id: 103,
         tags: {
+            'phone': '1234',
             'contact:website': 'https://bar.com'
+        }
+    }, {
+        type: 'node',
+        id: 104,
+        tags: {
+            'phone': '1234',
+            'contact:website': 'https://bar.com',
+            'website': 'https://pub.com'
         }
     }];
 
@@ -170,5 +228,11 @@ describe('validateNumbers', () => {
         expect(bar).toBeDefined();
         expect(bar.website).toBe('https://bar.com');
     });
+    test('website taken first over contact:website', () => {
+        const result = validateNumbers(websiteElements, SAMPLE_COUNTRY_CODE_GB);
 
+        const doubleWebsite = result.invalidNumbers.find(item => item.id === 104);
+        expect(doubleWebsite).toBeDefined();
+        expect(doubleWebsite.website).toBe('https://pub.com');
+    });
 });
