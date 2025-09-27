@@ -209,9 +209,8 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Phone Number Report for ${subdivision.name}</title>
         ${favicon}
-        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="/styles.css" rel="stylesheet">
         <style>
-            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
             body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
         </style>
     </head>
@@ -314,9 +313,8 @@ function generateMainIndexHtml(countryStats) {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>OSM Phone Number Validation Reports</title>
         ${favicon}
-        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="/styles.css" rel="stylesheet">
         <style>
-            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
             body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
         </style>
     </head>
@@ -629,9 +627,8 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>OSM Phone Number Validation Report - ${countryName}</title>
         ${favicon}
-        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="/styles.css" rel="stylesheet">
         <style>
-            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
             body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
         </style>
     </head>
