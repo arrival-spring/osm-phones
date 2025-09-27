@@ -129,7 +129,7 @@ async function main() {
         generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, locale, clientTranslations);
     }
 
-    generateMainIndexHtml(countryStats, clientDefaultTranslations);
+    generateMainIndexHtml(countryStats, defaultLocale, clientDefaultTranslations);
 
     console.log('Full build process completed successfully.');
 }
