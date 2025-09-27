@@ -138,6 +138,44 @@ describe('validateNumbers', () => {
         expect(londonHotel.autoFixable).toBe(false);
     });
 
+    const singleNumberElements = [{
+        type: 'node',
+        id: 400,
+        tags: {
+            'phone': '01389 123456'
+        }
+    }, {
+        type: 'node',
+        id: 401,
+        tags: {
+            'phone': '+44 01389 123456'
+        }
+    }, {
+        type: 'node',
+        id: 402,
+        tags: {
+            'phone': '+44 (0) (1389) 123456'
+        }
+    }];
+
+    test('autofix single invalid numbers', () => {
+        const result = validateNumbers(singleNumberElements, SAMPLE_COUNTRY_CODE_GB);
+        const node400 = result.invalidNumbers.find(item => item.id = 400);
+        expect(node400).toBeDefined();
+        expect(node400.autoFixable).toBe(true);
+        expect(node400.suggestedFixes.join('; ')).toBe('+44 1389 123456')
+
+        const node401 = result.invalidNumbers.find(item => item.id = 401);
+        expect(node401).toBeDefined();
+        expect(node401.autoFixable).toBe(true);
+        expect(node401.suggestedFixes.join('; ')).toBe('+44 1389 123456')
+
+        const node402 = result.invalidNumbers.find(item => item.id = 402);
+        expect(node402).toBeDefined();
+        expect(node402.autoFixable).toBe(true);
+        expect(node402.suggestedFixes.join('; ')).toBe('+44 1389 123456')
+    });
+
     const badSeparatorElements = [{
         type: 'node',
         id: 200,
