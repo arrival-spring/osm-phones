@@ -29,7 +29,7 @@
   "osmPhoneNumberValidation": "OSM Phone Number Validation",
   "reportSubtitle": "A report on invalid phone numbers in OpenStreetMap data for various countries.",
   "countryReports": "Country Reports",
-  "invalidNumbersOutOf": "invalid numbers (%s potentially fixable) out of %t",
+  "invalidNumbersOutOf": "%i invalid numbers (%f potentially fixable) out of %t",
   "backToAllCountries": "Back to all countries",
   "reportSubtitleForCountry": "A report on invalid phone numbers in OpenStreetMap data for %c.",
   "divisionalReports": "Divisional Reports",

@@ -40,7 +40,7 @@ const MASTER_KEYS = {
     'invalidPercentageOfTotal': ['%p'],
     'fixablePercentageOfInvalid': ['%p'],
 
-    'invalidNumbersOutOf': ['%s', '%t'],
+    'invalidNumbersOutOf': ['%i', '%f', '%t'],
 
     'reportSubtitleForCountry': ['%c'],
     'dataSourcedTemplate': ['%d', '%t', '%z', '%a'],
@@ -52,7 +52,7 @@ const MASTER_KEYS = {
     'timeAgoHoursPlural': ['%n'],
 
     // Page Titles (uses %s for country name)
-    'mainIndexTitle': [], // This is a static title, no placeholder needed
+    'mainIndexTitle': [], // Static title
     'countryReportTitle': ['%s']
 };
 

@@ -31,11 +31,11 @@ function translate(key, locale, args = []) {
 
     let output = translation;
 
-    if (key === 'invalidNumbersOutOf' && args.length === 2) {
-        // Positional replacement: %s is fixable, %t is total
-        output = output.replace('%s', args[0]).replace('%t', args[1]);
+    if (key === 'invalidNumbersOutOf' && args.length === 3) {
+        // Positional replacement: %i is invalid, %f is fixable, %t is total
+        output = output.replace('%i', args[0]).replace('%f', args[1]).replace('%t', args[2]);
     } else if ((key === 'invalidPercentageOfTotal' || key === 'fixablePercentageOfInvalid') && args.length === 1) {
-        output = output.replace('%p', args[0]);
+        output = output.replace('%p', `${args[0]}%`);
     } else if (key === 'reportSubtitleForCountry' && args.length === 1) {
         // Positional replacement: %c is country name
         output = output.replace('%c', args[0]);
@@ -58,4 +58,14 @@ function translate(key, locale, args = []) {
     return output;
 }
 
-module.exports = { translate };
+/**
+ * Gets the entire translation dictionary for a locale.
+ * @param {string} locale - The target locale (e.g., 'fr-FR').
+ * @returns {Object} The translation dictionary or an empty object.
+ */
+function getTranslations(locale) {
+    // Fallback to the default locale if the specific one is missing
+    return locales[locale] || locales[DEFAULT_LOCALE] || {};
+}
+
+module.exports = { translate, getTranslations };

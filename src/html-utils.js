@@ -54,9 +54,12 @@ function createStatsBox(total, invalid, fixable, locale) {
 /**
  * Creates the HTML footer with data timestamp and GitHub link.
  * @param {string} locale - Locale to format the date in
+ * @param {Object} translations - The translations dictionary for the current locale
  * @returns {string}
  */
-function createFooter(locale = 'en-GB') {
+function createFooter(locale = 'en-GB', translations) {
+    translations = translations || {};
+
     const dataTimestamp = new Date();
     // Formatting the date and time
     const formattedDate = dataTimestamp.toLocaleDateString(locale, {
@@ -70,6 +73,12 @@ function createFooter(locale = 'en-GB') {
         timeZone: 'UTC'
     });
 
+    // Use translation keys for static text, with fallbacks to hardcoded text
+    const dataSourcedTemplate = translations['dataSourcedTemplate'] || 'Data sourced on %d at %t %z (%a)';
+    const suggestionIssueLink = translate(suggestionIssueLink, locale);
+    const letMeKnowOnGitHub = translate(letMeKnowOnGitHub);
+    const timeAgoJustNow = translate(timeAgoJustNow);
+
     const initialTimeAgoText = translate('calculating', locale);
     const footerText = translate('dataSourcedTemplate', locale, [formattedDate, formattedTime, 'UTC', `<span id="time-ago-display">${initialTimeAgoText}</span>`]);
 
@@ -77,22 +86,38 @@ function createFooter(locale = 'en-GB') {
     <p id="data-timestamp-container" 
        class="text-sm text-gray-500 mt-2"
        data-timestamp="${dataTimestamp.getTime()}">
-        ${footerText} 
+        ${dataSourcedTemplate
+            .replace('%d', formattedDate)
+            .replace('%t', formattedTime)
+            .replace('%z', 'UTC')
+            .replace('%a', timeAgoJustNow)
+        }
     </p>
-    <p class="text-sm text-gray-500 mt-2">${translate('suggestionIssueLink', locale)} <a href="${githubLink}" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:text-blue-700 underline transition-colors">${translate('letMeKnowOnGitHub', locale)}</a>.</p>
+    <p class="text-sm text-gray-500 mt-2">${suggestionIssueLink} <a href="${githubLink}" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:text-blue-700 underline transition-colors">${letMeKnowOnGitHub}</a>.</p>
     
     <script>
+        // Embed the translations object for client-side use
+        const translations = ${JSON.stringify(translations)};
+        
+        function translate(key, substitutions = {}) {
+            let str = translations[key] || \`MISSING_KEY:\${key}\`;
+            // Simple substitution utility for %n placeholders
+            if (str.includes('%n') && substitutions['%n'] !== undefined) {
+                str = str.replace('%n', substitutions['%n']);
+            }
+            return str;
+        }
+
         function updateTimeAgo() {
             const container = document.getElementById('data-timestamp-container');
-            const displayElement = document.getElementById('time-ago-display');
-
-            if (!container || !displayElement) {
+            
+            if (!container) {
                 return;
             }
 
             const dataTimestampMs = parseInt(container.getAttribute('data-timestamp'), 10);
             if (isNaN(dataTimestampMs)) {
-                displayElement.textContent = '${translate('timeAgoError', locale)}';
+                container.textContent = translations['timeAgoError'] || 'error in time calculation';
                 return;
             }
 
@@ -106,24 +131,33 @@ function createFooter(locale = 'en-GB') {
             let timeAgoText;
 
             if (totalMinutes < 1) {
-                // Just Now
-                timeAgoText = '${translate('timeAgoJustNow', locale)}';
+                timeAgoText = translate('timeAgoJustNow');
             } else if (totalMinutes < 60) {
-                // Minutes: Choose singular or plural key
-                const key = totalMinutes === 1 ? 'timeAgoMinute' : 'timeAgoMinutesPlural';
-                // Note: The template must be passed as a string literal here for the client-side script
-                timeAgoText = '${translate("' + key + '", locale, ["' + totalMinutes + '"])}';
+                const minutes = totalMinutes;
+                // Use plural/singular keys with substitution
+                const key = minutes > 1 ? 'timeAgoMinutesPlural' : 'timeAgoMinute';
+                timeAgoText = translate(key, { '%n': minutes }); 
             } else {
-                // Hours: Choose singular or plural key
                 const hours = Math.floor(totalMinutes / 60);
-                const key = hours === 1 ? 'timeAgoHour' : 'timeAgoHoursPlural';
-                timeAgoText = '${translate("' + key + '", locale, ["' + hours + '"])}';
+                // Use plural/singular keys with substitution
+                const key = hours > 1 ? 'timeAgoHoursPlural' : 'timeAgoHour';
+                timeAgoText = translate(key, { '%n': hours }); 
             }
 
-            displayElement.textContent = timeAgoText;
+            // Re-render the full string using the translated template
+            const dataSourcedTemplate = translations['dataSourcedTemplate'] || 'Data sourced on %d at %t %z (%a)';
+
+            container.innerHTML = dataSourcedTemplate
+                .replace('%d', '${formattedDate}')
+                .replace('%t', '${formattedTime}')
+                .replace('%z', 'UTC')
+                .replace('%a', timeAgoText); 
         }
 
+        // Run immediately when the script loads
         updateTimeAgo();
+
+        // Set an interval to run every 60 seconds (1 minute) to keep the time updated
         setInterval(updateTimeAgo, 60000);
     </script>
     `
@@ -191,8 +225,9 @@ function createListItem(item, locale) {
  * @param {Array<Object>} invalidNumbers - List of invalid items.
  * @param {number} totalNumbers - Total number of phone tags checked.
  * @param {string} locale
+ * @param {Object} translations
  */
-async function generateHtmlReport(countryName, subdivision, invalidNumbers, totalNumbers, locale) {
+async function generateHtmlReport(countryName, subdivision, invalidNumbers, totalNumbers, locale, translations) {
     const safeSubdivisionName = safeName(subdivision.name);
     const safeCountryName = safeName(countryName);
     const filePath = path.join(PUBLIC_DIR, safeCountryName, `${safeSubdivisionName}.html`);
@@ -249,7 +284,7 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
                 ${invalidListContent}
             </ul>
             <div class="bg-white rounded-xl shadow-lg p-2 text-center">
-                ${createFooter(locale)}
+                ${createFooter(locale, translations)}
             </div>
         </div>
     <script>
@@ -279,11 +314,12 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
  * Generates the main index.html file listing all country reports.
  * @param {Array<Object>} countryStats - Array of country statistic objects, including country.locale.
  * @param {string} locale - The primary locale for the main page structure (e.g., 'en').
+ * @param {Object} translations
  */
-function generateMainIndexHtml(countryStats, locale='en-GB') {
-    
+function generateMainIndexHtml(countryStats, locale = 'en-GB', translations) {
+
     // We will use the 'locale' parameter (e.g., 'en') for the page structure.
-    
+
     const listContent = countryStats.map(country => {
         const safeCountryName = safeName(country.name);
         const countryPageName = `${safeCountryName}.html`;
@@ -308,7 +344,7 @@ function generateMainIndexHtml(countryStats, locale='en-GB') {
         const formattedTotal = country.totalNumbers.toLocaleString(itemLocale);
 
         // Use the country's specific locale for the description translation
-        const description = translate('invalidNumbersOutOf', itemLocale, [formattedFixable, formattedTotal]);
+        const description = translate('invalidNumbersOutOf', itemLocale, [formattedInvalid, formattedFixable, formattedTotal]);
 
         return `
             <a href="${countryPageName}" class="bg-white rounded-xl shadow-lg p-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 transition-transform transform hover:scale-105">
@@ -355,7 +391,7 @@ function generateMainIndexHtml(countryStats, locale='en-GB') {
                 </div>
             </div>
             <div class="bg-white rounded-xl shadow-lg p-2 text-center">
-                ${createFooter(locale)}
+                ${createFooter(locale, translations)}
             </div>
         </div>
     </body>
@@ -373,8 +409,9 @@ function generateMainIndexHtml(countryStats, locale='en-GB') {
  * @param {number} totalAutofixableCount
  * @param {number} totalTotalNumbers
  * @param {string} locale
+ * @param {Object} translations
  */
-function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, locale) {
+function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, locale, translations) {
     const safeCountryName = safeName(countryName);
 
     // --- Server-side translation of dynamic client script strings ---
@@ -485,6 +522,11 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                 const divisionNames = Object.keys(groupedDivisionStats);
                 const isGrouped = divisionNames.length > 1;
 
+                const percentageOptions = {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                };
+
                 // Capture current open state
                 const currentlyOpenDivisions = new Set();
                 listContainer.querySelectorAll('details').forEach(details => {
@@ -508,11 +550,6 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                     if (sortedData.length > 0) {
 
                         // --- Group Stats Calculation ---
-                        const percentageOptions = {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                        };
-
                         const groupStats = calculatedDivisionTotals[divisionName];
                         const groupInvalidFormatted = formatNumber(groupStats.invalid);
                         const groupTotalFormatted = formatNumber(groupStats.total);
@@ -631,6 +668,9 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                             const formattedInvalidCount = formatNumber(division.invalidCount);
                             const formattedFixableCount = formatNumber(division.autoFixableCount);
                             const formattedTotalCount = formatNumber(division.totalNumbers);
+
+                            const percentageNumber = division.totalNumbers > 0 ? (division.invalidCount / division.totalNumbers) * 100 : 0;
+                            const formattedPercentage = percentageNumber.toLocaleString(locale, percentageOptions);
                             
                             // Client-side substitution using the embedded template literal
                             const itemStatsLine = T_CLIENT.invalidNumbersOutOf
@@ -651,7 +691,7 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                                     </div>
                                 </a>
                                 <div class="text-center sm:text-right">
-                                    <p class="text-2xl font-bold text-gray-800">\${validPercentage.toFixed(2)}<span class="text-base font-normal">%</span></p>
+                                    <p class="text-2xl font-bold text-gray-800">\${formattedPercentage}<span class="text-base font-normal">%</span></p>
                                     <p class="text-xs text-gray-500">\${T_CLIENT.invalid}</p>
                                 </div>
                             \`;
@@ -731,7 +771,7 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                 </div>
             </div>
             <div class="bg-white rounded-xl shadow-lg p-2 text-center">
-                ${createFooter(locale)}
+                ${createFooter(locale, translations)}
             </div>
         </div>
         ${renderListScript}

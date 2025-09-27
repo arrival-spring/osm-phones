@@ -8,6 +8,33 @@ const {
     generateMainIndexHtml,
     generateCountryIndexHtml
 } = require('./html-utils');
+const { getTranslations } = require('./i18n');
+
+const CLIENT_KEYS = [
+    'timeAgoJustNow',
+    'timeAgoMinute',
+    'timeAgoMinutesPlural',
+    'timeAgoHour',
+    'timeAgoHoursPlural',
+    'timeAgoError',
+    'dataSourcedTemplate'
+];
+
+/**
+ * Filters the full translations object to include only keys needed by the client.
+ * @param {Object} fullTranslations - The complete dictionary for a locale.
+ * @returns {Object} A lightweight dictionary containing only client-side keys.
+ */
+function filterClientTranslations(fullTranslations) {
+    const clientTranslations = {};
+    for (const key of CLIENT_KEYS) {
+        // Only include the key if it exists in the source dictionary
+        if (fullTranslations[key] !== undefined) {
+            clientTranslations[key] = fullTranslations[key];
+        }
+    }
+    return clientTranslations;
+}
 
 async function main() {
     if (!fs.existsSync(PUBLIC_DIR)) {
@@ -18,9 +45,17 @@ async function main() {
 
     const countryStats = [];
 
+    const defaultLocale = 'en-GB';
+    const fullDefaultTranslations = getTranslations(defaultLocale);
+    const clientDefaultTranslations = filterClientTranslations(fullDefaultTranslations);
+
     for (const countryKey in COUNTRIES) {
         const countryData = COUNTRIES[countryKey];
         const countryName = countryData.name;
+        const locale = countryData.locale;
+
+        const fullTranslations = getTranslations(locale);
+        const clientTranslations = filterClientTranslations(fullTranslations);
 
         console.log(`Starting fetching divisions for ${countryName}...`);
 
@@ -77,7 +112,7 @@ async function main() {
                 totalAutofixableCount += autoFixableCount;
                 totalTotalNumbers += totalNumbers;
 
-                await generateHtmlReport(countryName, subdivision, invalidNumbers, totalNumbers, countryData.locale);
+                await generateHtmlReport(countryName, subdivision, invalidNumbers, totalNumbers, locale, clientTranslations);
 
                 subdivisionsProcessed++;
             }
@@ -91,10 +126,10 @@ async function main() {
             totalNumbers: totalTotalNumbers
         });
 
-        generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, countryData.locale);
+        generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, locale, clientTranslations);
     }
 
-    generateMainIndexHtml(countryStats);
+    generateMainIndexHtml(countryStats, clientDefaultTranslations);
 
     console.log('Full build process completed successfully.');
 }
