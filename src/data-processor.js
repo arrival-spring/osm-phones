@@ -175,8 +175,6 @@ function validateNumbers(elements, countryCode) {
                         const { isInvalid, suggestedFix, autoFixable } = validationResult;
 
                         suggestedNumbersList.push(suggestedFix);
-                        // Always push suggested fixes, in case of one valid, one invalid number
-                        item.suggestedFixes.push(suggestedFix);
 
                         if (isInvalid) {
                             hasIndividualInvalidNumber = true;

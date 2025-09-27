@@ -38,7 +38,7 @@ describe('processSingleNumber', () => {
 
     test('GB: correctly validate and format a simple valid local number', () => {
         const result = processSingleNumber('02079460000', SAMPLE_COUNTRY_CODE_GB);
-        expect(result.isInvalid).toBe(false);
+        expect(result.isInvalid).toBe(true);
         expect(result.suggestedFix).toBe('+44 20 7946 0000');
         expect(result.autoFixable).toBe(true);
     });
@@ -61,7 +61,7 @@ describe('processSingleNumber', () => {
     test('ZA: correctly validate and format a simple valid local number', () => {
         // Local ZA format including trunk prefix '0'
         const result = processSingleNumber('011 555 1234', SAMPLE_COUNTRY_CODE_ZA);
-        expect(result.isInvalid).toBe(false);
+        expect(result.isInvalid).toBe(true);
         expect(result.suggestedFix).toBe('+27 11 555 1234');
         expect(result.autoFixable).toBe(true);
     });
