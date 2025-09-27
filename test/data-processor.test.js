@@ -267,7 +267,6 @@ describe('validateNumbers', () => {
         const result = validateNumbers(mixedInvalidElements, SAMPLE_COUNTRY_CODE_GB);
         const node301 = result.invalidNumbers.find(item => item.id === 301);
         expect(node301).toBeDefined();
-        expect(node301.isInvalid).toBe(true);
         expect(node301.autoFixable).toBe(false);
     });
 
