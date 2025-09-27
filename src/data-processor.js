@@ -9,6 +9,8 @@ function safeName(name) {
     return name.replace(/\s+|\//g, '-').toLowerCase();
 }
 
+function test
+
 /**
  * Determines a readable feature name from OSM tags.
  * @param {Array<Object>} item - An array of an OSM objects including allTags.
