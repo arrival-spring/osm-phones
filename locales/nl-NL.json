@@ -1,0 +1,54 @@
+{
+  "numbersChecked": "Geverifieerde nummers",
+  "invalidNumbers": "Ongeldige nummers",
+  "invalidPercentageOfTotal": "%p van totaal",
+  "fixablePercentageOfInvalid": "%p van ongeldige nummers",
+  "potentiallyFixable": "Mogelijk te corrigeren",
+
+  "calculating": "bezig met berekenen...",
+  "suggestionIssueLink": "Heeft u een suggestie of een probleem?",
+  "letMeKnowOnGitHub": "Laat het me weten op GitHub",
+
+  "editInID": "Bewerken in iD",
+  "editInJOSM": "Bewerken in JOSM",
+  "fixInJOSM": "Corrigeren in JOSM",
+  "website": "Website",
+  "suggestedFix": "Voorgestelde correctie:",
+  "phone": "Telefoon:",
+
+  "backToCountryPage": "Terug naar landenpagina",
+  "phoneNumberReport": "Telefoonnummerrapport",
+  "fixableNumbersHeader": "Te corrigeren nummers",
+  "fixableNumbersDescription": "Deze nummers lijken geldig te zijn, maar zijn onjuist geformatteerd. De voorgestelde correctie gaat ervan uit dat het inderdaad nummers voor dit land zijn. Niet alle 'automatische' correcties zijn noodzakelijk geldig, dus klik niet blindelings op alle correctielinks zonder het nummer eerst te verifiëren.",
+  "noAutoFixable": "Geen automatisch te corrigeren telefoonnummers gevonden in deze onderverdeling.",
+  "invalidNumbersHeader": "Ongeldige nummers",
+  "invalidNumbersDescription": "Deze nummers zijn op de een of andere manier ongeldig; misschien zijn ze te lang of te kort, of missen ze een netnummer. De website kan worden gebruikt om een geldig nummer te controleren, of een survey kan nodig zijn.",
+  "noInvalidNumbers": "Geen ongeldige telefoonnummers gevonden in deze onderverdeling.",
+  "invalid": "ongeldig",
+
+  "osmPhoneNumberValidation": "OSM Telefoonnummervalidatie",
+  "reportSubtitle": "Een rapport over ongeldige telefoonnummers in OpenStreetMap-gegevens voor diverse landen.",
+  "countryReports": "Landenrapporten",
+  "invalidNumbersOutOf": "%t nummers in totaal (%s mogelijk te corrigeren) zijn ongeldig",
+  "backToAllCountries": "Terug naar alle landen",
+  "reportSubtitleForCountry": "Een rapport over ongeldige telefoonnummers in OpenStreetMap-gegevens voor %c.",
+  "divisionalReports": "Rapporten per afdeling",
+  "hideEmptyDivisions": "Verberg afdelingen zonder problemen",
+  "sortBy": "Sorteren op:",
+  "invalidPercentage": "Ongeldig percentage",
+  "invalidCount": "Aantal ongeldige nummers",
+  "name": "Naam",
+  "noDivisionsFound": "Geen onderverdelingen met ongeldige nummers gevonden.",
+
+  "dataSourcedTemplate": "Gegevens verkregen op %d om %t %z (%a)",
+
+  "timeAgoJustNow": "zojuist",
+  "timeAgoError": "fout in tijdscalculatie",
+  "timeAgoMinute": "%n minuut geleden",
+  "timeAgoMinutesPlural": "%n minuten geleden",
+  "timeAgoHour": "%n uur geleden",
+  "timeAgoHoursPlural": "%n uur geleden",
+
+  "mainIndexTitle": "OSM Telefoonnummervalidatierapporten",
+  "countryReportTitle": "OSM Telefoonnummervalidatierapport - %s"
+}
