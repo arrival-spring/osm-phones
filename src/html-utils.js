@@ -75,9 +75,9 @@ function createFooter(locale = 'en-GB', translations) {
 
     // Use translation keys for static text, with fallbacks to hardcoded text
     const dataSourcedTemplate = translations['dataSourcedTemplate'] || 'Data sourced on %d at %t %z (%a)';
-    const suggestionIssueLink = translate(suggestionIssueLink, locale);
-    const letMeKnowOnGitHub = translate(letMeKnowOnGitHub);
-    const timeAgoJustNow = translate(timeAgoJustNow);
+    const suggestionIssueLink = translate('suggestionIssueLink', locale);
+    const letMeKnowOnGitHub = translate('letMeKnowOnGitHub');
+    const timeAgoJustNow = translate('timeAgoJustNow');
 
     const initialTimeAgoText = translate('calculating', locale);
     const footerText = translate('dataSourcedTemplate', locale, [formattedDate, formattedTime, 'UTC', `<span id="time-ago-display">${initialTimeAgoText}</span>`]);
