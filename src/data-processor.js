@@ -81,9 +81,17 @@ function processSingleNumber(numberStr, countryCode) {
         let normalizedParsed = '';
 
         if (phoneNumber) {
-            // The suggested fix should include the original extension if one exists.
+            // Use phoneNumber.number (E.164 format, guaranteed NO extension) 
+            // and re-parse it to get the correctly spaced 'INTERNATIONAL' format.
+            const coreNumberE164 = phoneNumber.number;
+            
+            // Re-parse the core number to get the spaced INTERNATIONAL format without the extension
+            // Note: This is required because format('INTERNATIONAL') on the original number might include the extension.
+            const coreFormatted = parsePhoneNumber(coreNumberE164).format('INTERNATIONAL');
+            
+            // Manually append the extension in the standard format (' x{ext}').
             const extension = phoneNumber.ext ? ` x${phoneNumber.ext}` : '';
-            suggestedFix = phoneNumber.format('INTERNATIONAL') + extension;
+            suggestedFix = coreFormatted + extension;
         }
 
         if (phoneNumber && phoneNumber.isValid()) {
