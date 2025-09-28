@@ -492,7 +492,7 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
  * @param {string} locale - The primary locale for the main page structure (e.g., 'en').
  * @param {Object} translations
  */
-function generateMainIndexHtml(countryStats, locale, translations) {
+async function generateMainIndexHtml(countryStats, locale, translations) {
 
     const listContent = countryStats.map(country => {
         const safeCountryName = safeName(country.name);
@@ -571,7 +571,7 @@ function generateMainIndexHtml(countryStats, locale, translations) {
     </body>
     </html>
     `;
-    fs.writeFileSync(path.join(PUBLIC_DIR, 'index.html'), htmlContent);
+    await fsPromises.writeFile(path.join(PUBLIC_DIR, 'index.html'), htmlContent);
     console.log('Main index.html generated.');
 }
 
@@ -907,7 +907,7 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
  * @param {string} locale
  * @param {Object} translations
  */
-function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, locale, translations) {
+async function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, locale, translations) {
     const htmlContent = `
     <!DOCTYPE html>
     <html lang="${locale}">
@@ -962,7 +962,7 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
     </html>
     `;
     pageFileName = path.join(PUBLIC_DIR, `${safeName(countryName)}.html`)
-    fs.writeFileSync(pageFileName, htmlContent);
+    await fsPromises.writeFile(pageFileName, htmlContent);
     console.log(`Report for ${countryName} generated at ${pageFileName}.`);
 }
 
