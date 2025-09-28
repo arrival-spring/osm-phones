@@ -1,5 +1,5 @@
 const { parsePhoneNumber } = require('libphonenumber-js');
-const {EXCLUSIONS} = require('./constants')
+const { FEATURE_TAGS, HISTORIC_AND_DISUSED_PREFIXES, EXCLUSIONS } = require('./constants');
 
 /**
  * Creates a safe, slug-like name for filenames.
@@ -11,6 +11,41 @@ function safeName(name) {
 }
 
 /**
+ * Determines if an OSM feature should be considered disused.
+ * @param {Array<Object>} item - An array of an OSM objects including allTags.
+ * @returns {boolean}
+ */
+function isDisused(item) {
+    const featureType = getFeatureType(item);
+    if (featureType) {
+        return false
+    }
+
+    for (const prefix of HISTORIC_AND_DISUSED_PREFIXES) {
+        for (const tag of FEATURE_TAGS) {
+            if (item.allTags[`${prefix}:${tag}`]) {
+                return true
+            }
+        }
+    }
+    return false
+}
+
+/**
+ * Determines a name from OSM tags or null if one cannot be determined.
+ * @param {Array<Object>} item - An array of an OSM objects including allTags.
+ * @returns {string}
+ */
+function getFeatureType(item) {
+    for (const tag of FEATURE_TAGS) {
+        if (item.allTags[tag]) {
+            return item.allTags[tag];
+        }
+    }
+    return null
+}
+
+/**
  * Determines a readable feature name from OSM tags.
  * @param {Array<Object>} item - An array of an OSM objects including allTags.
  * @returns {string}
@@ -19,18 +54,8 @@ function getFeatureTypeName(item) {
     if (item.name) {
         return `${item.name}`;
     }
-
-    const featureTags = [
-        'amenity', 'shop', 'tourism', 'leisure', 'emergency', 'building',
-        'craft', 'aeroway', 'railway', 'healthcare', 'highway', 'military',
-        'man_made', 'public_transport', 'landuse', 'barrier'];
-    let featureType = null;
-    for (const tag of featureTags) {
-        if (item.allTags[tag]) {
-            featureType = item.allTags[tag];
-            break;
-        }
-    }
+    
+    const featureType = getFeatureType(item);
 
     if (featureType) {
         const formattedType = featureType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
@@ -282,6 +307,7 @@ function validateNumbers(elements, countryCode) {
 module.exports = {
     safeName,
     validateNumbers,
+    isDisused,
     getFeatureTypeName,
     stripExtension,
     processSingleNumber,

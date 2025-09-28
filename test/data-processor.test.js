@@ -3,11 +3,47 @@ const {
     checkExclusions,
     processSingleNumber,
     validateNumbers,
-    getFeatureTypeName
+    getFeatureTypeName,
+    isDisused
 } = require('../src/data-processor');
 
 const SAMPLE_COUNTRY_CODE_GB = 'GB';
 const SAMPLE_COUNTRY_CODE_ZA = 'ZA';
+
+// =====================================================================
+// isdisused Tests
+// =====================================================================
+describe("isDisused", () => {
+    // Disused
+    test('disused object is disused', () => {
+        expect(isDisused({allTags: {'disused:amenity': 'cafe'}})).toBe(true)
+    });
+
+    test('historic object is disused', () => {
+        expect(isDisused({allTags: {'historic:amenity': 'cafe'}})).toBe(true)
+    });
+
+    test('was object is disused', () => {
+        expect(isDisused({allTags: {'was:amenity': 'cafe'}})).toBe(true)
+    });
+
+    test('abandoned object is disused', () => {
+        expect(isDisused({allTags: {'abandoned:amenity': 'cafe'}})).toBe(true)
+    });
+
+    // Not disused
+    test('regular object is not disused', () => {
+        expect(isDisused({allTags: {'amenity': 'cafe'}})).toBe(false)
+    });
+
+    test('regular object with old disused tags is not disused', () => {
+        expect(isDisused({allTags: {'amenity': 'cafe', 'was:amenity': 'place_of_worship'}})).toBe(false)
+    });
+
+    test('empty tags is not disused', () => {
+        expect(isDisused({allTags: {}})).toBe(false)
+    });
+});
 
 // =====================================================================
 // stripExtension Tests

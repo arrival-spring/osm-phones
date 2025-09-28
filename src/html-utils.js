@@ -2,7 +2,7 @@ const { promises: fsPromises } = require('fs');
 const fs = require('fs');
 const path = require('path');
 const { PUBLIC_DIR, OSM_EDITORS, ALL_EDITOR_IDS, DEFAULT_EDITORS_DESKTOP, DEFAULT_EDITORS_MOBILE } = require('./constants');
-const { safeName, getFeatureTypeName } = require('./data-processor');
+const { safeName, getFeatureTypeName, isDisused } = require('./data-processor');
 const { translate } = require('./i18n');
 
 const githubLink = "https://github.com/arrival-spring/osm-phones/"
@@ -161,12 +161,12 @@ function createFooter(locale = 'en-GB', translations) {
  * @returns {string}
  */
 function createListItem(item, locale) {
-    
+
     const josmFixBaseUrl = 'http://127.0.0.1:8111/load_object';
     const fixedNumber = item.suggestedFixes.join('; ');
     const josmEditUrl = `${josmFixBaseUrl}?objects=${item.type[0]}${item.id}`;
-    const josmFixUrl = item.autoFixable ? 
-        `${josmEditUrl}&addtags=${item.tag}=${encodeURIComponent(fixedNumber)}` : 
+    const josmFixUrl = item.autoFixable ?
+        `${josmEditUrl}&addtags=${item.tag}=${encodeURIComponent(fixedNumber)}` :
         null;
 
     // Generate buttons for ALL editors so client-side script can hide them
@@ -177,10 +177,10 @@ function createListItem(item, locale) {
         const url = editor.getEditLink(item);
         const text = editor.editInString(locale);
         const isJosm = editorId === 'josm';
-        
+
         // Use a standard target="_blank" for non-JOSM/non-GEO links
         const target = isJosm ? '' : (editorId === 'geo' ? '' : 'target="_blank"');
-        
+
         // JOSM requires an onclick handler; others use a direct href
         const href = isJosm ? '#' : url;
         const onClick = isJosm ? `onclick="openInJosm('${url}', event)"` : '';
@@ -196,23 +196,27 @@ function createListItem(item, locale) {
     }).join('\n');
 
     // Generate JOSM Fix Button (special case)
-    const josmFixButton = josmFixUrl ? 
+    const josmFixButton = josmFixUrl ?
         `<a href="#" onclick="openInJosm('${josmFixUrl}', event)" 
            data-editor-id="josm-fix"
            class="inline-flex items-center rounded-full bg-yellow-200 px-3 py-1.5 text-sm font-semibold text-yellow-800 shadow-sm hover:bg-yellow-300 transition-colors">
             ${translate('fixInJOSM', locale)}
-        </a>` : 
+        </a>` :
         '';
 
     const phoneNumber = item.invalidNumbers;
     const websiteButton = item.website ? `<a href="${item.website}" class="inline-flex items-center rounded-full bg-green-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-green-600 transition-colors" target="_blank">${translate('website', locale)}</a>` : '';
+    const disusedLabel = isDisused(item) ? `<span class="text-xs font-semibold px-2 py-1 rounded-full bg-red-200 text-red-800">${translate('disused', locale)}</span>` : '';
 
     return `
         <li class="bg-white rounded-xl shadow-md p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
             <div>
-                <h3 class="text-lg font-bold text-gray-900">
-                    <a href="${item.osmUrl}" target="_blank" rel="noopener noreferrer" class="hover:text-gray-950 underline transition-colors">${getFeatureTypeName(item)}</a>
-                </h3>
+                <div class="flex-shrink-0 flex flex-wrap items-center gap-2">
+                    <h3 class="text-lg font-bold text-gray-900">
+                        <a href="${item.osmUrl}" target="_blank" rel="noopener noreferrer" class="hover:text-gray-950 underline transition-colors">${getFeatureTypeName(item)}</a>
+                    </h3>
+                    ${disusedLabel}
+                </div>
                 <div class="grid grid-cols-[max-content,1fr] gap-x-4">
                     <div class="col-span-1">
                         <span class="font-semibold">${translate('phone', locale)}</span>

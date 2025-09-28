@@ -108,6 +108,17 @@ const COUNTRIES = {
     },
 };
 
+// Order matters: first found one is preferred
+const FEATURE_TAGS = [
+    'amenity', 'shop', 'tourism', 'leisure', 'emergency', 'building',
+    'craft', 'aeroway', 'railway', 'healthcare', 'highway', 'military',
+    'man_made', 'public_transport', 'landuse', 'barrier', 'historic'
+];
+
+const HISTORIC_AND_DISUSED_PREFIXES = [
+    'disused', 'historic', 'was', 'abandoned'
+]
+
 const OSM_EDITORS = {
     "iD": {
         getEditLink: (item) => {
@@ -171,6 +182,8 @@ module.exports = {
     PUBLIC_DIR,
     OVERPASS_API_URL,
     COUNTRIES,
+    FEATURE_TAGS,
+    HISTORIC_AND_DISUSED_PREFIXES,
     OSM_EDITORS,
     ALL_EDITOR_IDS,
     DEFAULT_EDITORS_DESKTOP,

@@ -27,6 +27,7 @@
   "invalidNumbersDescription": "Ces numéros sont tous invalides d'une manière ou d'une autre ; peut-être sont-ils trop longs ou trop courts, ou peut-être leur manque-t-il un indicatif régional. Le site web pourrait être utilisé pour vérifier un numéro valide, ou un relevé sur place pourrait être nécessaire.",
   "noInvalidNumbers": "Aucun numéro de téléphone invalide trouvé dans cette subdivision.",
   "invalid": "invalide",
+  "disused": "Hors service",
 
   "osmPhoneNumberValidation": "Validation des numéros de téléphone OSM",
   "reportSubtitle": "Un rapport sur les numéros de téléphone invalides dans les données OpenStreetMap pour divers pays.",
