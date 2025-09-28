@@ -479,9 +479,7 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
  * @param {string} locale - The primary locale for the main page structure (e.g., 'en').
  * @param {Object} translations
  */
-function generateMainIndexHtml(countryStats, locale = 'en-GB', translations) {
-
-    // We will use the 'locale' parameter (e.g., 'en') for the page structure.
+function generateMainIndexHtml(countryStats, locale, translations) {
 
     const listContent = countryStats.map(country => {
         const safeCountryName = safeName(country.name);
@@ -565,16 +563,13 @@ function generateMainIndexHtml(countryStats, locale = 'en-GB', translations) {
 }
 
 /**
- * Generates the country index page with a list of its subdivisions.
+ * Creates the renderListScript for the country index page.
  * @param {string} countryName
  * @param {Object} groupedDivisionStats
- * @param {number} totalInvalidCount
- * @param {number} totalAutofixableCount
- * @param {number} totalTotalNumbers
  * @param {string} locale
- * @param {Object} translations
+ * @returns {string}
  */
-function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, locale, translations) {
+function createRenderListScript(countryName, groupedDivisionStats, locale) {
     const safeCountryName = safeName(countryName);
 
     // --- Server-side translation of dynamic client script strings ---
@@ -591,303 +586,315 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
     };
     // -----------------------------------------------------------------
 
-    const renderListScript = `
-        <script>
-            const groupedDivisionStats = ${JSON.stringify(groupedDivisionStats)};
-            const safeCountryName = '${safeCountryName}';
-            const listContainer = document.getElementById('division-list');
-            const sortButtons = document.querySelectorAll('.sort-btn');
-            const hideEmptyCheckbox = document.getElementById('hide-empty');
-            let currentSort = 'percentage';
-            const locale = '${locale}'; 
+    return  `
+    <script>
+        const groupedDivisionStats = ${JSON.stringify(groupedDivisionStats)};
+        const safeCountryName = '${safeCountryName}';
+        const listContainer = document.getElementById('division-list');
+        const sortButtons = document.querySelectorAll('.sort-btn');
+        const hideEmptyCheckbox = document.getElementById('hide-empty');
+        let currentSort = 'percentage';
+        const locale = '${locale}'; 
 
-            // Embedded translated string literals from the server-side 'T' object
-            const T_CLIENT = {
-                invalidNumbersOutOf: \`${T.invalidNumbersOutOf}\`,
-                invalid: \`${T.invalid}\`,
-                noSubdivisionsFound: \`${T.noSubdivisionsFound}\`
+        // Embedded translated string literals from the server-side 'T' object
+        const T_CLIENT = {
+            invalidNumbersOutOf: \`${T.invalidNumbersOutOf}\`,
+            invalid: \`${T.invalid}\`,
+            noSubdivisionsFound: \`${T.noSubdivisionsFound}\`
+        };
+        
+        // Utility function for consistent number formatting
+        function formatNumber(num) {
+            // Ensure the number formatting respects the locale for grouping
+            return num.toLocaleString(locale, { 
+                useGrouping: true, 
+                minimumFractionDigits: 0, 
+                maximumFractionDigits: 0 
+            });
+        }
+        
+        // Client-side color calculation logic (duplicated for client script access)
+        function getBackgroundColor(percent) {
+            if (percent > 2) {
+                return \`hsl(0, 70%, 50%)\`;
+            }
+            const hue = ((2 - percent) / 2) * 120;
+            return \`hsl(\${hue}, 70%, 50%)\`;
+        }
+
+        // Calculates the colour for the division group header
+        function getGroupBackgroundColorClient(invalidCount, totalNumbers) {
+            if (totalNumbers === 0) return 'hsl(0, 0%, 90%)';
+            const percentage = (invalidCount / totalNumbers) * 100;
+            return getBackgroundColor(percentage);
+        }
+
+        // Pre-calculate total stats for each division group 
+        const calculatedDivisionTotals = {};
+        for (const divisionName in groupedDivisionStats) {
+            let groupInvalid = 0;
+            let groupTotal = 0;
+            let groupFixable = 0;
+            groupedDivisionStats[divisionName].forEach(stat => {
+                groupInvalid += stat.invalidCount;
+                groupTotal += stat.totalNumbers;
+                groupFixable += stat.autoFixableCount;
+            });
+            calculatedDivisionTotals[divisionName] = {
+                invalid: groupInvalid,
+                total: groupTotal,
+                fixable: groupFixable
             };
-            
-            // Utility function for consistent number formatting
-            function formatNumber(num) {
-                // Ensure the number formatting respects the locale for grouping
-                return num.toLocaleString(locale, { 
-                    useGrouping: true, 
-                    minimumFractionDigits: 0, 
-                    maximumFractionDigits: 0 
-                });
-            }
-            
-            // Client-side color calculation logic (duplicated for client script access)
-            function getBackgroundColor(percent) {
-                if (percent > 2) {
-                    return \`hsl(0, 70%, 50%)\`;
-                }
-                const hue = ((2 - percent) / 2) * 120;
-                return \`hsl(\${hue}, 70%, 50%)\`;
-            }
+        }
 
-            // Calculates the colour for the division group header
-            function getGroupBackgroundColorClient(invalidCount, totalNumbers) {
-                if (totalNumbers === 0) return 'hsl(0, 0%, 90%)';
-                const percentage = (invalidCount / totalNumbers) * 100;
-                return getBackgroundColor(percentage);
-            }
-
-            // Pre-calculate total stats for each division group 
-            const calculatedDivisionTotals = {};
-            for (const divisionName in groupedDivisionStats) {
-                let groupInvalid = 0;
-                let groupTotal = 0;
-                let groupFixable = 0;
-                groupedDivisionStats[divisionName].forEach(stat => {
-                    groupInvalid += stat.invalidCount;
-                    groupTotal += stat.totalNumbers;
-                    groupFixable += stat.autoFixableCount;
-                });
-                calculatedDivisionTotals[divisionName] = {
-                    invalid: groupInvalid,
-                    total: groupTotal,
-                    fixable: groupFixable
-                };
-            }
-
-            function updateButtonStyles() {
-                sortButtons.forEach(button => {
-                    if (button.dataset.sort === currentSort) {
-                        button.classList.add('bg-blue-500', 'text-white', 'shadow');
-                        button.classList.remove('bg-gray-200', 'text-gray-800', 'hover:bg-gray-300');
-                    } else {
-                        button.classList.remove('bg-blue-500', 'text-white', 'shadow');
-                        button.classList.add('bg-gray-200', 'text-gray-800', 'hover:bg-gray-300');
-                    }
-                });
-            }
-
-            // Function to create the collapsible icon (right-pointing arrow)
-            function createCollapseIcon() {
-                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                svg.setAttribute('class', 'h-6 w-6 transform transition-transform duration-200 group-open:rotate-90 group-hover/summary:scale-110 text-white'); 
-                svg.setAttribute('fill', 'currentColor');
-                svg.setAttribute('viewBox', '0 0 20 20');
-                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                path.setAttribute('fill-rule', 'evenodd');
-                path.setAttribute('d', 'M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z');
-                path.setAttribute('clip-rule', 'evenodd');
-                svg.appendChild(path);
-                return svg;
-            }
-
-            function renderList() {
-
-                const TARGET_LI_CLASS = 'bg-white rounded-xl shadow-lg p-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 transition-transform transform hover:scale-105';
-
-                const divisionNames = Object.keys(groupedDivisionStats);
-                const isGrouped = divisionNames.length > 1;
-
-                const percentageOptions = {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                };
-
-                // Capture current open state
-                const currentlyOpenDivisions = new Set();
-                listContainer.querySelectorAll('details').forEach(details => {
-                    if (details.open) {
-                        const divisionHeader = details.querySelector('h3');
-                        if (divisionHeader) {
-                            currentlyOpenDivisions.add(divisionHeader.textContent.trim());
-                        }
-                    }
-                });
-
-                listContainer.innerHTML = '';
-
-                for (const divisionName of divisionNames) {
-                    let sortedData = [...groupedDivisionStats[divisionName]];
-
-                    if (hideEmptyCheckbox.checked) {
-                        sortedData = sortedData.filter(division => division.invalidCount > 0);
-                    }
-
-                    if (sortedData.length > 0) {
-
-                        // --- Group Stats Calculation ---
-                        const groupStats = calculatedDivisionTotals[divisionName];
-                        const groupInvalidFormatted = formatNumber(groupStats.invalid);
-                        const groupTotalFormatted = formatNumber(groupStats.total);
-                        const groupFixableFormatted = formatNumber(groupStats.fixable); 
-
-                        const groupPercentageNumber = groupStats.total > 0 ? (groupStats.invalid / groupStats.total) * 100 : 0;
-                        const formattedGroupPercentage = groupPercentageNumber.toLocaleString(locale, percentageOptions);
-
-                        const groupBgColor = getGroupBackgroundColorClient(groupStats.invalid, groupStats.total);
-                        
-                        // Client-side substitution using the embedded template literal
-                        const groupStatsLine = T_CLIENT.invalidNumbersOutOf
-                            .replace('%i', groupInvalidFormatted)
-                            .replace('%f', groupFixableFormatted)
-                            .replace('%t', groupTotalFormatted);
-
-                        // --- End Group Stats Calculation ---
-
-                        sortedData.sort((a, b) => {
-                            if (currentSort === 'percentage') {
-                                const percentageA = a.totalNumbers > 0 ? (a.invalidCount / a.totalNumbers) : 0;
-                                const percentageB = b.totalNumbers > 0 ? (b.invalidCount / b.totalNumbers) : 0;
-                                return percentageB - percentageA;
-                            } else if (currentSort === 'invalidCount') {
-                                return b.invalidCount - a.invalidCount;
-                            } else if (currentSort === 'name') {
-                                return a.name.localeCompare(b.name);
-                            }
-                        });
-
-                        let ul;
-
-                        if (isGrouped) {
-                            // --- RENDER GROUPED ---
-                            let detailsGroup = document.createElement('details'); 
-                            detailsGroup.className = 'group mt-8 border border-gray-200 rounded-xl shadow-lg';
-
-                            // Restore open state after sort
-                            if (currentlyOpenDivisions.has(divisionName)) {
-                                detailsGroup.open = true;
-                            }
-
-                            const summaryHeader = document.createElement('summary');
-                            summaryHeader.className = 'list-none cursor-pointer p-6 flex transition-colors rounded-t-xl group/summary bg-gray-50 hover:bg-gray-100'; 
-
-                            const summaryContent = document.createElement('div');
-                            summaryContent.className = 'flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 w-full';
-
-                            const leftSide = document.createElement('div');
-                            leftSide.className = 'flex-grow flex items-center space-x-4 w-full sm:w-auto'; 
-
-                            const iconCircle = document.createElement('div'); 
-                            iconCircle.className = 'h-12 w-12 rounded-full flex-shrink-0 flex items-center justify-center';
-                            iconCircle.style.backgroundColor = groupBgColor;
-
-                            const collapseIcon = createCollapseIcon();
-                            iconCircle.appendChild(collapseIcon); 
-
-                            const divisionNameContainer = document.createElement('div');
-                            divisionNameContainer.className = 'flex-grow'; 
-
-                            const divisionHeader = document.createElement('h3');
-                            divisionHeader.className = 'text-2xl font-bold text-gray-900'; 
-                            divisionHeader.textContent = divisionName;
-
-                            const statsLine = document.createElement('p');
-                            statsLine.className = 'text-sm text-gray-500'; 
-                            // Use the dynamically generated translated string
-                            statsLine.textContent = groupStatsLine;
-
-                            divisionNameContainer.appendChild(divisionHeader);
-                            divisionNameContainer.appendChild(statsLine);
-
-                            leftSide.appendChild(iconCircle); 
-                            leftSide.appendChild(divisionNameContainer);
-
-                            const rightSide = document.createElement('div');
-                            rightSide.className = 'text-center sm:text-right flex-shrink-0 w-full sm:w-auto';
-
-                            const percentageText = document.createElement('p');
-                            percentageText.className = 'text-2xl font-bold text-gray-800';
-                            percentageText.innerHTML = \`\${formattedGroupPercentage}<span class="text-base font-normal">%</span>\`;
-
-                            const percentageLabel = document.createElement('p');
-                            percentageLabel.className = 'text-xs text-gray-500';
-                            percentageLabel.textContent = T_CLIENT.invalid; 
-
-                            rightSide.appendChild(percentageText);
-                            rightSide.appendChild(percentageLabel);
-
-                            summaryContent.appendChild(leftSide);
-                            summaryContent.appendChild(rightSide);
-
-                            summaryHeader.appendChild(summaryContent);
-
-                            detailsGroup.appendChild(summaryHeader);
-
-                            ul = document.createElement('ul'); 
-                            ul.className = 'space-y-4 p-4 border-t border-gray-200';
-
-                            detailsGroup.appendChild(ul);
-                            listContainer.appendChild(detailsGroup);
-
-                        } else {
-                            // --- RENDER FLAT LIST ---
-                            ul = listContainer; 
-                        }
-
-                        // --- LIST ITEM RENDERING (Common Logic) ---
-                        sortedData.forEach(division => {
-                            const safeDivisionName = division.name.replace(/\\s+|\\//g, '-').toLowerCase();
-                            const percentage = division.totalNumbers > 0 ? (division.invalidCount / division.totalNumbers) * 100 : 0;
-                            const validPercentage = Math.max(0, Math.min(100, percentage));
-                            const backgroundColor = getBackgroundColor(validPercentage);
-
-                            const formattedInvalidCount = formatNumber(division.invalidCount);
-                            const formattedFixableCount = formatNumber(division.autoFixableCount);
-                            const formattedTotalCount = formatNumber(division.totalNumbers);
-
-                            const percentageNumber = division.totalNumbers > 0 ? (division.invalidCount / division.totalNumbers) * 100 : 0;
-                            const formattedPercentage = percentageNumber.toLocaleString(locale, percentageOptions);
-                            
-                            // Client-side substitution using the embedded template literal
-                            const itemStatsLine = T_CLIENT.invalidNumbersOutOf
-                                .replace('%i', formattedInvalidCount)
-                                .replace('%f', formattedFixableCount)
-                                .replace('%t', formattedTotalCount);
-
-
-                            const li = document.createElement('li');
-                            li.className = TARGET_LI_CLASS;
-
-                            li.innerHTML = \`
-                                <a href="\${safeCountryName}/\${safeDivisionName}.html" class="flex-grow flex items-center space-x-4">
-                                    <div class="h-12 w-12 rounded-full flex-shrink-0" style="background-color: \${backgroundColor};"></div>
-                                    <div class="flex-grow">
-                                        <h3 class="text-xl font-bold text-gray-900">\${division.name}</h3>
-                                        <p class="text-sm text-gray-500">\${itemStatsLine}</p>
-                                    </div>
-                                </a>
-                                <div class="text-center sm:text-right">
-                                    <p class="text-2xl font-bold text-gray-800">\${formattedPercentage}<span class="text-base font-normal">%</span></p>
-                                    <p class="text-xs text-gray-500">\${T_CLIENT.invalid}</p>
-                                </div>
-                            \`;
-                            ul.appendChild(li);
-                        });
-                        // --- END LIST ITEM RENDERING ---
-                    }
-                }
-
-                if (listContainer.querySelectorAll('li').length === 0) {
-                    listContainer.innerHTML = '';
-                    const li = document.createElement('li');
-                    li.className = 'p-6 text-center text-gray-500 rounded-xl';
-                    // Use the translated fallback message
-                    li.textContent = T_CLIENT.noSubdivisionsFound;
-                    listContainer.appendChild(li);
-                }
-                updateButtonStyles();
-            }
-
+        function updateButtonStyles() {
             sortButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    currentSort = button.dataset.sort;
-                    renderList();
-                });
+                if (button.dataset.sort === currentSort) {
+                    button.classList.add('bg-blue-500', 'text-white', 'shadow');
+                    button.classList.remove('bg-gray-200', 'text-gray-800', 'hover:bg-gray-300');
+                } else {
+                    button.classList.remove('bg-blue-500', 'text-white', 'shadow');
+                    button.classList.add('bg-gray-200', 'text-gray-800', 'hover:bg-gray-300');
+                }
+            });
+        }
+
+        // Function to create the collapsible icon (right-pointing arrow)
+        function createCollapseIcon() {
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('class', 'h-6 w-6 transform transition-transform duration-200 group-open:rotate-90 group-hover/summary:scale-110 text-white'); 
+            svg.setAttribute('fill', 'currentColor');
+            svg.setAttribute('viewBox', '0 0 20 20');
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('fill-rule', 'evenodd');
+            path.setAttribute('d', 'M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z');
+            path.setAttribute('clip-rule', 'evenodd');
+            svg.appendChild(path);
+            return svg;
+        }
+
+        function renderList() {
+
+            const TARGET_LI_CLASS = 'bg-white rounded-xl shadow-lg p-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 transition-transform transform hover:scale-105';
+
+            const divisionNames = Object.keys(groupedDivisionStats);
+            const isGrouped = divisionNames.length > 1;
+
+            const percentageOptions = {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            };
+
+            // Capture current open state
+            const currentlyOpenDivisions = new Set();
+            listContainer.querySelectorAll('details').forEach(details => {
+                if (details.open) {
+                    const divisionHeader = details.querySelector('h3');
+                    if (divisionHeader) {
+                        currentlyOpenDivisions.add(divisionHeader.textContent.trim());
+                    }
+                }
             });
 
-            hideEmptyCheckbox.addEventListener('change', renderList);
+            listContainer.innerHTML = '';
 
-            renderList();
-        </script>
+            for (const divisionName of divisionNames) {
+                let sortedData = [...groupedDivisionStats[divisionName]];
+
+                if (hideEmptyCheckbox.checked) {
+                    sortedData = sortedData.filter(division => division.invalidCount > 0);
+                }
+
+                if (sortedData.length > 0) {
+
+                    // --- Group Stats Calculation ---
+                    const groupStats = calculatedDivisionTotals[divisionName];
+                    const groupInvalidFormatted = formatNumber(groupStats.invalid);
+                    const groupTotalFormatted = formatNumber(groupStats.total);
+                    const groupFixableFormatted = formatNumber(groupStats.fixable); 
+
+                    const groupPercentageNumber = groupStats.total > 0 ? (groupStats.invalid / groupStats.total) * 100 : 0;
+                    const formattedGroupPercentage = groupPercentageNumber.toLocaleString(locale, percentageOptions);
+
+                    const groupBgColor = getGroupBackgroundColorClient(groupStats.invalid, groupStats.total);
+                    
+                    // Client-side substitution using the embedded template literal
+                    const groupStatsLine = T_CLIENT.invalidNumbersOutOf
+                        .replace('%i', groupInvalidFormatted)
+                        .replace('%f', groupFixableFormatted)
+                        .replace('%t', groupTotalFormatted);
+
+                    // --- End Group Stats Calculation ---
+
+                    sortedData.sort((a, b) => {
+                        if (currentSort === 'percentage') {
+                            const percentageA = a.totalNumbers > 0 ? (a.invalidCount / a.totalNumbers) : 0;
+                            const percentageB = b.totalNumbers > 0 ? (b.invalidCount / b.totalNumbers) : 0;
+                            return percentageB - percentageA;
+                        } else if (currentSort === 'invalidCount') {
+                            return b.invalidCount - a.invalidCount;
+                        } else if (currentSort === 'name') {
+                            return a.name.localeCompare(b.name);
+                        }
+                    });
+
+                    let ul;
+
+                    if (isGrouped) {
+                        // --- RENDER GROUPED ---
+                        let detailsGroup = document.createElement('details'); 
+                        detailsGroup.className = 'group mt-8 border border-gray-200 rounded-xl shadow-lg';
+
+                        // Restore open state after sort
+                        if (currentlyOpenDivisions.has(divisionName)) {
+                            detailsGroup.open = true;
+                        }
+
+                        const summaryHeader = document.createElement('summary');
+                        summaryHeader.className = 'list-none cursor-pointer p-6 flex transition-colors rounded-t-xl group/summary bg-gray-50 hover:bg-gray-100'; 
+
+                        const summaryContent = document.createElement('div');
+                        summaryContent.className = 'flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 w-full';
+
+                        const leftSide = document.createElement('div');
+                        leftSide.className = 'flex-grow flex items-center space-x-4 w-full sm:w-auto'; 
+
+                        const iconCircle = document.createElement('div'); 
+                        iconCircle.className = 'h-12 w-12 rounded-full flex-shrink-0 flex items-center justify-center';
+                        iconCircle.style.backgroundColor = groupBgColor;
+
+                        const collapseIcon = createCollapseIcon();
+                        iconCircle.appendChild(collapseIcon); 
+
+                        const divisionNameContainer = document.createElement('div');
+                        divisionNameContainer.className = 'flex-grow'; 
+
+                        const divisionHeader = document.createElement('h3');
+                        divisionHeader.className = 'text-2xl font-bold text-gray-900'; 
+                        divisionHeader.textContent = divisionName;
+
+                        const statsLine = document.createElement('p');
+                        statsLine.className = 'text-sm text-gray-500'; 
+                        // Use the dynamically generated translated string
+                        statsLine.textContent = groupStatsLine;
+
+                        divisionNameContainer.appendChild(divisionHeader);
+                        divisionNameContainer.appendChild(statsLine);
+
+                        leftSide.appendChild(iconCircle); 
+                        leftSide.appendChild(divisionNameContainer);
+
+                        const rightSide = document.createElement('div');
+                        rightSide.className = 'text-center sm:text-right flex-shrink-0 w-full sm:w-auto';
+
+                        const percentageText = document.createElement('p');
+                        percentageText.className = 'text-2xl font-bold text-gray-800';
+                        percentageText.innerHTML = \`\${formattedGroupPercentage}<span class="text-base font-normal">%</span>\`;
+
+                        const percentageLabel = document.createElement('p');
+                        percentageLabel.className = 'text-xs text-gray-500';
+                        percentageLabel.textContent = T_CLIENT.invalid; 
+
+                        rightSide.appendChild(percentageText);
+                        rightSide.appendChild(percentageLabel);
+
+                        summaryContent.appendChild(leftSide);
+                        summaryContent.appendChild(rightSide);
+
+                        summaryHeader.appendChild(summaryContent);
+
+                        detailsGroup.appendChild(summaryHeader);
+
+                        ul = document.createElement('ul'); 
+                        ul.className = 'space-y-4 p-4 border-t border-gray-200';
+
+                        detailsGroup.appendChild(ul);
+                        listContainer.appendChild(detailsGroup);
+
+                    } else {
+                        // --- RENDER FLAT LIST ---
+                        ul = listContainer; 
+                    }
+
+                    // --- LIST ITEM RENDERING (Common Logic) ---
+                    sortedData.forEach(division => {
+                        const safeDivisionName = division.name.replace(/\\s+|\\//g, '-').toLowerCase();
+                        const percentage = division.totalNumbers > 0 ? (division.invalidCount / division.totalNumbers) * 100 : 0;
+                        const validPercentage = Math.max(0, Math.min(100, percentage));
+                        const backgroundColor = getBackgroundColor(validPercentage);
+
+                        const formattedInvalidCount = formatNumber(division.invalidCount);
+                        const formattedFixableCount = formatNumber(division.autoFixableCount);
+                        const formattedTotalCount = formatNumber(division.totalNumbers);
+
+                        const percentageNumber = division.totalNumbers > 0 ? (division.invalidCount / division.totalNumbers) * 100 : 0;
+                        const formattedPercentage = percentageNumber.toLocaleString(locale, percentageOptions);
+                        
+                        // Client-side substitution using the embedded template literal
+                        const itemStatsLine = T_CLIENT.invalidNumbersOutOf
+                            .replace('%i', formattedInvalidCount)
+                            .replace('%f', formattedFixableCount)
+                            .replace('%t', formattedTotalCount);
+
+
+                        const li = document.createElement('li');
+                        li.className = TARGET_LI_CLASS;
+
+                        li.innerHTML = \`
+                            <a href="\${safeCountryName}/\${safeDivisionName}.html" class="flex-grow flex items-center space-x-4">
+                                <div class="h-12 w-12 rounded-full flex-shrink-0" style="background-color: \${backgroundColor};"></div>
+                                <div class="flex-grow">
+                                    <h3 class="text-xl font-bold text-gray-900">\${division.name}</h3>
+                                    <p class="text-sm text-gray-500">\${itemStatsLine}</p>
+                                </div>
+                            </a>
+                            <div class="text-center sm:text-right">
+                                <p class="text-2xl font-bold text-gray-800">\${formattedPercentage}<span class="text-base font-normal">%</span></p>
+                                <p class="text-xs text-gray-500">\${T_CLIENT.invalid}</p>
+                            </div>
+                        \`;
+                        ul.appendChild(li);
+                    });
+                    // --- END LIST ITEM RENDERING ---
+                }
+            }
+
+            if (listContainer.querySelectorAll('li').length === 0) {
+                listContainer.innerHTML = '';
+                const li = document.createElement('li');
+                li.className = 'p-6 text-center text-gray-500 rounded-xl';
+                // Use the translated fallback message
+                li.textContent = T_CLIENT.noSubdivisionsFound;
+                listContainer.appendChild(li);
+            }
+            updateButtonStyles();
+        }
+
+        sortButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                currentSort = button.dataset.sort;
+                renderList();
+            });
+        });
+
+        hideEmptyCheckbox.addEventListener('change', renderList);
+
+        renderList();
+    </script>
     `;
+}
 
+/**
+ * Generates the country index page with a list of its subdivisions.
+ * @param {string} countryName
+ * @param {Object} groupedDivisionStats
+ * @param {number} totalInvalidCount
+ * @param {number} totalAutofixableCount
+ * @param {number} totalTotalNumbers
+ * @param {string} locale
+ * @param {Object} translations
+ */
+function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, locale, translations) {
     const htmlContent = `
     <!DOCTYPE html>
     <html lang="${locale}">
@@ -937,7 +944,7 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                 ${createFooter(locale, translations)}
             </div>
         </div>
-        ${renderListScript}
+        ${createRenderListScript(countryName, groupedDivisionStats, locale)}
     </body>
     </html>
     `;
