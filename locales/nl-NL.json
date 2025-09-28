@@ -19,7 +19,7 @@
   "phone": "Telefoon:",
 
   "backToCountryPage": "Terug naar landenpagina",
-  "phoneNumberReport": "Telefoonnummerrapport",
+  "phoneNumberReport": "Telefoonnummer&shy;rapport",
   "fixableNumbersHeader": "Te corrigeren nummers",
   "fixableNumbersDescription": "Deze nummers lijken geldig te zijn, maar zijn onjuist geformatteerd. De voorgestelde correctie gaat ervan uit dat het inderdaad nummers voor dit land zijn. Niet alle 'automatische' correcties zijn noodzakelijk geldig, dus klik niet blindelings op alle correctielinks zonder het nummer eerst te verifiëren.",
   "noAutoFixable": "Geen automatisch te corrigeren telefoonnummers gevonden in deze onderverdeling.",
