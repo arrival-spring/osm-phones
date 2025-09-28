@@ -1,4 +1,5 @@
 const path = require('path');
+const { translate } = require('./i18n');
 
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 const OVERPASS_API_URL = 'https://overpass-api.de/api/interpreter';
