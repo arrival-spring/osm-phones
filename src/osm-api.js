@@ -76,7 +76,7 @@ async function fetchOsmDataForDivision(division, retries = 3) {
           nwr(area.division)["phone"~".*"];
           nwr(area.division)["contact:phone"~".*"];
         );
-        out body geom;
+        out center;
     `;
 
     try {
