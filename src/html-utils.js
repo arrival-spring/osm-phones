@@ -168,6 +168,7 @@ function createListItem(item, locale) {
     const josmFixUrl = item.autoFixable ?
         `${josmEditUrl}&addtags=${item.tag}=${encodeURIComponent(fixedNumber)}` :
         null;
+    const commonButtonClass = 'inline-flex items-center rounded-full px-3 py-1.5 shadow-sm transition-colors';
 
     // Generate buttons for ALL editors so client-side script can hide them
     const editorButtons = ALL_EDITOR_IDS.map(editorId => {
@@ -188,8 +189,7 @@ function createListItem(item, locale) {
         return `
             <a href="${href}" ${target} ${onClick} 
                 data-editor-id="${editorId}"
-                class="inline-flex items-center rounded-full bg-blue-500 hover:bg-blue-600 
-                       px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition-colors">
+                class="${commonButtonClass} bg-blue-500 hover:bg-blue-600">
                 ${text}
             </a>
         `;
@@ -199,13 +199,18 @@ function createListItem(item, locale) {
     const josmFixButton = josmFixUrl ?
         `<a href="#" onclick="openInJosm('${josmFixUrl}', event)" 
             data-editor-id="josm-fix"
-            class="inline-flex items-center rounded-full bg-yellow-200 px-3 py-1.5 text-sm font-semibold text-yellow-800 shadow-sm hover:bg-yellow-300 transition-colors">
+            class="${commonButtonClass} bg-yellow-200 text-yellow-800 hover:bg-yellow-300">
             ${translate('fixInJOSM', locale)}
         </a>` :
         '';
+    const fixableLabel = item.autoFixable ?
+        `<span data-editor-id="fix-label" class="text-xs font-semibold px-2 py-1 rounded-full bg-yellow-200 text-yellow-800">${translate('fixable', locale)}</span>` :
+        '';
 
     const phoneNumber = item.invalidNumbers;
-    const websiteButton = item.website ? `<a href="${item.website}" class="inline-flex items-center rounded-full bg-green-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-green-600 transition-colors" target="_blank">${translate('website', locale)}</a>` : '';
+    const websiteButton = item.website ?
+        `<a href="${item.website}" class="${commonButtonClass} bg-green-500 text-white hover:bg-green-600" target="_blank">${translate('website', locale)}</a>` :
+        '';
     const disusedLabel = isDisused(item) ? `<span class="text-xs font-semibold px-2 py-1 rounded-full bg-red-200 text-red-800">${translate('disused', locale)}</span>` : '';
 
     return `
@@ -219,14 +224,14 @@ function createListItem(item, locale) {
                 </div>
                 <div class="grid grid-cols-[max-content,1fr] gap-x-4">
                     <div class="col-span-1">
-                        <span class="font-semibold">${translate('phone', locale)}</span>
+                        <span class="font-semibold text-sm text-gray-700">${translate('phone', locale)}</span>
                     </div>
                     <div class="col-span-1 whitespace-nowrap">
                         <span>${phoneNumber}</span>
                     </div>
                     ${item.autoFixable ? `
                     <div class="col-span-1">
-                        <span class="font-semibold">${translate('suggestedFix', locale)}</span>
+                        <span class="font-semibold text-sm text-gray-700">${translate('suggestedFix', locale)}</span>
                     </div>
                     <div class="col-span-1 whitespace-nowrap">
                         <span>${fixedNumber}</span>
@@ -235,8 +240,9 @@ function createListItem(item, locale) {
                 </div>
             </div>
             
-            <div class="flex-shrink-0 flex flex-wrap items-center gap-2">
+            <div class="flex flex-wrap gap-2 sm:justify-end text-sm font-semibold">
                 ${websiteButton}
+                ${fixableLabel}
                 ${josmFixButton}
                 ${editorButtons} 
             </div>
@@ -290,8 +296,8 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
             <header class="text-center relative"> 
                 <div class="absolute top-0 right-0">
                     <button id="settings-toggle" class="p-2 text-gray-500 hover:text-gray-900 transition-colors rounded-full" aria-label="${translate('settings', locale)}">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.785 2.83-1.785 3.256 0l.59 2.47a1 1 0 00.916.711l2.678.077c1.834.053 2.57 2.416 1.18 3.513l-2.074 1.583a1 1 0 00-.323 1.127l.59 2.47c.426 1.785-2.016 1.785-2.443 0l-.59-2.47a1 1 0 00-.916-.711l-2.678-.077c-1.834-.053-2.57-2.416-1.18-3.513l2.074-1.583a1 1 0 00.323-1.127l-.59-2.47zM15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340.274 340.274" fill="currentColor" class="h-6 w-6">
+                            <path d="M293.629,127.806l-5.795-13.739c19.846-44.856,18.53-46.189,14.676-50.08l-25.353-24.77l-2.516-2.12h-2.937 c-1.549,0-6.173,0-44.712,17.48l-14.184-5.719c-18.332-45.444-20.212-45.444-25.58-45.444h-35.765 c-5.362,0-7.446-0.006-24.448,45.606l-14.123,5.734C86.848,43.757,71.574,38.19,67.452,38.19l-3.381,0.105L36.801,65.032 c-4.138,3.891-5.582,5.263,15.402,49.425l-5.774,13.691C0,146.097,0,147.838,0,153.33v35.068c0,5.501,0,7.44,46.585,24.127 l5.773,13.667c-19.843,44.832-18.51,46.178-14.655,50.032l25.353,24.8l2.522,2.168h2.951c1.525,0,6.092,0,44.685-17.516 l14.159,5.758c18.335,45.438,20.218,45.427,25.598,45.427h35.771c5.47,0,7.41,0,24.463-45.589l14.195-5.74 c26.014,11,41.253,16.585,45.349,16.585l3.404-0.096l27.479-26.901c3.909-3.945,5.278-5.309-15.589-49.288l5.734-13.702 c46.496-17.967,46.496-19.853,46.496-25.221v-35.029C340.268,146.361,340.268,144.434,293.629,127.806z M170.128,228.474 c-32.798,0-59.504-26.187-59.504-58.364c0-32.153,26.707-58.315,59.504-58.315c32.78,0,59.43,26.168,59.43,58.315 C229.552,202.287,202.902,228.474,170.128,228.474z"/>
                         </svg>
                     </button>
                     <div id="editor-settings-menu" class="hidden absolute right-0 mt-2 bg-white rounded-lg shadow-xl z-10 text-left border border-gray-200 divide-y divide-gray-200">
@@ -434,8 +440,14 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
                 const editorId = button.dataset.editorId;
                 
                 // Special handling for the JOSM Fix button: always visible if JOSM is active
+                // Display fix label if fix button is invisible
                 if (editorId === 'josm-fix') {
-                    const isVisible = currentActiveEditors.includes('josm');
+                    const isVisible = currentActiveEditors.includes('JOSM');
+                    button.style.display = isVisible ? 'inline-flex' : 'none';
+                    return;
+                }
+                if (editorId === 'fix-label') {
+                    const isVisible = !currentActiveEditors.includes('JOSM');
                     button.style.display = isVisible ? 'inline-flex' : 'none';
                     return;
                 }
@@ -586,7 +598,7 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
     };
     // -----------------------------------------------------------------
 
-    return  `
+    return `
     <script>
         const groupedDivisionStats = ${JSON.stringify(groupedDivisionStats)};
         const safeCountryName = '${safeCountryName}';
