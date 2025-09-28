@@ -42,6 +42,7 @@
   "invalidCount": "Nombre d'invalides",
   "name": "Nom",
   "noDivisionsFound": "Aucune subdivision avec des numéros invalides n'a été trouvée.",
+  "noSubdivisionsFound": "Aucune subdivision trouvée",
 
   "dataSourcedTemplate": "Données extraites le %d à %t %z (%a)",
 

@@ -42,6 +42,7 @@
   "invalidCount": "Invalid Count",
   "name": "Name",
   "noDivisionsFound": "No municipalities with invalid numbers found.",
+  "noSubdivisionsFound": "No municipalities found",
   
   "dataSourcedTemplate": "Data sourced on %d at %t %z (%a)",
 

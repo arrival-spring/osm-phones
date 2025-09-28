@@ -33,6 +33,7 @@ const MASTER_KEYS = {
     'timeAgoError': [],
     'settings': [],
     'disused': [],
+    'noSubdivisionsFound': [],
 
     'fixableNumbersDescription': [],
     'invalidNumbersDescription': [],
