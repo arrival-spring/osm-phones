@@ -29,6 +29,18 @@ describe('stripExtension', () => {
 // =====================================================================
 // checkExclusions Tests
 // =====================================================================
+/**
+ * A mock function to simulate the output of a successful phone number parse 
+ * (from libphonenumber-js), primarily exposing the nationalNumber.
+ * * @param {string} nationalNumber - The core national number of the phone number.
+ * @param {string} countryCode - The country code (e.g., 'FR').
+ * @returns {Object} A mock phone number object.
+ */
+const mockPhoneNumber = (nationalNumber, countryCode) => ({
+    nationalNumber: nationalNumber, 
+    country: countryCode,
+});
+
 describe('checkExclusions', () => {
     
     const FR = 'FR';
