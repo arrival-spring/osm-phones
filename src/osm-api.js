@@ -1,5 +1,4 @@
 const { OVERPASS_API_URL } = require('./constants');
-const fetch = require('node-fetch');
 
 /**
  * Recursive unction to fetch admin_level=6 subdivisions from Overpass API.
@@ -10,6 +9,7 @@ const fetch = require('node-fetch');
  */
 async function fetchAdminLevels(divisionAreaId, divisionName, admin_level, retries = 3) {
     console.log(`Fetching all subdivisions for ${divisionName}...`);
+    const { default: fetch } = await import('node-fetch');
 
     const queryTimeout = 180;
 
@@ -64,6 +64,7 @@ async function fetchAdminLevels(divisionAreaId, divisionName, admin_level, retri
  */
 async function fetchOsmDataForDivision(division, retries = 3) {
     console.log(`Fetching data for division: ${division.name} (ID: ${division.id})...`);
+    const { default: fetch } = await import('node-fetch');
 
     const areaId = division.id + 3600000000;
     const queryTimeout = 600;
