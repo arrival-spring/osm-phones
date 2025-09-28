@@ -49,10 +49,10 @@
 
   "timeAgoJustNow": "zojuist",
   "timeAgoError": "fout in tijdscalculatie",
-  "timeAgoMinute": "%n minuut geleden",
-  "timeAgoMinutesPlural": "%n minuten geleden",
-  "timeAgoHour": "%n uur geleden",
-  "timeAgoHoursPlural": "%n uur geleden",
+  "timeAgoMinute": "%n&nbsp;minuut geleden",
+  "timeAgoMinutesPlural": "%n&nbsp;minuten geleden",
+  "timeAgoHour": "%n&nbsp;uur geleden",
+  "timeAgoHoursPlural": "%n&nbsp;uur geleden",
 
   "mainIndexTitle": "OSM Telefoonnummervalidatierapporten",
   "countryReportTitle": "OSM Telefoonnummervalidatierapport - %c"
