@@ -169,6 +169,7 @@ function createListItem(item, locale) {
         `${josmEditUrl}&addtags=${item.tag}=${encodeURIComponent(fixedNumber)}` :
         null;
     const commonButtonClass = 'inline-flex items-center rounded-full px-3 py-1.5 shadow-sm transition-colors';
+    const commonLabelClass = 'text-xs font-semibold inline-flex items-center px-2 py-1 rounded-full';
 
     // Generate buttons for ALL editors so client-side script can hide them
     const editorButtons = ALL_EDITOR_IDS.map(editorId => {
@@ -204,14 +205,14 @@ function createListItem(item, locale) {
         </a>` :
         '';
     const fixableLabel = item.autoFixable ?
-        `<span data-editor-id="fix-label" class="text-xs font-semibold px-2 py-1 rounded-full bg-yellow-200 text-yellow-800">${translate('fixable', locale)}</span>` :
+        `<span data-editor-id="fix-label" class="${commonLabelClass} bg-yellow-200 text-yellow-800">${translate('fixable', locale)}</span>` :
         '';
 
     const phoneNumber = item.invalidNumbers;
     const websiteButton = item.website ?
         `<a href="${item.website}" class="${commonButtonClass} bg-green-500 text-white hover:bg-green-600" target="_blank">${translate('website', locale)}</a>` :
         '';
-    const disusedLabel = isDisused(item) ? `<span class="text-xs font-semibold px-2 py-1 rounded-full bg-red-200 text-red-800">${translate('disused', locale)}</span>` : '';
+    const disusedLabel = isDisused(item) ? `<span class="${commonLabelClass} bg-red-200 text-red-800">${translate('disused', locale)}</span>` : '';
 
     return `
         <li class="bg-white rounded-xl shadow-md p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
@@ -224,14 +225,14 @@ function createListItem(item, locale) {
                 </div>
                 <div class="grid grid-cols-[max-content,1fr] gap-x-4">
                     <div class="col-span-1">
-                        <span class="font-semibold text-sm text-gray-700">${translate('phone', locale)}</span>
+                        <span class="font-semibold text-xs text-gray-700">${translate('phone', locale)}</span>
                     </div>
                     <div class="col-span-1 whitespace-nowrap">
                         <span>${phoneNumber}</span>
                     </div>
                     ${item.autoFixable ? `
                     <div class="col-span-1">
-                        <span class="font-semibold text-sm text-gray-700">${translate('suggestedFix', locale)}</span>
+                        <span class="font-semibold text-xs text-gray-700">${translate('suggestedFix', locale)}</span>
                     </div>
                     <div class="col-span-1 whitespace-nowrap">
                         <span>${fixedNumber}</span>

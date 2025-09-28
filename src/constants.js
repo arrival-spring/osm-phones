@@ -123,15 +123,15 @@ const OSM_EDITORS = {
     "iD": {
         getEditLink: (item) => {
             const baseUrl = 'https://www.openstreetmap.org/edit?editor=id';
-            return `${baseUrl}&${item.type}=${item.id}`;
+            return `${baseUrl}&${item.type}=${item.id}#map=19/${item.lat}/${item.lon}`;
         },
         editInString: (locale) => translate('editIn', locale, ["iD"]),
     },
     "Rapid": {
         getEditLink: (item) => {
-            const baseUrl = 'https://rapideditor.org/edit?map=19';
+            const baseUrl = 'https://rapideditor.org/edit#map=19';
             // Use item.type[0] for the object type prefix (n/w/r)
-            return `${baseUrl}/${item.lat}/${item.lon}&${item.type[0]}/${item.id}`;
+            return `${baseUrl}/${item.lat}/${item.lon}&id=${item.type[0]}${item.id}`;
         },
         editInString: (locale) => translate('editIn', locale, ["Rapid"]),
     },
