@@ -28,6 +28,7 @@ function isDisused(item) {
             }
         }
     }
+    return false
 }
 
 /**
