@@ -1,5 +1,6 @@
 const {
     stripExtension,
+    checkExclusions,
     processSingleNumber,
     validateNumbers,
     getFeatureTypeName

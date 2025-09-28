@@ -284,5 +284,6 @@ module.exports = {
     validateNumbers,
     getFeatureTypeName,
     stripExtension,
-    processSingleNumber
+    processSingleNumber,
+    checkExclusions
 };
