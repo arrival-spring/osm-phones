@@ -12,7 +12,7 @@ const COUNTRIES = {
         },
         countryCode: 'BE',
         // locale: 'en', // I had to pick something. It would be possible to do a code refactor to allow the user to switch languages dynamically
-        locale: 'be-NL', // need to test something
+        locale: 'nl-BE', // need to test something
         subdivisionAdminLevel: 4
     },
     'France': {
