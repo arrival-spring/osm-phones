@@ -395,8 +395,8 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
                 const isChecked = currentActiveEditors.includes(id);
                 const checkboxHtml = \`
                     <div class="flex items-center justify-between py-2 px-3">
-                        <label for="editor-${id}" class="text-sm text-gray-700 w-full text-right mr-2">${id}</label>
-                        <input id="editor-${id}" type="checkbox" data-editor-id="${id}" ${isChecked ? 'checked' : ''}
+                        <label for="editor-\${id}" class="text-sm text-gray-700 w-full text-right mr-2">\${id}</label>
+                        <input id="editor-\${id}" type="checkbox" data-editor-id="\${id}" \${isChecked ? 'checked' : ''}
                             class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 flex-shrink-0">
                     </div>
                 \`;
