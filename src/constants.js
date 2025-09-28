@@ -126,7 +126,6 @@ const OSM_EDITORS = {
             return `${baseUrl}&${item.type}=${item.id}`;
         },
         editInString: (locale) => translate('editIn', locale, ["iD"]),
-        className: 'bg-blue-500 hover:bg-blue-600'
     },
     "Rapid": {
         getEditLink: (item) => {
@@ -135,7 +134,6 @@ const OSM_EDITORS = {
             return `${baseUrl}/${item.lat}/${item.lon}&${item.type[0]}/${item.id}`;
         },
         editInString: (locale) => translate('editIn', locale, ["Rapid"]),
-        className: 'bg-indigo-500 hover:bg-indigo-600'
     },
     "JOSM": {
         getEditLink: (item) => {
@@ -144,7 +142,6 @@ const OSM_EDITORS = {
             return `${baseUrl}?objects=${item.type[0]}${item.id}`;
         },
         editInString: (locale) => translate('editIn', locale, ["JOSM"]),
-        className: 'bg-red-500 hover:bg-red-600',
         onClick: (editorId) => `fixWithJosm(OSM_EDITORS['${editorId}'].getEditLink(item), event)`
     },
     "Level0": {
@@ -153,7 +150,6 @@ const OSM_EDITORS = {
             return `${baseUrl}${item.type}/${item.id}`;
         },
         editInString: (locale) => translate('editIn', locale, ["Level0"]),
-        className: 'bg-gray-500 hover:bg-gray-600'
     },
     "Geo": {
         getEditLink: (item) => {
@@ -161,7 +157,6 @@ const OSM_EDITORS = {
             return `${baseUrl}${item.lat},${item.lon}`;
         },
         editInString: (locale) => translate('openLocation', locale),
-        className: 'bg-green-500 hover:bg-green-600'
     },
 };
 
