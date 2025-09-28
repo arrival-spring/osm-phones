@@ -28,6 +28,7 @@
   "noInvalidNumbers": "No invalid phone numbers found in this Municipality.",
   "invalid": "invalid",
   "disused": "Disused",
+  "fixable": "Fixable",
   
   "osmPhoneNumberValidation": "OSM Phone Number Validation",
   "reportSubtitle": "A report on invalid phone numbers in OpenStreetMap data for various countries.",

@@ -168,6 +168,7 @@ function createListItem(item, locale) {
     const josmFixUrl = item.autoFixable ?
         `${josmEditUrl}&addtags=${item.tag}=${encodeURIComponent(fixedNumber)}` :
         null;
+    const commonButtonClass = 'inline-flex items-center rounded-full px-3 py-1.5 shadow-sm transition-colors';
 
     // Generate buttons for ALL editors so client-side script can hide them
     const editorButtons = ALL_EDITOR_IDS.map(editorId => {
@@ -188,8 +189,7 @@ function createListItem(item, locale) {
         return `
             <a href="${href}" ${target} ${onClick} 
                 data-editor-id="${editorId}"
-                class="inline-flex items-center rounded-full bg-blue-500 hover:bg-blue-600 
-                       px-3 py-1.5 text-white shadow-sm transition-colors">
+                class="${commonButtonClass} bg-blue-500 hover:bg-blue-600">
                 ${text}
             </a>
         `;
@@ -199,16 +199,19 @@ function createListItem(item, locale) {
     const josmFixButton = josmFixUrl ?
         `<a href="#" onclick="openInJosm('${josmFixUrl}', event)" 
             data-editor-id="josm-fix"
-            class="inline-flex items-center rounded-full bg-yellow-200 px-3 py-1.5 text-yellow-800 shadow-sm hover:bg-yellow-300 transition-colors">
+            class="${commonButtonClass} bg-yellow-200 text-yellow-800 hover:bg-yellow-300">
             ${translate('fixInJOSM', locale)}
         </a>` :
         '';
+    const fixableLabel = item.autoFixable ?
+        `<span data-editor-id="fix-label" class="text-xs font-semibold px-2 py-1 rounded-full bg-yellow-200 text-yellow-800">${translate('fixable', locale)}</span>` :
+        '';
 
     const phoneNumber = item.invalidNumbers;
-    const websiteButton = item.website ? `<a href="${item.website}" class="inline-flex items-center rounded-full bg-green-500 px-3 py-1.5 text-white shadow-sm hover:bg-green-600 transition-colors" target="_blank">${translate('website', locale)}</a>` : '';
+    const websiteButton = item.website ?
+        `<a href="${item.website}" class="${commonButtonClass} bg-green-500 text-white hover:bg-green-600" target="_blank">${translate('website', locale)}</a>` :
+        '';
     const disusedLabel = isDisused(item) ? `<span class="text-xs font-semibold px-2 py-1 rounded-full bg-red-200 text-red-800">${translate('disused', locale)}</span>` : '';
-    // TODO: add this instead of JOSM fix button if fix button is invisible (already a function to hide JOSM fix button when edit button is hidden)
-    // const fixableLabel = item.autoFixable ? `<span class="text-xs font-semibold px-2 py-1 rounded-full bg-yellow-200 text-yellow-800">Fixable</span>` : '';
 
     return `
         <li class="bg-white rounded-xl shadow-md p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
@@ -239,6 +242,7 @@ function createListItem(item, locale) {
             
             <div class="flex flex-wrap gap-2 sm:justify-end text-sm font-semibold">
                 ${websiteButton}
+                ${fixableLabel}
                 ${josmFixButton}
                 ${editorButtons} 
             </div>
@@ -436,8 +440,14 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
                 const editorId = button.dataset.editorId;
                 
                 // Special handling for the JOSM Fix button: always visible if JOSM is active
+                // Display fix label if fix button is invisible
                 if (editorId === 'josm-fix') {
                     const isVisible = currentActiveEditors.includes('JOSM');
+                    button.style.display = isVisible ? 'inline-flex' : 'none';
+                    return;
+                }
+                if (editorId === 'fix-label') {
+                    const isVisible = !currentActiveEditors.includes('JOSM');
                     button.style.display = isVisible ? 'inline-flex' : 'none';
                     return;
                 }
@@ -588,7 +598,7 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
     };
     // -----------------------------------------------------------------
 
-    return  `
+    return `
     <script>
         const groupedDivisionStats = ${JSON.stringify(groupedDivisionStats)};
         const safeCountryName = '${safeCountryName}';

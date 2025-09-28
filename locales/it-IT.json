@@ -28,6 +28,7 @@
   "noInvalidNumbers": "Nessun numero di telefono non valido trovato in questa suddivisione.",
   "invalid": "non valido",
   "disused": "Fuori servizio",
+  "fixable": "Corregibile",
 
   "osmPhoneNumberValidation": "Validazione numeri di telefono OSM",
   "reportSubtitle": "Un rapporto sui numeri di telefono non validi nei dati OpenStreetMap per vari paesi.",

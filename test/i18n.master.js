@@ -34,6 +34,7 @@ const MASTER_KEYS = {
     'settings': [],
     'disused': [],
     'noSubdivisionsFound': [],
+    'fixable': [],
 
     'fixableNumbersDescription': [],
     'invalidNumbersDescription': [],

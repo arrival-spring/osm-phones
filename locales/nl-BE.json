@@ -28,6 +28,7 @@
   "noInvalidNumbers": "Geen ongeldige telefoonnummers gevonden in deze onderverdeling.",
   "invalid": "ongeldig",
   "disused": "Buiten gebruik",
+  "fixable": "Herstelbaar",
 
   "osmPhoneNumberValidation": "OSM Telefoonnummervalidatie",
   "reportSubtitle": "Een rapport over ongeldige telefoonnummers in OpenStreetMap-gegevens voor diverse landen.",
