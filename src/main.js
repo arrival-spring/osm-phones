@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { PUBLIC_DIR, COUNTRIES } = require('./constants');
-const { fetchAdminLevels: fetchAdminLevels, fetchOsmDataForDivision } = require('./osm-api');
+const { fetchAdminLevels, fetchOsmDataForDivision } = require('./osm-api');
 const { safeName, validateNumbers } = require('./data-processor');
 const {
     generateHtmlReport,

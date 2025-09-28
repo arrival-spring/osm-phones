@@ -16,7 +16,7 @@ async function fetchAdminLevels(divisionAreaId, divisionName, admin_level, retri
     const query = `
         [out:json][timeout:${queryTimeout}];
         area(${divisionAreaId})->.division;
-        rel(area.division)["admin_level"="${admin_level}"]["boundary"]["administrative"]["name"];
+        rel(area.division)["admin_level"="${admin_level}"]["boundary"="administrative"]["name"];
         out body;
     `;
 
