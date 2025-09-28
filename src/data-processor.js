@@ -16,7 +16,7 @@ function safeName(name) {
  * @returns {boolean}
  */
 function isDisused(item) {
-    featureType = getFeatureTypeNameOrNull(item);
+    const featureType = getFeatureType(item);
     if (featureType) {
         return false
     }
@@ -35,18 +35,13 @@ function isDisused(item) {
  * @param {Array<Object>} item - An array of an OSM objects including allTags.
  * @returns {string}
  */
-function getFeatureTypeNameOrNull(item) {
-    if (item.name) {
-        return `${item.name}`;
-    }
-    let featureType = null;
+function getFeatureType(item) {
     for (const tag of FEATURE_TAGS) {
         if (item.allTags[tag]) {
-            featureType = item.allTags[tag];
-            break;
+            return item.allTags[tag];
         }
     }
-    return featureType
+    return null
 }
 
 /**
@@ -55,7 +50,11 @@ function getFeatureTypeNameOrNull(item) {
  * @returns {string}
  */
 function getFeatureTypeName(item) {
-    featureType = getFeatureTypeNameOrNull(item);
+    if (item.name) {
+        return `${item.name}`;
+    }
+    
+    const featureType = getFeatureType(item);
 
     if (featureType) {
         const formattedType = featureType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
