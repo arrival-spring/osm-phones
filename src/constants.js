@@ -107,8 +107,17 @@ const COUNTRIES = {
     },
 };
 
+const EXCLUSIONS = {
+    'FR': { // France
+        '3631': { // The phone number to check (must be the core number, no country code or spaces)
+            'amenity': 'post_office',
+        },
+    },
+};
+
 module.exports = {
     PUBLIC_DIR,
     OVERPASS_API_URL,
-    COUNTRIES
+    COUNTRIES,
+    EXCLUSIONS
 };

@@ -1,4 +1,5 @@
 const { parsePhoneNumber } = require('libphonenumber-js');
+const {EXCLUSIONS} = require('./constants')
 
 /**
  * Creates a safe, slug-like name for filenames.
@@ -61,12 +62,52 @@ function stripExtension(numberStr) {
 }
 
 /**
+ * Checks if a parsed phone number matches any defined exclusions based on country 
+ * code and OSM tags.
+ * * @param {Object} phoneNumber - The parsed phone number object from libphonenumber-js.
+ * @param {string} countryCode - The country code.
+ * @param {Object} osmTags - The OpenStreetMap tags associated with the number.
+ * @returns {Object|null} - Returns an object with { isInvalid: false, autoFixable: true, suggestedFix } 
+ * if an exclusion is matched, otherwise returns null.
+ */
+function checkExclusions(phoneNumber, countryCode, osmTags) {
+    if (!phoneNumber) {
+        return null;
+    }
+    
+    const countryExclusions = EXCLUSIONS[countryCode];
+
+    if (countryExclusions) {
+        // Get the core national number without country code
+        const coreNationalNumber = phoneNumber.nationalNumber;
+        const numberExclusions = countryExclusions[coreNationalNumber];
+
+        if (numberExclusions) {
+            // Check if all required OSM tag key/value pair matches the input osmTags
+            for (const key in numberExclusions) {
+                if (numberExclusions.hasOwnProperty(key)) {
+                    if (osmTags[key] === numberExclusions[key]) {
+                        return {
+                            isInvalid: false,
+                            autoFixable: true,
+                            suggestedFix: coreNationalNumber
+                        };
+                    }
+                }
+            }
+        }
+    }
+    
+    return null;
+}
+
+/**
  * Validates a single phone number string using libphonenumber-js.
  * @param {string} numberStr - The phone number string to validate.
  * @param {string} countryCode - The country code for validation.
  * @returns {{isInvalid: boolean, suggestedFix: string, autoFixable: boolean}}
  */
-function processSingleNumber(numberStr, countryCode) {
+function processSingleNumber(numberStr, countryCode, osmTags = {}) {
     let suggestedFix = 'No fix available';
     let autoFixable = true;
     let isInvalid = false;
@@ -76,6 +117,11 @@ function processSingleNumber(numberStr, countryCode) {
 
     try {
         const phoneNumber = parsePhoneNumber(numberStr, countryCode);
+
+        const exclusionResult = checkExclusions(phoneNumber, countryCode, osmTags);
+        if (exclusionResult) {
+            return exclusionResult;
+        }
 
         // Strip the extension from the original string for normalization
         const numberToValidate = stripExtension(numberStr);
@@ -87,11 +133,11 @@ function processSingleNumber(numberStr, countryCode) {
             // Use phoneNumber.number (E.164 format, guaranteed NO extension) 
             // and re-parse it to get the correctly spaced 'INTERNATIONAL' format.
             const coreNumberE164 = phoneNumber.number;
-            
+
             // Re-parse the core number to get the spaced INTERNATIONAL format without the extension
             // Note: This is required because format('INTERNATIONAL') on the original number might include the extension.
             const coreFormatted = parsePhoneNumber(coreNumberE164).format('INTERNATIONAL');
-            
+
             // Manually append the extension in the standard format (' x{ext}').
             const extension = phoneNumber.ext ? ` x${phoneNumber.ext}` : '';
             suggestedFix = coreFormatted + extension;
@@ -186,7 +232,7 @@ function validateNumbers(elements, countryCode) {
                     numbers.forEach(numberStr => {
                         totalNumbers++;
 
-                        const validationResult = processSingleNumber(numberStr, countryCode);
+                        const validationResult = processSingleNumber(numberStr, countryCode, tags);
                         const { isInvalid, suggestedFix, autoFixable } = validationResult;
 
                         suggestedNumbersList.push(suggestedFix);
