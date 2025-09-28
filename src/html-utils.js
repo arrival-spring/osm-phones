@@ -189,7 +189,7 @@ function createListItem(item, locale) {
             <a href="${href}" ${target} ${onClick} 
                 data-editor-id="${editorId}"
                 class="inline-flex items-center rounded-full bg-blue-500 hover:bg-blue-600 
-                       px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition-colors">
+                       px-3 py-1.5 text-white shadow-sm transition-colors">
                 ${text}
             </a>
         `;
@@ -199,14 +199,16 @@ function createListItem(item, locale) {
     const josmFixButton = josmFixUrl ?
         `<a href="#" onclick="openInJosm('${josmFixUrl}', event)" 
             data-editor-id="josm-fix"
-            class="inline-flex items-center rounded-full bg-yellow-200 px-3 py-1.5 text-sm font-semibold text-yellow-800 shadow-sm hover:bg-yellow-300 transition-colors">
+            class="inline-flex items-center rounded-full bg-yellow-200 px-3 py-1.5 text-yellow-800 shadow-sm hover:bg-yellow-300 transition-colors">
             ${translate('fixInJOSM', locale)}
         </a>` :
         '';
 
     const phoneNumber = item.invalidNumbers;
-    const websiteButton = item.website ? `<a href="${item.website}" class="inline-flex items-center rounded-full bg-green-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-green-600 transition-colors" target="_blank">${translate('website', locale)}</a>` : '';
+    const websiteButton = item.website ? `<a href="${item.website}" class="inline-flex items-center rounded-full bg-green-500 px-3 py-1.5 text-white shadow-sm hover:bg-green-600 transition-colors" target="_blank">${translate('website', locale)}</a>` : '';
     const disusedLabel = isDisused(item) ? `<span class="text-xs font-semibold px-2 py-1 rounded-full bg-red-200 text-red-800">${translate('disused', locale)}</span>` : '';
+    // TODO: add this instead of JOSM fix button if fix button is invisible (already a function to hide JOSM fix button when edit button is hidden)
+    // const fixableLabel = item.autoFixable ? `<span class="text-xs font-semibold px-2 py-1 rounded-full bg-yellow-200 text-yellow-800">Fixable</span>` : '';
 
     return `
         <li class="bg-white rounded-xl shadow-md p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
@@ -219,14 +221,14 @@ function createListItem(item, locale) {
                 </div>
                 <div class="grid grid-cols-[max-content,1fr] gap-x-4">
                     <div class="col-span-1">
-                        <span class="font-semibold">${translate('phone', locale)}</span>
+                        <span class="font-semibold text-sm text-gray-700">${translate('phone', locale)}</span>
                     </div>
                     <div class="col-span-1 whitespace-nowrap">
                         <span>${phoneNumber}</span>
                     </div>
                     ${item.autoFixable ? `
                     <div class="col-span-1">
-                        <span class="font-semibold">${translate('suggestedFix', locale)}</span>
+                        <span class="font-semibold text-sm text-gray-700">${translate('suggestedFix', locale)}</span>
                     </div>
                     <div class="col-span-1 whitespace-nowrap">
                         <span>${fixedNumber}</span>
@@ -235,7 +237,7 @@ function createListItem(item, locale) {
                 </div>
             </div>
             
-            <div class="flex-shrink-0 flex flex-wrap items-center gap-2">
+            <div class="flex flex-wrap gap-2 sm:justify-end text-sm font-semibold">
                 ${websiteButton}
                 ${josmFixButton}
                 ${editorButtons} 
@@ -435,7 +437,7 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
                 
                 // Special handling for the JOSM Fix button: always visible if JOSM is active
                 if (editorId === 'josm-fix') {
-                    const isVisible = currentActiveEditors.includes('josm');
+                    const isVisible = currentActiveEditors.includes('JOSM');
                     button.style.display = isVisible ? 'inline-flex' : 'none';
                     return;
                 }
