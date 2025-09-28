@@ -49,10 +49,10 @@
 
   "timeAgoJustNow": "proprio ora",
   "timeAgoError": "errore nel calcolo del tempo",
-  "timeAgoMinute": "%n minuto fa",
-  "timeAgoMinutesPlural": "%n minuti fa",
-  "timeAgoHour": "%n ora fa",
-  "timeAgoHoursPlural": "%n ore fa",
+  "timeAgoMinute": "%n&nbsp;minuto fa",
+  "timeAgoMinutesPlural": "%n&nbsp;minuti fa",
+  "timeAgoHour": "%n&nbsp;ora fa",
+  "timeAgoHoursPlural": "%n&nbsp;ore fa",
 
   "mainIndexTitle": "Rapporti di Validazione dei Numeri di Telefono OSM",
   "countryReportTitle": "OSM Telefono nummervalidatierapport - %c"

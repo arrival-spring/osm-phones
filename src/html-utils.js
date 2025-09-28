@@ -435,7 +435,7 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
 
         function applyEditorVisibility() {
             // Find all editor buttons using the data-editor-id attribute
-            const buttons = document.querySelectorAll('[data-editor-id]'); 
+            const buttons = document.querySelectorAll(':not(input)[data-editor-id]');
             
             buttons.forEach(button => {
                 const editorId = button.dataset.editorId;
