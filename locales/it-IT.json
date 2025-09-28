@@ -42,6 +42,7 @@
   "invalidCount": "Numero di non validi",
   "name": "Nome",
   "noDivisionsFound": "Nessuna suddivisione con numeri non validi trovata.",
+  "noSubdivisionsFound": "Nessuna suddivisione trovata",
 
   "dataSourcedTemplate": "Dati ottenuti il %d alle %t %z (%a)",
 

@@ -125,7 +125,7 @@ const OSM_EDITORS = {
             const baseUrl = 'https://www.openstreetmap.org/edit?editor=id';
             return `${baseUrl}&${item.type}=${item.id}`;
         },
-        editInString: (locale) => translate('editIn', locale, "iD"),
+        editInString: (locale) => translate('editIn', locale, ["iD"]),
         className: 'bg-blue-500 hover:bg-blue-600'
     },
     "Rapid": {
@@ -134,7 +134,7 @@ const OSM_EDITORS = {
             // Use item.type[0] for the object type prefix (n/w/r)
             return `${baseUrl}/${item.lat}/${item.lon}&${item.type[0]}/${item.id}`;
         },
-        editInString: (locale) => translate('editIn', locale, "Rapid"),
+        editInString: (locale) => translate('editIn', locale, ["Rapid"]),
         className: 'bg-indigo-500 hover:bg-indigo-600'
     },
     "JOSM": {
@@ -143,7 +143,7 @@ const OSM_EDITORS = {
             // Use item.type[0] for the single-letter type prefix (n/w/r)
             return `${baseUrl}?objects=${item.type[0]}${item.id}`;
         },
-        editInString: (locale) => translate('editIn', locale, "JOSM"),
+        editInString: (locale) => translate('editIn', locale, ["JOSM"]),
         className: 'bg-red-500 hover:bg-red-600',
         onClick: (editorId) => `fixWithJosm(OSM_EDITORS['${editorId}'].getEditLink(item), event)`
     },
@@ -152,7 +152,7 @@ const OSM_EDITORS = {
             const baseUrl = 'https://level0.osmz.ru/?url=';
             return `${baseUrl}${item.type}/${item.id}`;
         },
-        editInString: (locale) => translate('editIn', locale, "Level0"),
+        editInString: (locale) => translate('editIn', locale, ["Level0"]),
         className: 'bg-gray-500 hover:bg-gray-600'
     },
     "Geo": {
@@ -167,8 +167,8 @@ const OSM_EDITORS = {
 
 const ALL_EDITOR_IDS = Object.keys(OSM_EDITORS);
 
-const DEFAULT_EDITORS_DESKTOP = ["id", "josm"];
-const DEFAULT_EDITORS_MOBILE = ["geo"];
+const DEFAULT_EDITORS_DESKTOP = ["iD", "JOSM"];
+const DEFAULT_EDITORS_MOBILE = ["Geo"];
 
 const EXCLUSIONS = {
     'FR': { // France

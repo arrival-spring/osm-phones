@@ -42,6 +42,7 @@
   "invalidCount": "Aantal ongeldige nummers",
   "name": "Naam",
   "noDivisionsFound": "Geen onderverdelingen met ongeldige nummers gevonden.",
+  "noSubdivisionsFound": "Geen onderverdelingen gevonden",
 
   "dataSourcedTemplate": "Gegevens verkregen op %d om %t %z (%a)",
 
