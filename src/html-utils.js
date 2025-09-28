@@ -1,7 +1,7 @@
 const { promises: fsPromises } = require('fs');
 const fs = require('fs');
 const path = require('path');
-const { PUBLIC_DIR } = require('./constants');
+const { PUBLIC_DIR, OSM_EDITORS, DEFAULT_EDITORS_DESKTOP, DEFAULT_EDITORS_MOBILE } = require('./constants');
 const { safeName, getFeatureTypeName } = require('./data-processor');
 const { translate } = require('./i18n');
 
@@ -161,18 +161,50 @@ function createFooter(locale = 'en-GB', translations) {
  * @returns {string}
  */
 function createListItem(item, locale) {
-    const josmBaseUrl = 'http://127.0.0.1:8111/load_object';
-    const idBaseUrl = 'https://www.openstreetmap.org/edit?editor=id&map=19/';
+    
+    const josmFixBaseUrl = 'http://127.0.0.1:8111/load_object';
+    const fixedNumber = item.suggestedFixes.join('; ');
+    const josmEditUrl = `${josmFixBaseUrl}?objects=${item.type[0]}${item.id}`;
+    const josmFixUrl = item.autoFixable ? 
+        `${josmEditUrl}&addtags=${item.tag}=${encodeURIComponent(fixedNumber)}` : 
+        null;
+
+    // Generate buttons for ALL editors so client-side script can hide them
+    const editorButtons = ALL_EDITOR_IDS.map(editorId => {
+        const editor = OSM_EDITORS[editorId];
+        if (!editor) return '';
+
+        const url = editor.getEditLink(item);
+        const text = editor.editInString(locale);
+        const isJosm = editorId === 'josm';
+        
+        // Use a standard target="_blank" for non-JOSM/non-GEO links
+        const target = isJosm ? '' : (editorId === 'geo' ? '' : 'target="_blank"');
+        
+        // JOSM requires an onclick handler; others use a direct href
+        const href = isJosm ? '#' : url;
+        const onClick = isJosm ? `onclick="openInJosm('${url}', event)"` : '';
+
+        return `
+            <a href="${href}" ${target} ${onClick} 
+               data-editor-id="${editorId}"
+               class="inline-flex items-center rounded-full ${editor.className} 
+                      px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition-colors">
+                ${text}
+            </a>
+        `;
+    }).join('\n');
+
+    // Generate JOSM Fix Button (special case)
+    const josmFixButton = josmFixUrl ? 
+        `<a href="#" onclick="openInJosm('${josmFixUrl}', event)" 
+           data-editor-id="josm-fix"
+           class="inline-flex items-center rounded-full bg-yellow-200 px-3 py-1.5 text-sm font-semibold text-yellow-800 shadow-sm hover:bg-yellow-300 transition-colors">
+            ${translate('fixInJOSM', locale)}
+        </a>` : 
+        '';
 
     const phoneNumber = item.invalidNumbers;
-    const fixedNumber = item.suggestedFixes.join('; ');
-    const idEditUrl = `${idBaseUrl}${item.lat}/${item.lon}&${item.type}=${item.id}`;
-    const josmEditUrl = `${josmBaseUrl}?objects=${item.type}${item.id}`;
-    const josmFixUrl = item.autoFixable ? `${josmEditUrl}&addtags=${item.tag}=${encodeURIComponent(fixedNumber)}` : null;
-
-    const idEditButton = `<a href="${idEditUrl}" class="inline-flex items-center rounded-full bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-colors" target="_blank">${translate('editInID', locale)}</a>`;
-    const josmEditButton = `<a href="#" onclick="fixWithJosm('${josmEditUrl}', event)" class="inline-flex items-center rounded-full bg-blue-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 transition-colors">${translate('editInJOSM', locale)}</a>`;
-    const josmFixButton = josmFixUrl ? `<a href="#" onclick="fixWithJosm('${josmFixUrl}', event)" class="inline-flex items-center rounded-full bg-yellow-200 px-3 py-1.5 text-sm font-semibold text-yello-800 shadow-sm hover:bg-yellow-300 transition-colors">${translate('fixInJOSM', locale)}</a>` : '';
     const websiteButton = item.website ? `<a href="${item.website}" class="inline-flex items-center rounded-full bg-green-500 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-green-600 transition-colors" target="_blank">${translate('website', locale)}</a>` : '';
 
     return `
@@ -202,8 +234,7 @@ function createListItem(item, locale) {
             <div class="flex-shrink-0 flex flex-wrap items-center gap-2">
                 ${websiteButton}
                 ${josmFixButton}
-                ${idEditButton}
-                ${josmEditButton}
+                ${editorButtons} 
             </div>
         </li>
     `;
@@ -234,6 +265,9 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
         manualFixNumbers.map(item => createListItem(item, locale)).join('') :
         `<li class="bg-white rounded-xl shadow-md p-6 text-center text-gray-500">${translate('noInvalidNumbers', locale)}</li>`;
 
+    // Dynamically create the list of all editor IDs for the client-side script
+    const allEditorIdsClient = JSON.stringify(ALL_EDITOR_IDS);
+
     const htmlContent = `
     <!DOCTYPE html>
     <html lang="${locale}"> 
@@ -249,7 +283,16 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
     </head>
     <body class="p-8">
         <div class="max-w-4xl mx-auto space-y-8">
-            <header class="text-center">
+            <header class="text-center relative"> 
+                <div class="absolute top-0 right-0">
+                    <button id="settings-toggle" class="p-2 text-gray-500 hover:text-gray-900 transition-colors rounded-full" aria-label="${translate('settings', locale)}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.785 2.83-1.785 3.256 0l.59 2.47a1 1 0 00.916.711l2.678.077c1.834.053 2.57 2.416 1.18 3.513l-2.074 1.583a1 1 0 00-.323 1.127l.59 2.47c.426 1.785-2.016 1.785-2.443 0l-.59-2.47a1 1 0 00-.916-.711l-2.678-.077c-1.834-.053-2.57-2.416-1.18-3.513l2.074-1.583a1 1 0 00.323-1.127l-.59-2.47z" />
+                        </svg>
+                    </button>
+                    <div id="editor-settings-menu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl z-10 p-3 space-y-2 text-left border border-gray-200">
+                        </div>
+                </div>
                 <a href="../${safeCountryName}.html" class="inline-block mb-4 text-blue-500 hover:text-blue-700 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline-block align-middle mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -279,7 +322,7 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
             </div>
         </div>
     <script>
-        function fixWithJosm(url, event) {
+        function openInJosm(url, event) {
             event.preventDefault();
             fetch(url)
                 .then(response => {
@@ -293,6 +336,131 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
                     console.error('Could not connect to JOSM Remote Control. Please ensure JOSM is running.', error);
                 });
         }
+        
+        // ----------------------------------------------------------------------------------------------------------------------
+        // CLIENT-SIDE LOGIC FOR EDITOR SETTINGS
+        // ----------------------------------------------------------------------------------------------------------------------
+
+        const ALL_EDITOR_IDS = ${allEditorIdsClient};
+        const DEFAULT_EDITORS_DESKTOP = ${JSON.stringify(DEFAULT_EDITORS_DESKTOP)};
+        const DEFAULT_EDITORS_MOBILE = ${JSON.stringify(DEFAULT_EDITORS_MOBILE)};
+        const STORAGE_KEY = 'osm_report_editors';
+
+        function isMobileView() {
+            // This checks if the viewport width is less than a common tablet/desktop breakpoint (e.g., 768px for Tailwind's 'md')
+            return window.matchMedia("(max-width: 767px)").matches;
+        }
+
+        const DEFAULT_EDITORS = isMobileView() ? DEFAULT_EDITORS_MOBILE : DEFAULT_EDITORS_DESKTOP;
+        
+        const settingsToggle = document.getElementById('settings-toggle');
+        const settingsMenu = document.getElementById('editor-settings-menu');
+        
+        let currentActiveEditors = [];
+
+        // 1. Storage & Utility Functions
+        
+        function loadSettings() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    currentActiveEditors = JSON.parse(saved);
+                    return;
+                }
+            } catch (e) {
+                console.error("Error loading settings from localStorage:", e);
+            }
+            // Fallback to defaults
+            currentActiveEditors = [...DEFAULT_EDITORS]; 
+        }
+
+        function saveSettings() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(currentActiveEditors));
+            } catch (e) {
+                console.error("Error saving settings to localStorage:", e);
+            }
+        }
+
+        // 2. UI Rendering and Event Handlers
+
+        function createSettingsCheckboxes() {
+            settingsMenu.innerHTML = ''; 
+
+            ALL_EDITOR_IDS.forEach(id => {
+                const isChecked = currentActiveEditors.includes(id);
+                const checkboxHtml = \`
+                    <div class="flex items-center">
+                        <input id="editor-\${id}" type="checkbox" data-editor-id="\${id}" \${isChecked ? 'checked' : ''}
+                            class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                        <label for="editor-\${id}" class="ml-2 text-sm text-gray-700">\${id}</label>
+                    </div>
+                \`;
+                settingsMenu.insertAdjacentHTML('beforeend', checkboxHtml);
+            });
+
+            settingsMenu.addEventListener('change', handleEditorChange);
+        }
+
+        function handleEditorChange(event) {
+            const checkbox = event.target;
+            if (checkbox.type === 'checkbox') {
+                const editorId = checkbox.dataset.editorId;
+                
+                if (checkbox.checked) {
+                    if (!currentActiveEditors.includes(editorId)) {
+                        currentActiveEditors.push(editorId);
+                    }
+                } else {
+                    currentActiveEditors = currentActiveEditors.filter(id => id !== editorId);
+                }
+                
+                saveSettings();
+                applyEditorVisibility();
+            }
+        }
+        
+        // 3. Visibility Application
+
+        function applyEditorVisibility() {
+            // Find all editor buttons using the data-editor-id attribute
+            const buttons = document.querySelectorAll('[data-editor-id]'); 
+            
+            buttons.forEach(button => {
+                const editorId = button.dataset.editorId;
+                
+                // Special handling for the JOSM Fix button: always visible if JOSM is active
+                if (editorId === 'josm-fix') {
+                    const isVisible = currentActiveEditors.includes('josm');
+                    button.style.display = isVisible ? 'inline-flex' : 'none';
+                    return;
+                }
+                
+                const isVisible = currentActiveEditors.includes(editorId);
+                button.style.display = isVisible ? 'inline-flex' : 'none';
+            });
+        }
+
+        // 4. Initialization
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSettings();
+            createSettingsCheckboxes();
+            applyEditorVisibility();
+
+            settingsToggle.addEventListener('click', (event) => {
+                settingsMenu.classList.toggle('hidden');
+                event.stopPropagation(); // Stop click from propagating to document listener
+            });
+            
+            // Close the menu if user clicks outside
+            document.addEventListener('click', (event) => {
+                if (!settingsMenu.contains(event.target) && !settingsToggle.contains(event.target)) {
+                    settingsMenu.classList.add('hidden');
+                }
+            });
+        });
+
     </script>
     </body>
     </html>
