@@ -130,14 +130,14 @@ async function main() {
             totalNumbers: totalTotalNumbers
         });
 
-        generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, locale, clientTranslations);
+        await generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, locale, clientTranslations);
 
         if (testMode) {
             break;
         }
     }
 
-    generateMainIndexHtml(countryStats, defaultLocale, clientDefaultTranslations);
+    await generateMainIndexHtml(countryStats, defaultLocale, clientDefaultTranslations);
 
     console.log('Full build process completed successfully.');
 }
