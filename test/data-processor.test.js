@@ -13,7 +13,7 @@ const SAMPLE_COUNTRY_CODE_ZA = 'ZA';
 // =====================================================================
 // isdisused Tests
 // =====================================================================
-describe("isDisused"), () => {
+describe("isDisused", () => {
     // Disused
     test('disused object is disused', () => {
         expect(isDisused({'disused:amenity': 'cafe'})).toBe(true)
@@ -43,7 +43,7 @@ describe("isDisused"), () => {
     test('empty tags is not disused', () => {
         expect(isDisused({})).toBe(false)
     });
-}
+});
 
 // =====================================================================
 // stripExtension Tests
