@@ -176,10 +176,10 @@ function createListItem(item, locale) {
 
         const url = editor.getEditLink(item);
         const text = editor.editInString(locale);
-        const isJosm = editorId === 'josm';
+        const isJosm = editorId === 'JOSM';
 
         // Use a standard target="_blank" for non-JOSM/non-GEO links
-        const target = isJosm ? '' : (editorId === 'geo' ? '' : 'target="_blank"');
+        const target = isJosm ? '' : (editorId === 'Geo' ? '' : 'target="_blank"');
 
         // JOSM requires an onclick handler; others use a direct href
         const href = isJosm ? '#' : url;
