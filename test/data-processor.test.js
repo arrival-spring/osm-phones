@@ -1,5 +1,6 @@
 const {
     stripExtension,
+    checkExclusions,
     processSingleNumber,
     validateNumbers,
     getFeatureTypeName
@@ -22,6 +23,86 @@ describe('stripExtension', () => {
 
     test('should return the original string if no extension is present', () => {
         expect(stripExtension('0800 123 4567')).toBe('0800 123 4567');
+    });
+});
+
+// =====================================================================
+// checkExclusions Tests
+// =====================================================================
+/**
+ * A mock function to simulate the output of a successful phone number parse 
+ * (from libphonenumber-js), primarily exposing the nationalNumber.
+ * * @param {string} nationalNumber - The core national number of the phone number.
+ * @param {string} countryCode - The country code (e.g., 'FR').
+ * @returns {Object} A mock phone number object.
+ */
+const mockPhoneNumber = (nationalNumber, countryCode) => ({
+    nationalNumber: nationalNumber, 
+    country: countryCode,
+});
+
+describe('checkExclusions', () => {
+    
+    const FR = 'FR';
+    const DE = 'DE'; // Non-excluded country
+    const excludedNumber = '3631';
+    const otherNumber = '1234'; // Non-excluded number
+    const requiredTags = { amenity: 'post_office' };
+    const irrelevantTags = { shop: 'bank', operator: 'La Banque Postale' };
+    const emptyTags = {};
+
+    // --- SUCCESS CASES: Should return the exclusion object ---
+
+    test('should return exclusion result when country, number, and tags match', () => {
+        const phoneNumber = mockPhoneNumber(excludedNumber, FR);
+        const expected = {
+            isInvalid: false,
+            autoFixable: true,
+            suggestedFix: excludedNumber
+        };
+        expect(checkExclusions(phoneNumber, FR, requiredTags)).toEqual(expected);
+    });
+
+    test('should return exclusion result when number and tags match, even with extra irrelevant tags', () => {
+        const phoneNumber = mockPhoneNumber(excludedNumber, FR);
+        const combinedTags = { ...requiredTags, ...irrelevantTags };
+        const expected = {
+            isInvalid: false,
+            autoFixable: true,
+            suggestedFix: excludedNumber
+        };
+        expect(checkExclusions(phoneNumber, FR, combinedTags)).toEqual(expected);
+    });
+
+    // --- FAILURE CASES: Should return null ---
+
+    test('should return null when the country code does not match', () => {
+        // 3631 is only excluded for FR, not DE
+        const phoneNumber = mockPhoneNumber(excludedNumber, DE);
+        expect(checkExclusions(phoneNumber, DE, requiredTags)).toBeNull();
+    });
+
+    test('should return null when the phone number is not excluded, even if tags and country match', () => {
+        // FR is excluded, amenity=post_office is the required tag, but the number is wrong
+        const phoneNumber = mockPhoneNumber(otherNumber, FR);
+        expect(checkExclusions(phoneNumber, FR, requiredTags)).toBeNull();
+    });
+
+    test('should return null when the required OSM tag value is incorrect', () => {
+        // Correct country and number, but the amenity tag is 'bank' instead of 'post_office'
+        const phoneNumber = mockPhoneNumber(excludedNumber, FR);
+        expect(checkExclusions(phoneNumber, FR, irrelevantTags)).toBeNull();
+    });
+
+    test('should return null when the required OSM tag is missing (empty tags)', () => {
+        // Correct country and number, but no tags are passed
+        const phoneNumber = mockPhoneNumber(excludedNumber, FR);
+        expect(checkExclusions(phoneNumber, FR, emptyTags)).toBeNull();
+    });
+    
+    test('should return null when no phoneNumber object is provided', () => {
+        // Should handle the case where parsePhoneNumber failed and returned null
+        expect(checkExclusions(null, FR, requiredTags)).toBeNull();
     });
 });
 

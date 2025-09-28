@@ -159,6 +159,14 @@ const ALL_EDITOR_IDS = Object.keys(OSM_EDITORS);
 const DEFAULT_EDITORS_DESKTOP = ["id", "josm"];
 const DEFAULT_EDITORS_MOBILE = ["geo"];
 
+const EXCLUSIONS = {
+    'FR': { // France
+        '3631': { // The phone number to check (must be the core number, no country code or spaces)
+            'amenity': 'post_office',
+        },
+    },
+};
+
 module.exports = {
     PUBLIC_DIR,
     OVERPASS_API_URL,
@@ -166,5 +174,6 @@ module.exports = {
     OSM_EDITORS,
     ALL_EDITOR_IDS,
     DEFAULT_EDITORS_DESKTOP,
-    DEFAULT_EDITORS_MOBILE
+    DEFAULT_EDITORS_MOBILE,
+    EXCLUSIONS
 };
