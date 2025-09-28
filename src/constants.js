@@ -6,12 +6,12 @@ const OVERPASS_API_URL = 'https://overpass-api.de/api/interpreter';
 
 const COUNTRIES = {
     'Belgium': {
-        name: 'Belgium',
+        name: 'België / Belgique / Belgien',
         divisions: {
             'Belgium': 3600937244,
         },
         countryCode: 'BE',
-        locale: 'fr-BE', // I had to pick one. It would be possible to do a code refactor to allow the user to switch languages dynamically
+        locale: 'en', // I had to pick something. It would be possible to do a code refactor to allow the user to switch languages dynamically
         subdivisionAdminLevel: 4
     },
     'France': {
@@ -36,7 +36,7 @@ const COUNTRIES = {
         subdivisionAdminLevel: 6
     },
     'Italy': {
-        name: 'Italy',
+        name: 'Italia',
         divisions: {
             "Centro": 3617518200,
             "Isole": 3617514223,
@@ -58,7 +58,7 @@ const COUNTRIES = {
     //     subdivisionAdminLevel: 5
     // },
     'Netherlands': {
-        name: 'Netherlands',
+        name: 'Nederland',
         divisions: {
             "Drenthe": 3600047540,
             "Flevoland": 3600047407,
