@@ -21,8 +21,7 @@ const CLIENT_KEYS = [
 ];
 
 const BUILD_TYPE = process.env.BUILD_TYPE;
-// const testMode = BUILD_TYPE === 'simplified';
-const testMode = true
+const testMode = BUILD_TYPE === 'simplified';
 
 /**
  * Filters the full translations object to include only keys needed by the client.
