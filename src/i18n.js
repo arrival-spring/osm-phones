@@ -39,6 +39,8 @@ function translate(key, locale, args = []) {
     } else if ((key === 'reportSubtitleForCountry' || key === 'countryReportTitle') && args.length === 1) {
         // Positional replacement: %c is country name
         output = output.replace('%c', args[0]);
+    } else if ((key === 'editIn') && args.length === 1) {
+        output = output.replace('%e', args[0]);
     }
 
     // Handle Time Ago templates (using %n)

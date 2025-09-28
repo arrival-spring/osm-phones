@@ -1,4 +1,5 @@
 const path = require('path');
+const { translate } = require('./i18n');
 
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 const OVERPASS_API_URL = 'https://overpass-api.de/api/interpreter';
@@ -118,10 +119,74 @@ const HISTORIC_AND_DISUSED_PREFIXES = [
     'disused', 'historic', 'was', 'abandoned'
 ]
 
+const OSM_EDITORS = {
+    "iD": {
+        getEditLink: (item) => {
+            const baseUrl = 'https://www.openstreetmap.org/edit?editor=id';
+            return `${baseUrl}&${item.type}=${item.id}`;
+        },
+        editInString: (locale) => translate('editIn', locale, "iD"),
+        className: 'bg-blue-500 hover:bg-blue-600'
+    },
+    "Rapid": {
+        getEditLink: (item) => {
+            const baseUrl = 'https://rapideditor.org/edit?map=19';
+            // Use item.type[0] for the object type prefix (n/w/r)
+            return `${baseUrl}/${item.lat}/${item.lon}&${item.type[0]}/${item.id}`;
+        },
+        editInString: (locale) => translate('editIn', locale, "Rapid"),
+        className: 'bg-indigo-500 hover:bg-indigo-600'
+    },
+    "JOSM": {
+        getEditLink: (item) => {
+            const baseUrl = 'http://127.0.0.1:8111/load_object';
+            // Use item.type[0] for the single-letter type prefix (n/w/r)
+            return `${baseUrl}?objects=${item.type[0]}${item.id}`;
+        },
+        editInString: (locale) => translate('editIn', locale, "JOSM"),
+        className: 'bg-red-500 hover:bg-red-600',
+        onClick: (editorId) => `fixWithJosm(OSM_EDITORS['${editorId}'].getEditLink(item), event)`
+    },
+    "Level0": {
+        getEditLink: (item) => {
+            const baseUrl = 'https://level0.osmz.ru/?url=';
+            return `${baseUrl}${item.type}/${item.id}`;
+        },
+        editInString: (locale) => translate('editIn', locale, "Level0"),
+        className: 'bg-gray-500 hover:bg-gray-600'
+    },
+    "Geo": {
+        getEditLink: (item) => {
+            const baseUrl = 'geo:';
+            return `${baseUrl}${item.lat},${item.lon}`;
+        },
+        editInString: (locale) => translate('openLocation', locale),
+        className: 'bg-green-500 hover:bg-green-600'
+    },
+};
+
+const ALL_EDITOR_IDS = Object.keys(OSM_EDITORS);
+
+const DEFAULT_EDITORS_DESKTOP = ["id", "josm"];
+const DEFAULT_EDITORS_MOBILE = ["geo"];
+
+const EXCLUSIONS = {
+    'FR': { // France
+        '3631': { // The phone number to check (must be the core number, no country code or spaces)
+            'amenity': 'post_office',
+        },
+    },
+};
+
 module.exports = {
     PUBLIC_DIR,
     OVERPASS_API_URL,
     COUNTRIES,
     FEATURE_TAGS,
-    HISTORIC_AND_DISUSED_PREFIXES
+    HISTORIC_AND_DISUSED_PREFIXES,
+    OSM_EDITORS,
+    ALL_EDITOR_IDS,
+    DEFAULT_EDITORS_DESKTOP,
+    DEFAULT_EDITORS_MOBILE,
+    EXCLUSIONS
 };

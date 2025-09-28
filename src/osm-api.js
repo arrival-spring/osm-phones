@@ -16,7 +16,7 @@ async function fetchAdminLevels(divisionAreaId, divisionName, admin_level, retri
     const query = `
         [out:json][timeout:${queryTimeout}];
         area(${divisionAreaId})->.division;
-        rel(area.division)["admin_level"="${admin_level}"]["name"];
+        rel(area.division)["admin_level"="${admin_level}"]["boundary"]["administrative"]["name"];
         out body;
     `;
 
@@ -76,7 +76,7 @@ async function fetchOsmDataForDivision(division, retries = 3) {
           nwr(area.division)["phone"~".*"];
           nwr(area.division)["contact:phone"~".*"];
         );
-        out body geom;
+        out center;
     `;
 
     try {

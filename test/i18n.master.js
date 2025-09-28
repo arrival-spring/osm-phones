@@ -6,8 +6,7 @@ const MASTER_KEYS = {
     'calculating': [],
     'suggestionIssueLink': [],
     'letMeKnowOnGitHub': [],
-    'editInID': [],
-    'editInJOSM': [],
+    'openLocation': [],
     'fixInJOSM': [],
     'website': [],
     'suggestedFix': [],
@@ -32,11 +31,14 @@ const MASTER_KEYS = {
     'noInvalidNumbers': [],
     'timeAgoJustNow': [],
     'timeAgoError': [],
+    'settings': [],
 
     'fixableNumbersDescription': [],
     'invalidNumbersDescription': [],
 
     // --- Keys with Required Placeholders ---
+    'editIn': ['%e'],
+
     'invalidPercentageOfTotal': ['%p'],
     'fixablePercentageOfInvalid': ['%p'],
 
