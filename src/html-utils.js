@@ -287,7 +287,8 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>${translate('countryReportTitle', locale, [countryName])}</title>
         ${favicon}
-        <link href="../styles.css" rel="stylesheet">
+        <!-- <link href="../styles.css" rel="stylesheet"> -->
+        <script src="https://cdn.tailwindcss.com"></script>
         <style>
             body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
         </style>
@@ -545,7 +546,8 @@ function generateMainIndexHtml(countryStats, locale, translations) {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>${translate('mainIndexTitle', locale)}</title>
         ${favicon}
-        <link href="./styles.css" rel="stylesheet">
+        <!-- <link href="./styles.css" rel="stylesheet"> -->
+        <script src="https://cdn.tailwindcss.com"></script>
         <style>
             body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
         </style>
@@ -916,7 +918,8 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>${translate('countryReportTitle', locale, [countryName])}</title>
         ${favicon}
-        <link href="./styles.css" rel="stylesheet">
+        <!-- <link href="./styles.css" rel="stylesheet"> -->
+        <script src="https://cdn.tailwindcss.com"></script>
         <style>
             body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
         </style>
@@ -942,7 +945,7 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                             <input type="checkbox" id="hide-empty" checked class="h-4 w-4 rounded text-blue-600 focus:ring-blue-500 border-gray-300">
                             <label for="hide-empty" class="ml-2 text-sm font-medium text-gray-700">${translate('hideEmptyDivisions', locale)}</label>
                         </div>
-                        <div class="flex flex-wrap items-center sm:justify-end space-x-2 space-y-2">
+                        <div class="flex flex-wrap items-center justify-end space-x-2 space-y-2">
                             <span class="mr-2 text-sm font-medium text-gray-700">${translate('sortBy', locale)}</span>
                             <button id="sort-percentage" data-sort="percentage" class="sort-btn px-4 py-2 rounded-md text-sm font-medium transition-colors">${translate('invalidPercentage', locale)}</button>
                             <button id="sort-invalid" data-sort="invalidCount" class="sort-btn px-4 py-2 rounded-md text-sm font-medium transition-colors">${translate('invalidCount', locale)}</button>
