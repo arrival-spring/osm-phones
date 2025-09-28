@@ -940,7 +940,7 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
                 ${createFooter(locale, translations)}
             </div>
         </div>
-        ${createRenderListScript(country, groupedDivisionStats, locale)}
+        ${createRenderListScript(countryName, groupedDivisionStats, locale)}
     </body>
     </html>
     `;
