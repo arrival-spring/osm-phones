@@ -1,4 +1,5 @@
 const { parsePhoneNumber } = require('libphonenumber-js');
+const { FEATURE_TAGS, HISTORIC_AND_DISUSED_PREFIXES } = require('./constants');
 
 /**
  * Creates a safe, slug-like name for filenames.
@@ -10,26 +11,51 @@ function safeName(name) {
 }
 
 /**
- * Determines a readable feature name from OSM tags.
+ * Determines if an OSM feature should be considered disused.
+ * @param {Array<Object>} item - An array of an OSM objects including allTags.
+ * @returns {boolean}
+ */
+function isDisused(item) {
+    featureType = getFeatureTypeNameOrNull(item);
+    if (featureType) {
+        return false
+    }
+
+    for (const prefix of HISTORIC_AND_DISUSED_PREFIXES) {
+        for (const tag of FEATURE_TAGS) {
+            if (item.allTags[`${prefix}:${tag}`]) {
+                return true
+            }
+        }
+    }
+}
+
+/**
+ * Determines a name from OSM tags or null if one cannot be determined.
  * @param {Array<Object>} item - An array of an OSM objects including allTags.
  * @returns {string}
  */
-function getFeatureTypeName(item) {
+function getFeatureTypeNameOrNull(item) {
     if (item.name) {
         return `${item.name}`;
     }
-
-    const featureTags = [
-        'amenity', 'shop', 'tourism', 'leisure', 'emergency', 'building',
-        'craft', 'aeroway', 'railway', 'healthcare', 'highway', 'military',
-        'man_made', 'public_transport', 'landuse', 'barrier'];
     let featureType = null;
-    for (const tag of featureTags) {
+    for (const tag of FEATURE_TAGS) {
         if (item.allTags[tag]) {
             featureType = item.allTags[tag];
             break;
         }
     }
+    return featureType
+}
+
+/**
+ * Determines a readable feature name from OSM tags.
+ * @param {Array<Object>} item - An array of an OSM objects including allTags.
+ * @returns {string}
+ */
+function getFeatureTypeName(item) {
+    featureType = getFeatureTypeNameOrNull(item);
 
     if (featureType) {
         const formattedType = featureType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
@@ -87,11 +113,11 @@ function processSingleNumber(numberStr, countryCode) {
             // Use phoneNumber.number (E.164 format, guaranteed NO extension) 
             // and re-parse it to get the correctly spaced 'INTERNATIONAL' format.
             const coreNumberE164 = phoneNumber.number;
-            
+
             // Re-parse the core number to get the spaced INTERNATIONAL format without the extension
             // Note: This is required because format('INTERNATIONAL') on the original number might include the extension.
             const coreFormatted = parsePhoneNumber(coreNumberE164).format('INTERNATIONAL');
-            
+
             // Manually append the extension in the standard format (' x{ext}').
             const extension = phoneNumber.ext ? ` x${phoneNumber.ext}` : '';
             suggestedFix = coreFormatted + extension;
