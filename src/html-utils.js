@@ -280,7 +280,7 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>${translate('countryReportTitle', locale, [countryName])}</title>
         ${favicon}
-        <link href="../styles.css" rel="stylesheet">
+        <script src="https://cdn.tailwindcss.com"></script>
         <style>
             body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
         </style>
@@ -532,7 +532,7 @@ function generateMainIndexHtml(countryStats, locale, translations) {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>${translate('mainIndexTitle', locale)}</title>
         ${favicon}
-        <link href="./styles.css" rel="stylesheet">
+        <script src="https://cdn.tailwindcss.com"></script>
         <style>
             body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
         </style>
@@ -903,7 +903,7 @@ function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvali
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>${translate('countryReportTitle', locale, [countryName])}</title>
         ${favicon}
-        <link href="./styles.css" rel="stylesheet">
+        <script src="https://cdn.tailwindcss.com"></script>
         <style>
             body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
         </style>

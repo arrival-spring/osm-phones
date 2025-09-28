@@ -5,15 +5,15 @@ const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 const OVERPASS_API_URL = 'https://overpass-api.de/api/interpreter';
 
 const COUNTRIES = {
-    'Belgium': {
-        name: 'België / Belgique / Belgien',
-        divisions: {
-            'Belgium': 3600937244,
-        },
-        countryCode: 'BE',
-        locale: 'en', // I had to pick something. It would be possible to do a code refactor to allow the user to switch languages dynamically
-        subdivisionAdminLevel: 4
-    },
+    // 'Belgium': {
+    //     name: 'België / Belgique / Belgien',
+    //     divisions: {
+    //         'Belgium': 3600937244,
+    //     },
+    //     countryCode: 'BE',
+    //     locale: 'en', // I had to pick something. It would be possible to do a code refactor to allow the user to switch languages dynamically
+    //     subdivisionAdminLevel: 4
+    // },
     'France': {
         name: 'France',
         divisions: {
