@@ -9,8 +9,9 @@
   "suggestionIssueLink": "Got a suggestion or an issue?",
   "letMeKnowOnGitHub": "Let me know on GitHub",
   
-  "editInID": "Edit in iD",
-  "editInJOSM": "Edit in JOSM",
+  "settings": "settings",
+  
+  "editIn": "Edit in %e",
   "fixInJOSM": "Fix in JOSM",
   "website": "Website",
   "suggestedFix": "Suggested fix:",

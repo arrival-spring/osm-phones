@@ -8,9 +8,10 @@
   "calculating": "bezig met berekenen...",
   "suggestionIssueLink": "Heeft u een suggestie of een probleem?",
   "letMeKnowOnGitHub": "Laat het me weten op GitHub",
+  
+  "settings": "instellingen",
 
-  "editInID": "Bewerken in iD",
-  "editInJOSM": "Bewerken in JOSM",
+  "editIn": "Bewerken in %e",
   "fixInJOSM": "Corrigeren in JOSM",
   "website": "Website",
   "suggestedFix": "Voorgestelde correctie:",

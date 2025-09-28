@@ -8,9 +8,10 @@
   "calculating": "calcolo in corso...",
   "suggestionIssueLink": "Hai un suggerimento o un problema?",
   "letMeKnowOnGitHub": "Segnalamelo su GitHub",
+  
+  "settings": "impostazioni",
 
-  "editInID": "Modifica in iD",
-  "editInJOSM": "Modifica in JOSM",
+  "editIn": "Modifica in %e",
   "fixInJOSM": "Correggi in JOSM",
   "website": "Sito web",
   "suggestedFix": "Correzione suggerita:",
@@ -50,5 +51,5 @@
   "timeAgoHoursPlural": "%n ore fa",
 
   "mainIndexTitle": "Rapporti di Validazione dei Numeri di Telefono OSM",
-  "countryReportTitle": "Rapporto di Validazione Numeri di Telefono OSM - %c"
+  "countryReportTitle": "OSM Telefono nummervalidatierapport - %c"
 }
