@@ -1,7 +1,7 @@
 const { promises: fsPromises } = require('fs');
 const fs = require('fs');
 const path = require('path');
-const { PUBLIC_DIR, OSM_EDITORS, DEFAULT_EDITORS_DESKTOP, DEFAULT_EDITORS_MOBILE } = require('./constants');
+const { PUBLIC_DIR, OSM_EDITORS, ALL_EDITOR_IDS, DEFAULT_EDITORS_DESKTOP, DEFAULT_EDITORS_MOBILE } = require('./constants');
 const { safeName, getFeatureTypeName } = require('./data-processor');
 const { translate } = require('./i18n');
 
