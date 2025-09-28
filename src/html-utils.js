@@ -187,9 +187,9 @@ function createListItem(item, locale) {
 
         return `
             <a href="${href}" ${target} ${onClick} 
-               data-editor-id="${editorId}"
-               class="inline-flex items-center rounded-full bg-blue-500 hover:bg-blue-600 
-                      px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition-colors">
+                data-editor-id="${editorId}"
+                class="inline-flex items-center rounded-full bg-blue-500 hover:bg-blue-600 
+                       px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition-colors">
                 ${text}
             </a>
         `;
@@ -198,8 +198,8 @@ function createListItem(item, locale) {
     // Generate JOSM Fix Button (special case)
     const josmFixButton = josmFixUrl ?
         `<a href="#" onclick="openInJosm('${josmFixUrl}', event)" 
-           data-editor-id="josm-fix"
-           class="inline-flex items-center rounded-full bg-yellow-200 px-3 py-1.5 text-sm font-semibold text-yellow-800 shadow-sm hover:bg-yellow-300 transition-colors">
+            data-editor-id="josm-fix"
+            class="inline-flex items-center rounded-full bg-yellow-200 px-3 py-1.5 text-sm font-semibold text-yellow-800 shadow-sm hover:bg-yellow-300 transition-colors">
             ${translate('fixInJOSM', locale)}
         </a>` :
         '';
@@ -210,7 +210,7 @@ function createListItem(item, locale) {
 
     return `
         <li class="bg-white rounded-xl shadow-md p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
-            <div>
+            <div class="min-w-0">
                 <div class="flex-shrink-0 flex flex-wrap items-center gap-2">
                     <h3 class="text-lg font-bold text-gray-900">
                         <a href="${item.osmUrl}" target="_blank" rel="noopener noreferrer" class="hover:text-gray-950 underline transition-colors">${getFeatureTypeName(item)}</a>
@@ -221,14 +221,14 @@ function createListItem(item, locale) {
                     <div class="col-span-1">
                         <span class="font-semibold">${translate('phone', locale)}</span>
                     </div>
-                    <div class="col-span-1">
+                    <div class="col-span-1 whitespace-nowrap">
                         <span>${phoneNumber}</span>
                     </div>
                     ${item.autoFixable ? `
                     <div class="col-span-1">
                         <span class="font-semibold">${translate('suggestedFix', locale)}</span>
                     </div>
-                    <div class="col-span-1">
+                    <div class="col-span-1 whitespace-nowrap">
                         <span>${fixedNumber}</span>
                     </div>
                     ` : ''}
@@ -291,10 +291,10 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
                 <div class="absolute top-0 right-0">
                     <button id="settings-toggle" class="p-2 text-gray-500 hover:text-gray-900 transition-colors rounded-full" aria-label="${translate('settings', locale)}">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.785 2.83-1.785 3.256 0l.59 2.47a1 1 0 00.916.711l2.678.077c1.834.053 2.57 2.416 1.18 3.513l-2.074 1.583a1 1 0 00-.323 1.127l.59 2.47c.426 1.785-2.016 1.785-2.443 0l-.59-2.47a1 1 0 00-.916-.711l-2.678-.077c-1.834-.053-2.57-2.416-1.18-3.513l2.074-1.583a1 1 0 00.323-1.127l-.59-2.47z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.785 2.83-1.785 3.256 0l.59 2.47a1 1 0 00.916.711l2.678.077c1.834.053 2.57 2.416 1.18 3.513l-2.074 1.583a1 1 0 00-.323 1.127l.59 2.47c.426 1.785-2.016 1.785-2.443 0l-.59-2.47a1 1 0 00-.916-.711l-2.678-.077c-1.834-.053-2.57-2.416-1.18-3.513l2.074-1.583a1 1 0 00.323-1.127l-.59-2.47zM15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
                     </button>
-                    <div id="editor-settings-menu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl z-10 p-3 space-y-2 text-left border border-gray-200">
+                    <div id="editor-settings-menu" class="hidden absolute right-0 mt-2 bg-white rounded-lg shadow-xl z-10 text-left border border-gray-200 divide-y divide-gray-200">
                         </div>
                 </div>
                 <a href="../${safeCountryName}.html" class="inline-block mb-4 text-blue-500 hover:text-blue-700 transition-colors">
@@ -362,7 +362,7 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
         
         let currentActiveEditors = [];
 
-        // 1. Storage & Utility Functions
+        // Storage & Utility Functions
         
         function loadSettings() {
             try {
@@ -394,10 +394,10 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
             ALL_EDITOR_IDS.forEach(id => {
                 const isChecked = currentActiveEditors.includes(id);
                 const checkboxHtml = \`
-                    <div class="flex items-center">
-                        <input id="editor-\${id}" type="checkbox" data-editor-id="\${id}" \${isChecked ? 'checked' : ''}
-                            class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-                        <label for="editor-\${id}" class="ml-2 text-sm text-gray-700">\${id}</label>
+                    <div class="flex items-center justify-between py-2 px-3">
+                        <label for="editor-${id}" class="text-sm text-gray-700 w-full text-right mr-2">${id}</label>
+                        <input id="editor-${id}" type="checkbox" data-editor-id="${id}" ${isChecked ? 'checked' : ''}
+                            class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 flex-shrink-0">
                     </div>
                 \`;
                 settingsMenu.insertAdjacentHTML('beforeend', checkboxHtml);
