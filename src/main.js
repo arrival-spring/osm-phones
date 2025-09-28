@@ -20,6 +20,9 @@ const CLIENT_KEYS = [
     'dataSourcedTemplate'
 ];
 
+const BUILD_TYPE = process.env.BUILD_TYPE;
+const testMode = BUILD_TYPE === 'simplified';
+
 /**
  * Filters the full translations object to include only keys needed by the client.
  * @param {Object} fullTranslations - The complete dictionary for a locale.
@@ -87,12 +90,7 @@ async function main() {
 
             console.log(`Processing phone numbers for ${uniqueSubdivisions.length} subdivisions in ${divisionName}.`);
 
-            // Testing: only get one subdivisions from each main division for now
-            let subdivisionsProcessed = 0;
             for (const subdivision of uniqueSubdivisions) {
-                // if (subdivisionsProcessed >= 2) {
-                //     break;
-                // }
 
                 const elements = await fetchOsmDataForDivision(subdivision);
                 const { invalidNumbers, totalNumbers } = validateNumbers(elements, countryData.countryCode);
@@ -114,7 +112,13 @@ async function main() {
 
                 await generateHtmlReport(countryName, subdivision, invalidNumbers, totalNumbers, locale, clientTranslations);
 
-                subdivisionsProcessed++;
+                // Do one subdivision for one division in one country in test mode
+                if (testMode) {
+                    break;
+                }
+            }
+            if (testMode) {
+                break;
             }
         }
 
@@ -127,6 +131,10 @@ async function main() {
         });
 
         generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, locale, clientTranslations);
+
+        if (testMode) {
+            break;
+        }
     }
 
     generateMainIndexHtml(countryStats, defaultLocale, clientDefaultTranslations);
