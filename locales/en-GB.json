@@ -11,6 +11,7 @@
 
   "settings": "settings",
 
+  "openLocation": "Open location",
   "editIn": "Edit in %e",
   "fixInJOSM": "Fix in JOSM",
   "website": "Website",

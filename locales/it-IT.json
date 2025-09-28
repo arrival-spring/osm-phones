@@ -11,6 +11,7 @@
   
   "settings": "impostazioni",
 
+  "openLocation": "Apri posizione",
   "editIn": "Modifica in %e",
   "fixInJOSM": "Correggi in JOSM",
   "website": "Sito web",
