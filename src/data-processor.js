@@ -307,6 +307,7 @@ function validateNumbers(elements, countryCode) {
 module.exports = {
     safeName,
     validateNumbers,
+    isDisused,
     getFeatureTypeName,
     stripExtension,
     processSingleNumber,

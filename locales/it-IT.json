@@ -27,6 +27,7 @@
   "invalidNumbersDescription": "Questi numeri sono tutti non validi in qualche modo: forse sono troppo lunghi o troppo corti, o forse manca un prefisso. Il sito web può essere utilizzato per verificare un numero valido, oppure potrebbe essere necessario un rilievo sul posto.",
   "noInvalidNumbers": "Nessun numero di telefono non valido trovato in questa suddivisione.",
   "invalid": "non valido",
+  "disused": "Fuori servizio",
 
   "osmPhoneNumberValidation": "Validazione numeri di telefono OSM",
   "reportSubtitle": "Un rapporto sui numeri di telefono non validi nei dati OpenStreetMap per vari paesi.",

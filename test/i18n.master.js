@@ -32,6 +32,7 @@ const MASTER_KEYS = {
     'timeAgoJustNow': [],
     'timeAgoError': [],
     'settings': [],
+    'disused': [],
 
     'fixableNumbersDescription': [],
     'invalidNumbersDescription': [],

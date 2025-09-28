@@ -27,6 +27,7 @@
   "invalidNumbersDescription": "Deze nummers zijn op de een of andere manier ongeldig; misschien zijn ze te lang of te kort, of missen ze een netnummer. De website kan worden gebruikt om een geldig nummer te controleren, of een survey kan nodig zijn.",
   "noInvalidNumbers": "Geen ongeldige telefoonnummers gevonden in deze onderverdeling.",
   "invalid": "ongeldig",
+  "disused": "Buiten gebruik",
 
   "osmPhoneNumberValidation": "OSM Telefoonnummervalidatie",
   "reportSubtitle": "Een rapport over ongeldige telefoonnummers in OpenStreetMap-gegevens voor diverse landen.",

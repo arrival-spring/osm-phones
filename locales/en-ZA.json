@@ -27,6 +27,7 @@
   "invalidNumbersDescription": "These numbers are all invalid in some way; maybe they are too long or too short, or perhaps they're missing an area code. The website could be used to check for a valid number, or a survey may be necessary.",
   "noInvalidNumbers": "No invalid phone numbers found in this Municipality.",
   "invalid": "invalid",
+  "disused": "Disused",
   
   "osmPhoneNumberValidation": "OSM Phone Number Validation",
   "reportSubtitle": "A report on invalid phone numbers in OpenStreetMap data for various countries.",
