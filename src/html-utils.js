@@ -802,7 +802,7 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
 
                         const iconCircle = document.createElement('div'); 
                         iconCircle.className = 'h-12 w-12 rounded-full flex-shrink-0 flex items-center justify-center';
-                        iconCircle.setAttribute('data-percentage', \${groupPercentageNumber});
+                        iconCircle.setAttribute('data-percentage', groupPercentageNumber);
 
                         const collapseIcon = createCollapseIcon();
                         iconCircle.appendChild(collapseIcon); 
