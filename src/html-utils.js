@@ -190,7 +190,7 @@ function createListItem(item, locale) {
         return `
             <a href="${href}" ${target} ${onClick} 
                 data-editor-id="${editorId}"
-                class="${commonButtonClass} bg-blue-500 hover:bg-blue-600 text-white">
+                class="${commonButtonClass} bg-blue-500 hover:bg-blue-600">
                 ${text}
             </a>
         `;
@@ -216,7 +216,7 @@ function createListItem(item, locale) {
 
     return `
         <li class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
-            <div class="w-full sm:w-2/3">
+            <div class="min-w-0">
                 <div class="flex-shrink-0 flex flex-wrap items-center gap-2">
                     <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100">
                         <a href="${item.osmUrl}" target="_blank" rel="noopener noreferrer" class="hover:text-gray-950 dark:hover:text-gray-200 underline transition-colors">${getFeatureTypeName(item)}</a>
@@ -227,21 +227,21 @@ function createListItem(item, locale) {
                     <div class="col-span-1">
                         <span class="font-semibold text-xs text-gray-700 dark:text-gray-400">${translate('phone', locale)}</span>
                     </div>
-                    <div class="col-span-1">
+                    <div class="col-span-1 whitespace-nowrap">
                         <span>${phoneNumber}</span>
                     </div>
                     ${item.autoFixable ? `
                     <div class="col-span-1">
                         <span class="font-semibold text-xs text-gray-700">${translate('suggestedFix', locale)}</span>
                     </div>
-                    <div class="col-span-1">
+                    <div class="col-span-1 whitespace-nowrap">
                         <span>${fixedNumber}</span>
                     </div>
                     ` : ''}
                 </div>
             </div>
             
-            <div class="flex flex-wrap gap-2 w-full sm:w-2/3 justify-end text-sm font-semibold">
+            <div class="flex flex-wrap gap-2 w-full justify-end text-sm font-semibold">
                 ${websiteButton}
                 ${fixableLabel}
                 ${josmFixButton}
@@ -268,37 +268,13 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
     const autofixableNumbers = invalidNumbers.filter(item => item.autoFixable);
     const manualFixNumbers = invalidNumbers.filter(item => !item.autoFixable);
 
-    const anyInvalid = manualFixNumbers.length > 0
-    const anyFixable = autofixableNumbers.length > 0
+    const fixableListContent = autofixableNumbers.length > 0 ?
+        autofixableNumbers.map(item => createListItem(item, locale)).join('') :
+        `<li class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 text-center text-gray-500 dark:text-gray-400">${translate('noAutoFixable', locale)}</li>`;
 
-    const fixableListContent = autofixableNumbers.map(item => createListItem(item, locale)).join('');
-    const invalidListContent = manualFixNumbers.map(item => createListItem(item, locale)).join('');
-
-    const fixableSectionAndHeader = `
-        <div class="text-center">
-            <h2 class="text-2xl font-semibold text-gray-900 dark:text-gray-100">${translate('fixableNumbersHeader', locale)}</h2>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">${translate('fixableNumbersDescription', locale)}</p>
-        </div>
-        <ul class="space-y-4">
-            ${fixableListContent}
-        </ul>`;
-
-    const invalidSectionAndHeader = `
-        <div class="text-center">
-            <h2 class="text-2xl font-semibold text-gray-900 dark:text-gray-100">${translate('invalidNumbersHeader', locale)}</h2>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">${translate('invalidNumbersDescription', locale)}</p>
-        </div>
-        <ul class="space-y-4">
-            ${invalidListContent}
-        </ul>`;
-
-    const noInvalidContent = `<li class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 text-center text-gray-500 dark:text-gray-400">${translate('noInvalidNumbers', locale)}</li>`;
-
-    const fixableAndInvalidSectionContent =
-        (anyFixable && anyInvalid) ? fixableSectionAndHeader + invalidSectionAndHeader :
-        anyFixable ? fixableSectionAndHeader :
-        anyInvalid ? invalidSectionAndHeader :
-        noInvalidContent
+    const invalidListContent = manualFixNumbers.length > 0 ?
+        manualFixNumbers.map(item => createListItem(item, locale)).join('') :
+        `<li class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 text-center text-gray-500 dark:text-gray-400">${translate('noInvalidNumbers', locale)}</li>`;
 
     // Dynamically create the list of all editor IDs for the client-side script
     const allEditorIdsClient = JSON.stringify(ALL_EDITOR_IDS);
@@ -313,11 +289,8 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
         ${favicon}
         <link href="../styles.css" rel="stylesheet">
         <script src="../theme.js"></script>
-        <style>
-            body { font-family: 'Inter', sans-serif; @apply bg-gray-100 dark:bg-gray-900; }
-        </style>
     </head>
-    <body class="p-8">
+    <body class="p-8 font-sans bg-gray-100 dark:bg-gray-900">
         <div class="max-w-4xl mx-auto space-y-8">
             <header class="text-center relative"> 
                 <div class="absolute top-0 right-0 flex items-center space-x-2">
@@ -343,7 +316,20 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
                 <h2 class="text-2xl font-semibold text-gray-700 dark:text-gray-300 mt-2">${subdivision.name}</h2>
             </header>
             ${createStatsBox(totalNumbers, invalidNumbers.length, autofixableNumbers.length, locale)}
-            ${fixableAndInvalidSectionContent}
+            <div class="text-center">
+                <h2 class="text-2xl font-semibold text-gray-900 dark:text-gray-100">${translate('fixableNumbersHeader', locale)}</h2>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">${translate('fixableNumbersDescription', locale)}</p>
+            </div>
+            <ul class="space-y-4">
+                ${fixableListContent}
+            </ul>
+            <div class="text-center">
+                <h2 class="text-2xl font-semibold text-gray-900 dark:text-gray-100">${translate('invalidNumbersHeader', locale)}</h2>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">${translate('invalidNumbersDescription', locale)}</p>
+            </div>
+            <ul class="space-y-4">
+                ${invalidListContent}
+            </ul>
             <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-2 text-center">
                 ${createFooter(locale, translations)}
             </div>
@@ -519,15 +505,6 @@ async function generateMainIndexHtml(countryStats, locale, translations) {
         // Use the country's specific locale for number formatting and description text
         const itemLocale = country.locale || locale; // Fallback to the main page locale
 
-        function getBackgroundColor(percent) {
-            if (percent > 2) {
-                return `hsl(0, 70%, 50%)`;
-            }
-            const hue = ((2 - percent) / 2) * 120;
-            return `hsl(${hue}, 70%, 50%)`;
-        }
-        const backgroundColor = getBackgroundColor(validPercentage);
-
         // Format numbers using the *country's* specific locale
         const formattedInvalid = country.invalidCount.toLocaleString(itemLocale);
         const formattedFixable = country.autoFixableCount.toLocaleString(itemLocale);
@@ -539,7 +516,7 @@ async function generateMainIndexHtml(countryStats, locale, translations) {
         return `
             <a href="${countryPageName}" class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 transition-transform transform hover:scale-105">
                 <div class="flex-grow flex items-center space-x-4">
-                    <div class="h-12 w-12 rounded-full flex-shrink-0" style="background-color: ${backgroundColor};"></div>
+                    <div class="h-12 w-12 rounded-full flex-shrink-0 color-indicator" data-percentage="${validPercentage}"></div>
                     <div class="flex-grow">
                         <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100">${country.name}</h3>
                         <p class="text-sm text-gray-500 dark:text-gray-400">${description}</p>
@@ -563,11 +540,8 @@ async function generateMainIndexHtml(countryStats, locale, translations) {
         ${favicon}
         <link href="./styles.css" rel="stylesheet">
         <script src="theme.js"></script>
-        <style>
-            body { font-family: 'Inter', sans-serif; @apply bg-gray-100 dark:bg-gray-900; }
-        </style>
     </head>
-    <body class="p-8">
+    <body class="p-8 font-sans bg-gray-100 dark:bg-gray-900">
         <div class="max-w-5xl mx-auto space-y-8">
             <header class="text-center space-y-2 relative">
                 <div class="absolute top-0 right-0">
@@ -591,6 +565,32 @@ async function generateMainIndexHtml(countryStats, locale, translations) {
                 ${createFooter(locale, translations)}
             </div>
         </div>
+        <script>
+            function getBackgroundColor(percent, isDark) {
+                if (isDark) {
+                    // Dark mode: less saturated, darker colors
+                    if (percent > 2) return 'hsl(0, 40%, 30%)'; // Dark red
+                    const hue = ((2 - percent) / 2) * 120;
+                    return `hsl(${hue}, 40%, 30%)`; // Dark green to dark yellow
+                } else {
+                    // Light mode: vibrant colors
+                    if (percent > 2) return 'hsl(0, 70%, 50%)'; // Bright red
+                    const hue = ((2 - percent) / 2) * 120;
+                    return `hsl(${hue}, 70%, 50%)`; // Bright green to bright yellow
+                }
+            }
+
+            function applyColors() {
+                const isDark = document.documentElement.classList.contains('dark');
+                document.querySelectorAll('.color-indicator').forEach(el => {
+                    const percentage = parseFloat(el.dataset.percentage);
+                    el.style.backgroundColor = getBackgroundColor(percentage, isDark);
+                });
+            }
+
+            document.addEventListener('DOMContentLoaded', applyColors);
+            window.addEventListener('themeChanged', applyColors);
+        </script>
     </body>
     </html>
     `;
@@ -650,19 +650,24 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
         }
         
         // Client-side color calculation logic (duplicated for client script access)
-        function getBackgroundColor(percent) {
-            if (percent > 2) {
-                return \`hsl(0, 70%, 50%)\`;
+        function getBackgroundColor(percent, isDark) {
+            if (isDark) {
+                if (percent > 2) return 'hsl(0, 40%, 30%)';
+                const hue = ((2 - percent) / 2) * 120;
+                return `hsl(${hue}, 40%, 30%)`;
+            } else {
+                if (percent > 2) return `hsl(0, 70%, 50%)`;
+                const hue = ((2 - percent) / 2) * 120;
+                return `hsl(${hue}, 70%, 50%)`;
             }
-            const hue = ((2 - percent) / 2) * 120;
-            return \`hsl(\${hue}, 70%, 50%)\`;
         }
 
         // Calculates the colour for the division group header
         function getGroupBackgroundColorClient(invalidCount, totalNumbers) {
-            if (totalNumbers === 0) return 'hsl(0, 0%, 90%)';
+            const isDark = document.documentElement.classList.contains('dark');
+            if (totalNumbers === 0) return isDark ? 'hsl(0, 0%, 20%)' : 'hsl(0, 0%, 90%)';
             const percentage = (invalidCount / totalNumbers) * 100;
-            return getBackgroundColor(percentage);
+            return getBackgroundColor(percentage, isDark);
         }
 
         // Pre-calculate total stats for each division group 
@@ -684,14 +689,18 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
         }
 
         function updateButtonStyles() {
+            const isDark = document.documentElement.classList.contains('dark');
             sortButtons.forEach(button => {
-                if (button.dataset.sort === currentSort) {
-                    button.classList.add('bg-blue-500', 'text-white', 'shadow');
-                    button.classList.remove('bg-gray-200', 'text-gray-800', 'hover:bg-gray-300');
-                } else {
-                    button.classList.remove('bg-blue-500', 'text-white', 'shadow');
-                    button.classList.add('bg-gray-200', 'text-gray-800', 'hover:bg-gray-300');
-                }
+                const isActive = button.dataset.sort === currentSort;
+                button.classList.toggle('bg-blue-500', isActive);
+                button.classList.toggle('text-white', isActive);
+                button.classList.toggle('shadow', isActive);
+                button.classList.toggle('bg-gray-200', !isActive);
+                button.classList.toggle('dark:bg-gray-700', !isActive && isDark);
+                button.classList.toggle('text-gray-800', !isActive);
+                button.classList.toggle('dark:text-gray-200', !isActive && isDark);
+                button.classList.toggle('hover:bg-gray-300', !isActive);
+                button.classList.toggle('dark:hover:bg-gray-600', !isActive && isDark);
             });
         }
 
@@ -941,11 +950,8 @@ async function generateCountryIndexHtml(countryName, groupedDivisionStats, total
         ${favicon}
         <link href="./styles.css" rel="stylesheet">
         <script src="theme.js"></script>
-        <style>
-            body { font-family: 'Inter', sans-serif; @apply bg-gray-100 dark:bg-gray-900; }
-        </style>
     </head>
-    <body class="p-8">
+    <body class="p-8 font-sans bg-gray-100 dark:bg-gray-900">
         <div class="max-w-5xl mx-auto space-y-8">
             <header class="text-center space-y-2 relative">
                 <div class="absolute top-0 right-0">

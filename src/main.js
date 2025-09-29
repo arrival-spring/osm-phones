@@ -44,6 +44,8 @@ async function main() {
         fs.mkdirSync(PUBLIC_DIR);
     }
 
+    fs.copyFileSync(path.join(__dirname, 'theme.js'), path.join(PUBLIC_DIR, 'theme.js'));
+
     console.log('Starting full build process...');
 
     const countryStats = [];
