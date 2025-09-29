@@ -190,7 +190,7 @@ function createListItem(item, locale) {
         return `
             <a href="${href}" ${target} ${onClick} 
                 data-editor-id="${editorId}"
-                class="${commonButtonClass} bg-blue-500 hover:bg-blue-600">
+                class="${commonButtonClass} bg-blue-500 hover:bg-blue-600 text-white">
                 ${text}
             </a>
         `;
@@ -216,7 +216,7 @@ function createListItem(item, locale) {
 
     return `
         <li class="bg-white rounded-xl shadow-md p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
-            <div class="min-w-0">
+            <div class="w-full sm:w-2/3">
                 <div class="flex-shrink-0 flex flex-wrap items-center gap-2">
                     <h3 class="text-lg font-bold text-gray-900">
                         <a href="${item.osmUrl}" target="_blank" rel="noopener noreferrer" class="hover:text-gray-950 underline transition-colors">${getFeatureTypeName(item)}</a>
@@ -227,21 +227,21 @@ function createListItem(item, locale) {
                     <div class="col-span-1">
                         <span class="font-semibold text-xs text-gray-700">${translate('phone', locale)}</span>
                     </div>
-                    <div class="col-span-1 whitespace-nowrap">
+                    <div class="col-span-1">
                         <span>${phoneNumber}</span>
                     </div>
                     ${item.autoFixable ? `
                     <div class="col-span-1">
                         <span class="font-semibold text-xs text-gray-700">${translate('suggestedFix', locale)}</span>
                     </div>
-                    <div class="col-span-1 whitespace-nowrap">
+                    <div class="col-span-1">
                         <span>${fixedNumber}</span>
                     </div>
                     ` : ''}
                 </div>
             </div>
             
-            <div class="flex flex-wrap gap-2 w-full justify-end text-sm font-semibold">
+            <div class="flex flex-wrap gap-2 w-full sm:w-2/3 justify-end text-sm font-semibold">
                 ${websiteButton}
                 ${fixableLabel}
                 ${josmFixButton}
