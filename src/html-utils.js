@@ -268,13 +268,37 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
     const autofixableNumbers = invalidNumbers.filter(item => item.autoFixable);
     const manualFixNumbers = invalidNumbers.filter(item => !item.autoFixable);
 
-    const fixableListContent = autofixableNumbers.length > 0 ?
-        autofixableNumbers.map(item => createListItem(item, locale)).join('') :
-        `<li class="bg-white rounded-xl shadow-md p-6 text-center text-gray-500">${translate('noAutoFixable', locale)}</li>`;
+    const anyInvalid = manualFixNumbers.length > 0
+    const anyFixable = autofixableNumbers.length > 0
 
-    const invalidListContent = manualFixNumbers.length > 0 ?
-        manualFixNumbers.map(item => createListItem(item, locale)).join('') :
-        `<li class="bg-white rounded-xl shadow-md p-6 text-center text-gray-500">${translate('noInvalidNumbers', locale)}</li>`;
+    const fixableListContent = autofixableNumbers.map(item => createListItem(item, locale)).join('');
+    const invalidListContent = manualFixNumbers.map(item => createListItem(item, locale)).join('');
+
+    const fixableSectionAndHeader = `
+        <div class="text-center">
+            <h2 class="text-2xl font-semibold text-gray-900">${translate('fixableNumbersHeader', locale)}</h2>
+            <p class="text-sm text-gray-500 mt-2">${translate('fixableNumbersDescription', locale)}</p>
+        </div>
+        <ul class="space-y-4">
+            ${fixableListContent}
+        </ul>`;
+
+    const invalidSectionAndHeader = `
+        <div class="text-center">
+            <h2 class="text-2xl font-semibold text-gray-900">${translate('invalidNumbersHeader', locale)}</h2>
+            <p class="text-sm text-gray-500 mt-2">${translate('invalidNumbersDescription', locale)}</p>
+        </div>
+        <ul class="space-y-4">
+            ${invalidListContent}
+        </ul>`;
+
+    const noInvalidContent = `<li class="bg-white rounded-xl shadow-md p-6 text-center text-gray-500">${translate('noInvalidNumbers', locale)}</li>`;
+
+    const fixableAndInvalidSectionContent =
+        (anyFixable && anyInvalid) ? fixableSectionAndHeader + invalidSectionAndHeader :
+        anyFixable ? fixableSectionAndHeader :
+        anyInvalid ? invalidSectionAndHeader :
+        noInvalidContent
 
     // Dynamically create the list of all editor IDs for the client-side script
     const allEditorIdsClient = JSON.stringify(ALL_EDITOR_IDS);
@@ -314,20 +338,7 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
                 <h2 class="text-2xl font-semibold text-gray-700 mt-2">${subdivision.name}</h2>
             </header>
             ${createStatsBox(totalNumbers, invalidNumbers.length, autofixableNumbers.length, locale)}
-            <div class="text-center">
-                <h2 class="text-2xl font-semibold text-gray-900">${translate('fixableNumbersHeader', locale)}</h2>
-                <p class="text-sm text-gray-500 mt-2">${translate('fixableNumbersDescription', locale)}</p>
-            </div>
-            <ul class="space-y-4">
-                ${fixableListContent}
-            </ul>
-            <div class="text-center">
-                <h2 class="text-2xl font-semibold text-gray-900">${translate('invalidNumbersHeader', locale)}</h2>
-                <p class="text-sm text-gray-500 mt-2">${translate('invalidNumbersDescription', locale)}</p>
-            </div>
-            <ul class="space-y-4">
-                ${invalidListContent}
-            </ul>
+            ${fixableAndInvalidSectionContent}
             <div class="bg-white rounded-xl shadow-lg p-2 text-center">
                 ${createFooter(locale, translations)}
             </div>
