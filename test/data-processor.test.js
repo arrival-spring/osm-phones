@@ -212,7 +212,7 @@ describe('processSingleNumber', () => {
 // =====================================================================
 // processSingleNumber Tests
 // =====================================================================
-decribe('validateSingleTag', () => {
+describe('validateSingleTag', () => {
     test('correctly count total numbers processed', () => {
         const result = validateSingleTag(
             '020 1234 5678; +44 20 7946 0000',
