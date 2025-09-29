@@ -163,7 +163,7 @@ const OSM_EDITORS = {
 const ALL_EDITOR_IDS = Object.keys(OSM_EDITORS);
 
 const DEFAULT_EDITORS_DESKTOP = ["iD", "JOSM"];
-const DEFAULT_EDITORS_MOBILE = ["Geo"];
+const DEFAULT_EDITORS_MOBILE = ["Geo", "Level0"];
 
 const EXCLUSIONS = {
     'FR': { // France
