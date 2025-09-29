@@ -234,8 +234,8 @@ describe('validateSingleTag', () => {
             '020 1234 5678', // too short
             'GB'
         );
-        expect(result.isInvalid).toBe(false);
-        expect(result.autoFixable).toBe(false);
+        expect(result.isInvalid).toBe(true);
+        expect(result.isAutoFixable).toBe(false);
     });
 
     test('single number in national format is fixable', () => {
@@ -244,7 +244,7 @@ describe('validateSingleTag', () => {
             'GB'
         );
         expect(result.isInvalid).toBe(true);
-        expect(result.autoFixable).toBe(true);
+        expect(result.isAutoFixable).toBe(true);
         expect(result.suggestedFixes).toBe(['+44 1389 123456'])
     });
 
@@ -254,7 +254,7 @@ describe('validateSingleTag', () => {
             'GB'
         );
         expect(result.isInvalid).toBe(true);
-        expect(result.autoFixable).toBe(true);
+        expect(result.isAutoFixable).toBe(true);
         expect(result.suggestedFixes).toBe(['+44 1389 123456'])
     });
 
@@ -264,7 +264,7 @@ describe('validateSingleTag', () => {
             'GB'
         );
         expect(result.isInvalid).toBe(true);
-        expect(result.autoFixable).toBe(true);
+        expect(result.isAutoFixable).toBe(true);
         expect(result.suggestedFixes).toBe(['+44 1389 123456'])
     });
 
@@ -282,7 +282,7 @@ describe('validateSingleTag', () => {
             'GB'
         );
         expect(result.isInvalid).toBe(true);
-        expect(result.autoFixable).toBe(true);
+        expect(result.isAutoFixable).toBe(true);
         expect(result.suggestedFixes).toBe(['+44 1389 123456', '+44 1389 123456'])
     });
 
@@ -292,7 +292,7 @@ describe('validateSingleTag', () => {
             'GB'
         );
         expect(result.isInvalid).toBe(true);
-        expect(result.autoFixable).toBe(true);
+        expect(result.isAutoFixable).toBe(true);
         expect(result.suggestedFixes).toBe(['+44 1389 123456', '+44 1389 123456'])
     });
 
@@ -302,7 +302,7 @@ describe('validateSingleTag', () => {
             'GB'
         );
         expect(result.isInvalid).toBe(true);
-        expect(result.autoFixable).toBe(true);
+        expect(result.isAutoFixable).toBe(true);
         expect(result.suggestedFixes).toBe(['+44 1389 123456', '+44 1389 123456'])
     });
 
@@ -312,7 +312,7 @@ describe('validateSingleTag', () => {
             'GB'
         );
         expect(result_no_space.isInvalid).toBe(true);
-        expect(result_no_space.autoFixable).toBe(true);
+        expect(result_no_space.isAutoFixable).toBe(true);
         expect(result_no_space.suggestedFixes).toBe(['+44 1389 123456', '+44 1389 123456'])
 
         const result_one_space = validateSingleTag(
@@ -320,7 +320,7 @@ describe('validateSingleTag', () => {
             'GB'
         );
         expect(result_one_space.isInvalid).toBe(true);
-        expect(result_one_space.autoFixable).toBe(true);
+        expect(result_one_space.isAutoFixable).toBe(true);
         expect(result_one_space.suggestedFixes).toBe(['+44 1389 123456', '+44 1389 123456'])
 
         const result_two_spaces = validateSingleTag(
@@ -328,7 +328,7 @@ describe('validateSingleTag', () => {
             'GB'
         );
         expect(result_two_spaces.isInvalid).toBe(true);
-        expect(result_two_spaces.autoFixable).toBe(true);
+        expect(result_two_spaces.isAutoFixable).toBe(true);
         expect(result_two_spaces.suggestedFixes).toBe(['+44 1389 123456', '+44 1389 123456'])
     });
 
@@ -338,7 +338,7 @@ describe('validateSingleTag', () => {
             'GB'
         );
         expect(result.isInvalid).toBe(true);
-        expect(result.autoFixable).toBe(true);
+        expect(result.isAutoFixable).toBe(true);
         expect(result.suggestedFixes).toBe(['+44 1389 123456', '+44 1389 123456'])
     });
 
@@ -348,7 +348,7 @@ describe('validateSingleTag', () => {
             'GB'
         );
         expect(result.isInvalid).toBe(true);
-        expect(result.autoFixable).toBe(false);
+        expect(result.isAutoFixable).toBe(false);
     });
 });
 

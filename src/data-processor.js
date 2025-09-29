@@ -314,7 +314,7 @@ function validateNumbers(elements, countryCode) {
                 
                 const isInvalid = validationResult.isInvalid;
                 const suggestedFix = validationResult.suggestedNumbersList.join('; ')
-                const autoFixable = validationResult.autoFixable;
+                const autoFixable = validationResult.isAutoFixable;
                 totalNumbers += validationResult.numberOfValues;
 
                 if (isInvalid) {        
