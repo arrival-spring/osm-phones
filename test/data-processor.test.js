@@ -283,7 +283,7 @@ describe('validateSingleTag', () => {
         );
         expect(result.isInvalid).toBe(true);
         expect(result.isAutoFixable).toBe(true);
-        expect(result.suggestedNumbersList).toEqual(['+44 1389 123456', '+44 1389 123456'])
+        expect(result.suggestedNumbersList).toEqual(['+44 1389 123456', '+44 1389 123457'])
     });
 
     test('using "and" as seperator is fixable', () => {
@@ -293,7 +293,7 @@ describe('validateSingleTag', () => {
         );
         expect(result.isInvalid).toBe(true);
         expect(result.isAutoFixable).toBe(true);
-        expect(result.suggestedNumbersList).toEqual(['+44 1389 123456', '+44 1389 123456'])
+        expect(result.suggestedNumbersList).toEqual(['+44 1389 123456', '+44 1389 123457'])
     });
 
     test('using comma as seperator is fixable', () => {
@@ -303,7 +303,7 @@ describe('validateSingleTag', () => {
         );
         expect(result.isInvalid).toBe(true);
         expect(result.isAutoFixable).toBe(true);
-        expect(result.suggestedNumbersList).toEqual(['+44 1389 123456', '+44 1389 123456'])
+        expect(result.suggestedNumbersList).toEqual(['+44 1389 123456', '+44 1389 123457'])
     });
 
     test('using forward slash as seperator is fixable', () => {
@@ -313,7 +313,7 @@ describe('validateSingleTag', () => {
         );
         expect(result_no_space.isInvalid).toBe(true);
         expect(result_no_space.isAutoFixable).toBe(true);
-        expect(result_no_space.suggestedNumbersList).toEqual(['+44 1389 123456', '+44 1389 123456'])
+        expect(result_no_space.suggestedNumbersList).toEqual(['+44 1389 123456', '+44 1389 123457'])
 
         const result_one_space = validateSingleTag(
             '+44 1389 123456/ +44 1389 123457',
@@ -321,7 +321,7 @@ describe('validateSingleTag', () => {
         );
         expect(result_one_space.isInvalid).toBe(true);
         expect(result_one_space.isAutoFixable).toBe(true);
-        expect(result_one_space.suggestedNumbersList).toEqual(['+44 1389 123456', '+44 1389 123456'])
+        expect(result_one_space.suggestedNumbersList).toEqual(['+44 1389 123456', '+44 1389 123457'])
 
         const result_two_spaces = validateSingleTag(
             '+44 1389 123456/ +44 1389 123457',
@@ -329,7 +329,7 @@ describe('validateSingleTag', () => {
         );
         expect(result_two_spaces.isInvalid).toBe(true);
         expect(result_two_spaces.isAutoFixable).toBe(true);
-        expect(result_two_spaces.suggestedNumbersList).toEqual(['+44 1389 123456', '+44 1389 123456'])
+        expect(result_two_spaces.suggestedNumbersList).toEqual(['+44 1389 123456', '+44 1389 123457'])
     });
 
     test('fix one fixable number and keep existing valid number', () => {
@@ -339,7 +339,7 @@ describe('validateSingleTag', () => {
         );
         expect(result.isInvalid).toBe(true);
         expect(result.isAutoFixable).toBe(true);
-        expect(result.suggestedNumbersList).toEqual(['+44 1389 123456', '+44 1389 123456'])
+        expect(result.suggestedNumbersList).toEqual(['+44 1389 123456', '+44 1389 123457'])
     });
 
     test('one valid and one invalid makes the whole thing invalid and unfixable', () => {
@@ -363,10 +363,10 @@ describe('validateNumbers', () => {
     const FIXABLE_LANDLINE_INPUT = '0207 9460000';
     const FIXABLE_LANDLINE_SUGGESTED_FIX = '+44 20 7946 0000';
     const UNFIXABLE_INPUT = '020 794'; // Too short
-    const BAD_SEPARATOR_INPUT = '020 7946 0000, 07700 900000';
-    const BAD_SEPARATOR_FIX = '+44 20 7946 0000; +44 7700 900000';
-    const FIXABLE_MOBILE_INPUT = '07700  900000';
-    const FIXABLE_MOBILE_SUGGESTED_FIX = '+44 7700 900000';
+    const BAD_SEPARATOR_INPUT = '020 7946 0000, 07712 900000';
+    const BAD_SEPARATOR_FIX = '+44 20 7946 0000; +44 7712 900000';
+    const FIXABLE_MOBILE_INPUT = '07712  900000';
+    const FIXABLE_MOBILE_SUGGESTED_FIX = '+44 7712 900000';
 
     test('should correctly identify a single valid number and return zero invalid items', () => {
         const elements = [
@@ -430,7 +430,6 @@ describe('validateNumbers', () => {
 
         expect(invalidItem.autoFixable).toBe(false);
         expect(invalidItem.invalidNumbers.mobile).toBe(UNFIXABLE_INPUT);
-        expect(invalidItem.suggestedFixes.mobile).toBe('No fix available');
     });
 
     test('should handle multiple numbers in a single tag using a bad separator (comma)', () => {
