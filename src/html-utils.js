@@ -792,7 +792,7 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
                         }
 
                         const summaryHeader = document.createElement('summary');
-                        summaryHeader.className = 'list-none cursor-pointer p-6 flex transition-colors rounded-t-xl group/summary bg-gray-50 dark:bg-gray-950 hover:bg-gray-100 dark:hover:bg-gray-900'; 
+                        summaryHeader.className = 'list-none cursor-pointer p-6 flex transition-colors rounded-t-xl group/summary bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-950'; 
 
                         const summaryContent = document.createElement('div');
                         summaryContent.className = 'flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 w-full';
