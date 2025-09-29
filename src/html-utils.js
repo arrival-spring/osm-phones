@@ -351,7 +351,7 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
         </style>
     </head>
     <body class="p-8 bg-gray-100 dark:bg-gray-900">
-        <div class="max-w-4xl mx-auto space-y-8">
+        <div class="max-w-5xl mx-auto space-y-8">
             <header class="text-center relative"> 
                 <div class="absolute top-0 right-0 flex items-center space-x-2">
                     ${themeButton}
