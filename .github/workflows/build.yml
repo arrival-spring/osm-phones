@@ -1,9 +1,9 @@
 name: Build and Deploy OSM Report
 
 on:
-  # push:
-  #   branches:
-  #     - main
+  push:
+    branches:
+      - main
   pull_request:
     branches:
       - main
@@ -43,7 +43,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      BUILD_TYPE: ${{ github.event_name == 'pull_request' && 'simplified' || 'full' }}
+      BUILD_TYPE: ${{ (github.event_name == 'pull_request' || github.event_name == 'push') && 'simplified' || 'full' }}
 
     steps:
       - name: Checkout repository
