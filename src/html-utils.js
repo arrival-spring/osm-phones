@@ -205,12 +205,12 @@ function createListItem(item, locale) {
     const josmFixButton = josmFixUrl ?
         `<a href="#" onclick="openInJosm('${josmFixUrl}', event)" 
             data-editor-id="josm-fix"
-            class="${commonButtonClass} bg-yellow-200 text-yellow-800 hover:bg-yellow-300 dark:bg-yellow-600 dark:hover:bg-yellow-500 dark:text-yellow-200">
+            class="${commonButtonClass} bg-yellow-200 text-yellow-800 hover:bg-yellow-300 dark:bg-yellow-600 dark:hover:bg-yellow-500 dark:text-yellow-50">
             ${translate('fixInJOSM', locale)}
         </a>` :
         '';
     const fixableLabel = item.autoFixable ?
-        `<span data-editor-id="fix-label" class="${commonLabelClass} bg-yellow-200 text-yellow-800 dark:bg-yellow-600 dark:hover:bg-yellow-500 dark:text-yellow-200">${translate('fixable', locale)}</span>` :
+        `<span data-editor-id="fix-label" class="${commonLabelClass} bg-yellow-200 text-yellow-800 dark:bg-yellow-600 dark:hover:bg-yellow-500 dark:text-yellow-50">${translate('fixable', locale)}</span>` :
         '';
 
     const phoneNumber = item.invalidNumbers;
@@ -712,11 +712,11 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
                 button.classList.toggle('text-white', isActive);
                 button.classList.toggle('shadow', isActive);
                 button.classList.toggle('bg-gray-200', !isActive);
-                button.classList.toggle('dark:bg-gray-700', !isActive && isDark);
+                button.classList.toggle('dark:bg-gray-700', !isActive);
                 button.classList.toggle('text-gray-800', !isActive);
-                button.classList.toggle('dark:text-gray-200', !isActive && isDark);
+                button.classList.toggle('dark:text-gray-200', !isActive);
                 button.classList.toggle('hover:bg-gray-300', !isActive);
-                button.classList.toggle('dark:hover:bg-gray-600', !isActive && isDark);
+                button.classList.toggle('dark:hover:bg-gray-600', !isActive);
             });
         }
 
@@ -910,8 +910,8 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
                                 </div>
                             </a>
                             <div class="text-center sm:text-right">
-                                <p class="text-2xl font-bold text-gray-800">\${formattedPercentage}<span class="text-base font-normal">%</span></p>
-                                <p class="text-xs text-gray-500">\${T_CLIENT.invalid}</p>
+                                <p class="text-2xl font-bold text-gray-800 dark:text-gray-100">\${formattedPercentage}<span class="text-base font-normal">%</span></p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">\${T_CLIENT.invalid}</p>
                             </div>
                         \`;
                         ul.appendChild(li);
