@@ -59,6 +59,9 @@ jobs:
           node src/main.js
           npm run build:css
 
+      - name: Copy Theme File to Public Directory
+        run: cp src/theme.js public/theme.js
+
       - name: Check Build Type
         run: echo "The build type is $BUILD_TYPE"
 
