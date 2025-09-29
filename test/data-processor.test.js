@@ -245,7 +245,7 @@ describe('validateSingleTag', () => {
         );
         expect(result.isInvalid).toBe(true);
         expect(result.isAutoFixable).toBe(true);
-        expect(result.suggestedNumbersList).toBe(['+44 1389 123456'])
+        expect(result.suggestedNumbersList).toEqual(['+44 1389 123456'])
     });
 
     test('leading 0 and country code is fixable', () => {
@@ -255,7 +255,7 @@ describe('validateSingleTag', () => {
         );
         expect(result.isInvalid).toBe(true);
         expect(result.isAutoFixable).toBe(true);
-        expect(result.suggestedNumbersList).toBe(['+44 1389 123456'])
+        expect(result.suggestedNumbersList).toEqual(['+44 1389 123456'])
     });
 
     test('leading 0 and extraneous brackets is fixable', () => {
@@ -265,7 +265,7 @@ describe('validateSingleTag', () => {
         );
         expect(result.isInvalid).toBe(true);
         expect(result.isAutoFixable).toBe(true);
-        expect(result.suggestedNumbersList).toBe(['+44 1389 123456'])
+        expect(result.suggestedNumbersList).toEqual(['+44 1389 123456'])
     });
 
     test('number with extension is valid', () => {
@@ -283,7 +283,7 @@ describe('validateSingleTag', () => {
         );
         expect(result.isInvalid).toBe(true);
         expect(result.isAutoFixable).toBe(true);
-        expect(result.suggestedNumbersList).toBe(['+44 1389 123456', '+44 1389 123456'])
+        expect(result.suggestedNumbersList).toEqual(['+44 1389 123456', '+44 1389 123456'])
     });
 
     test('using "and" as seperator is fixable', () => {
@@ -293,7 +293,7 @@ describe('validateSingleTag', () => {
         );
         expect(result.isInvalid).toBe(true);
         expect(result.isAutoFixable).toBe(true);
-        expect(result.suggestedNumbersList).toBe(['+44 1389 123456', '+44 1389 123456'])
+        expect(result.suggestedNumbersList).toEqual(['+44 1389 123456', '+44 1389 123456'])
     });
 
     test('using comma as seperator is fixable', () => {
@@ -303,7 +303,7 @@ describe('validateSingleTag', () => {
         );
         expect(result.isInvalid).toBe(true);
         expect(result.isAutoFixable).toBe(true);
-        expect(result.suggestedNumbersList).toBe(['+44 1389 123456', '+44 1389 123456'])
+        expect(result.suggestedNumbersList).toEqual(['+44 1389 123456', '+44 1389 123456'])
     });
 
     test('using forward slash as seperator is fixable', () => {
@@ -313,7 +313,7 @@ describe('validateSingleTag', () => {
         );
         expect(result_no_space.isInvalid).toBe(true);
         expect(result_no_space.isAutoFixable).toBe(true);
-        expect(result_no_space.suggestedNumbersList).toBe(['+44 1389 123456', '+44 1389 123456'])
+        expect(result_no_space.suggestedNumbersList).toEqual(['+44 1389 123456', '+44 1389 123456'])
 
         const result_one_space = validateSingleTag(
             '+44 1389 123456/ +44 1389 123457',
@@ -321,7 +321,7 @@ describe('validateSingleTag', () => {
         );
         expect(result_one_space.isInvalid).toBe(true);
         expect(result_one_space.isAutoFixable).toBe(true);
-        expect(result_one_space.suggestedNumbersList).toBe(['+44 1389 123456', '+44 1389 123456'])
+        expect(result_one_space.suggestedNumbersList).toEqual(['+44 1389 123456', '+44 1389 123456'])
 
         const result_two_spaces = validateSingleTag(
             '+44 1389 123456/ +44 1389 123457',
@@ -329,7 +329,7 @@ describe('validateSingleTag', () => {
         );
         expect(result_two_spaces.isInvalid).toBe(true);
         expect(result_two_spaces.isAutoFixable).toBe(true);
-        expect(result_two_spaces.suggestedNumbersList).toBe(['+44 1389 123456', '+44 1389 123456'])
+        expect(result_two_spaces.suggestedNumbersList).toEqual(['+44 1389 123456', '+44 1389 123456'])
     });
 
     test('fix one fixable number and keep existing valid number', () => {
@@ -339,7 +339,7 @@ describe('validateSingleTag', () => {
         );
         expect(result.isInvalid).toBe(true);
         expect(result.isAutoFixable).toBe(true);
-        expect(result.suggestedNumbersList).toBe(['+44 1389 123456', '+44 1389 123456'])
+        expect(result.suggestedNumbersList).toEqual(['+44 1389 123456', '+44 1389 123456'])
     });
 
     test('one valid and one invalid makes the whole thing invalid and unfixable', () => {
