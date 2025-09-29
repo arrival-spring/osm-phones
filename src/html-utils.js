@@ -784,7 +784,7 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
                     if (isGrouped) {
                         // --- RENDER GROUPED ---
                         let detailsGroup = document.createElement('details'); 
-                        detailsGroup.className = 'group mt-8 border border-gray-200 rounded-xl shadow-lg';
+                        detailsGroup.className = 'group mt-8 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg';
 
                         // Restore open state after sort
                         if (currentlyOpenDivisions.has(divisionName)) {
@@ -792,7 +792,7 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
                         }
 
                         const summaryHeader = document.createElement('summary');
-                        summaryHeader.className = 'list-none cursor-pointer p-6 flex transition-colors rounded-t-xl group/summary bg-gray-50 hover:bg-gray-100'; 
+                        summaryHeader.className = 'list-none cursor-pointer p-6 flex transition-colors rounded-t-xl group/summary bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800'; 
 
                         const summaryContent = document.createElement('div');
                         summaryContent.className = 'flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 w-full';
@@ -847,7 +847,7 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
                         detailsGroup.appendChild(summaryHeader);
 
                         ul = document.createElement('ul'); 
-                        ul.className = 'space-y-4 p-4 border-t border-gray-200';
+                        ul.className = 'space-y-4 p-4 border-t border-gray-200 dark:border-gray-700';
 
                         detailsGroup.appendChild(ul);
                         listContainer.appendChild(detailsGroup);
@@ -882,7 +882,7 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
 
                         li.innerHTML = \`
                             <a href="\${safeCountryName}/\${safeDivisionName}.html" class="flex-grow flex items-center space-x-4">
-                                <div class="h-12 w-12 rounded-full flex-shrink-0" data-percentage="\${invalidPercentage}"></div>
+                                <div class="h-12 w-12 rounded-full flex-shrink-0 color-indicator" data-percentage="\${invalidPercentage}"></div>
                                 <div class="flex-grow">
                                     <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100">\${division.name}</h3>
                                     <p class="text-sm text-gray-500 dark:text-gray-400">\${itemStatsLine}</p>
