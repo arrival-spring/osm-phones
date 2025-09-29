@@ -74,6 +74,7 @@ async function main() {
         let totalTotalNumbers = 0;
         const groupedDivisionStats = {};
 
+        let divisionCount = 0;
         for (const divisionName in countryData.divisions) {
             const divisionAreaId = countryData.divisions[divisionName];
             console.log(`Processing subdivisions for ${divisionName}...`);
@@ -92,6 +93,7 @@ async function main() {
 
             console.log(`Processing phone numbers for ${uniqueSubdivisions.length} subdivisions in ${divisionName}.`);
 
+            let subdivisionCount = 0;
             for (const subdivision of uniqueSubdivisions) {
 
                 const elements = await fetchOsmDataForDivision(subdivision);
@@ -115,11 +117,13 @@ async function main() {
                 await generateHtmlReport(countryName, subdivision, invalidNumbers, totalNumbers, locale, clientTranslations);
 
                 // Do one subdivision for one division in one country in test mode
-                if (testMode) {
+                subdivisionCount++;
+                if (testMode && subdivisionCount >= 2) {
                     break;
                 }
             }
-            if (testMode) {
+            divisionCount++;
+            if (testMode && divisionCount >= 2) {
                 break;
             }
         }
