@@ -117,13 +117,14 @@ async function main() {
                 await generateHtmlReport(countryName, subdivision, invalidNumbers, totalNumbers, locale, clientTranslations);
 
                 // Do one subdivision for one division in one country in test mode
+                // count is here in case of needing to change it to test something
                 subdivisionCount++;
-                if (testMode && subdivisionCount >= 2) {
+                if (testMode && subdivisionCount >= 1) {
                     break;
                 }
             }
             divisionCount++;
-            if (testMode && divisionCount >= 2) {
+            if (testMode && divisionCount >= 1) {
                 break;
             }
         }
