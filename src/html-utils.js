@@ -32,20 +32,20 @@ function createStatsBox(total, invalid, fixable, locale) {
     const formattedFixablePercentage = fixablePercentageNumber.toLocaleString(locale, percentageOptions);
 
     return `
-        <div class="bg-white rounded-xl shadow-lg p-8 grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
             <div>
-                <p class="text-4xl font-extrabold text-gray-800">${formattedTotal}</p>
-                <p class="text-sm text-gray-500">${translate('numbersChecked', locale)}</p>
+                <p class="text-4xl font-extrabold text-gray-800 dark:text-gray-100">${formattedTotal}</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400">${translate('numbersChecked', locale)}</p>
             </div>
             <div>
-                <p class="text-4xl font-extrabold text-blue-700">${formattedInvalid}</p>
-                <p class="text-gray-500">${translate('invalidNumbers', locale)}</p>
-                <p class="text-sm text-gray-400">${translate('invalidPercentageOfTotal', locale, [formattedTotalPercentage])}</p>
+                <p class="text-4xl font-extrabold text-blue-700 dark:text-blue-400">${formattedInvalid}</p>
+                <p class="text-gray-500 dark:text-gray-400">${translate('invalidNumbers', locale)}</p>
+                <p class="text-sm text-gray-400 dark:text-gray-500">${translate('invalidPercentageOfTotal', locale, [formattedTotalPercentage])}</p>
             </div>
             <div>
-                <p class="text-4xl font-extrabold text-green-700">${formattedFixable}</p>
-                <p class="text-gray-500">${translate('potentiallyFixable', locale)}</p>
-                <p class="text-sm text-gray-400">${translate('fixablePercentageOfInvalid', locale, [formattedFixablePercentage])}</p>
+                <p class="text-4xl font-extrabold text-green-700 dark:text-green-400">${formattedFixable}</p>
+                <p class="text-gray-500 dark:text-gray-400">${translate('potentiallyFixable', locale)}</p>
+                <p class="text-sm text-gray-400 dark:text-gray-500">${translate('fixablePercentageOfInvalid', locale, [formattedFixablePercentage])}</p>
             </div>
         </div>
     `;
@@ -80,11 +80,11 @@ function createFooter(locale = 'en-GB', translations) {
 
     return `
     <p id="data-timestamp-container" 
-       class="text-sm text-gray-500 mt-2"
+       class="text-sm text-gray-500 dark:text-gray-400 mt-2"
        data-timestamp="${dataTimestamp.getTime()}">
         ${dataSourcedTemplate}
     </p>
-    <p class="text-sm text-gray-500 mt-2">${suggestionIssueLink} <a href="${githubLink}" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:text-blue-700 underline transition-colors">${letMeKnowOnGitHub}</a>.</p>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">${suggestionIssueLink} <a href="${githubLink}" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:text-blue-700 underline transition-colors">${letMeKnowOnGitHub}</a>.</p>
     
     <script>
         // Embed the translations object for client-side use
@@ -215,17 +215,17 @@ function createListItem(item, locale) {
     const disusedLabel = isDisused(item) ? `<span class="${commonLabelClass} bg-red-200 text-red-800">${translate('disused', locale)}</span>` : '';
 
     return `
-        <li class="bg-white rounded-xl shadow-md p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
+        <li class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
             <div class="min-w-0">
                 <div class="flex-shrink-0 flex flex-wrap items-center gap-2">
-                    <h3 class="text-lg font-bold text-gray-900">
-                        <a href="${item.osmUrl}" target="_blank" rel="noopener noreferrer" class="hover:text-gray-950 underline transition-colors">${getFeatureTypeName(item)}</a>
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100">
+                        <a href="${item.osmUrl}" target="_blank" rel="noopener noreferrer" class="hover:text-gray-950 dark:hover:text-gray-200 underline transition-colors">${getFeatureTypeName(item)}</a>
                     </h3>
                     ${disusedLabel}
                 </div>
                 <div class="grid grid-cols-[max-content,1fr] gap-x-4">
                     <div class="col-span-1">
-                        <span class="font-semibold text-xs text-gray-700">${translate('phone', locale)}</span>
+                        <span class="font-semibold text-xs text-gray-700 dark:text-gray-400">${translate('phone', locale)}</span>
                     </div>
                     <div class="col-span-1 whitespace-nowrap">
                         <span>${phoneNumber}</span>
@@ -270,38 +270,43 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
 
     const fixableListContent = autofixableNumbers.length > 0 ?
         autofixableNumbers.map(item => createListItem(item, locale)).join('') :
-        `<li class="bg-white rounded-xl shadow-md p-6 text-center text-gray-500">${translate('noAutoFixable', locale)}</li>`;
+        `<li class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 text-center text-gray-500 dark:text-gray-400">${translate('noAutoFixable', locale)}</li>`;
 
     const invalidListContent = manualFixNumbers.length > 0 ?
         manualFixNumbers.map(item => createListItem(item, locale)).join('') :
-        `<li class="bg-white rounded-xl shadow-md p-6 text-center text-gray-500">${translate('noInvalidNumbers', locale)}</li>`;
+        `<li class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 text-center text-gray-500 dark:text-gray-400">${translate('noInvalidNumbers', locale)}</li>`;
 
     // Dynamically create the list of all editor IDs for the client-side script
     const allEditorIdsClient = JSON.stringify(ALL_EDITOR_IDS);
 
     const htmlContent = `
     <!DOCTYPE html>
-    <html lang="${locale}"> 
+    <html lang="${locale}" class="">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>${translate('countryReportTitle', locale, [countryName])}</title>
         ${favicon}
         <link href="../styles.css" rel="stylesheet">
+        <script src="../theme.js"></script>
         <style>
-            body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+            body { font-family: 'Inter', sans-serif; @apply bg-gray-100 dark:bg-gray-900; }
         </style>
     </head>
     <body class="p-8">
         <div class="max-w-4xl mx-auto space-y-8">
             <header class="text-center relative"> 
-                <div class="absolute top-0 right-0">
-                    <button id="settings-toggle" class="p-2 text-gray-500 hover:text-gray-900 transition-colors rounded-full" aria-label="${translate('settings', locale)}">
+                <div class="absolute top-0 right-0 flex items-center space-x-2">
+                    <button id="theme-toggle" type="button" class="text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 rounded-lg text-sm p-2.5">
+                        <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+                        <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.121-3.536a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM10 16a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM3.05 4.54a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zm1.414 10.606l.707.707a1 1 0 01-1.414 1.414l-.707-.707a1 1 0 011.414-1.414zM16.95 4.54a1 1 0 010 1.414l.707.707a1 1 0 111.414-1.414l-.707-.707a1 1 0 01-1.414 0z"></path></svg>
+                    </button>
+                    <button id="settings-toggle" class="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors rounded-full" aria-label="${translate('settings', locale)}">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340.274 340.274" fill="currentColor" class="h-6 w-6">
                             <path d="M293.629,127.806l-5.795-13.739c19.846-44.856,18.53-46.189,14.676-50.08l-25.353-24.77l-2.516-2.12h-2.937 c-1.549,0-6.173,0-44.712,17.48l-14.184-5.719c-18.332-45.444-20.212-45.444-25.58-45.444h-35.765 c-5.362,0-7.446-0.006-24.448,45.606l-14.123,5.734C86.848,43.757,71.574,38.19,67.452,38.19l-3.381,0.105L36.801,65.032 c-4.138,3.891-5.582,5.263,15.402,49.425l-5.774,13.691C0,146.097,0,147.838,0,153.33v35.068c0,5.501,0,7.44,46.585,24.127 l5.773,13.667c-19.843,44.832-18.51,46.178-14.655,50.032l25.353,24.8l2.522,2.168h2.951c1.525,0,6.092,0,44.685-17.516 l14.159,5.758c18.335,45.438,20.218,45.427,25.598,45.427h35.771c5.47,0,7.41,0,24.463-45.589l14.195-5.74 c26.014,11,41.253,16.585,45.349,16.585l3.404-0.096l27.479-26.901c3.909-3.945,5.278-5.309-15.589-49.288l5.734-13.702 c46.496-17.967,46.496-19.853,46.496-25.221v-35.029C340.268,146.361,340.268,144.434,293.629,127.806z M170.128,228.474 c-32.798,0-59.504-26.187-59.504-58.364c0-32.153,26.707-58.315,59.504-58.315c32.78,0,59.43,26.168,59.43,58.315 C229.552,202.287,202.902,228.474,170.128,228.474z"/>
                         </svg>
                     </button>
-                    <div id="editor-settings-menu" class="hidden absolute right-0 mt-2 bg-white rounded-lg shadow-xl z-10 text-left border border-gray-200 divide-y divide-gray-200">
+                    <div id="editor-settings-menu" class="hidden absolute right-0 mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl z-10 text-left border border-gray-200 dark:border-gray-700 divide-y divide-gray-200 dark:divide-gray-700">
                         </div>
                 </div>
                 <a href="../${safeCountryName}.html" class="inline-block mb-4 text-blue-500 hover:text-blue-700 transition-colors">
@@ -310,25 +315,25 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
                     </svg>
                     <span class="align-middle">${translate('backToCountryPage', locale)}</span>
                 </a>
-                <h1 class="text-4xl font-extrabold text-gray-900">${translate('phoneNumberReport', locale)}</h1>
-                <h2 class="text-2xl font-semibold text-gray-700 mt-2">${subdivision.name}</h2>
+                <h1 class="text-4xl font-extrabold text-gray-900 dark:text-gray-100">${translate('phoneNumberReport', locale)}</h1>
+                <h2 class="text-2xl font-semibold text-gray-700 dark:text-gray-300 mt-2">${subdivision.name}</h2>
             </header>
             ${createStatsBox(totalNumbers, invalidNumbers.length, autofixableNumbers.length, locale)}
             <div class="text-center">
-                <h2 class="text-2xl font-semibold text-gray-900">${translate('fixableNumbersHeader', locale)}</h2>
-                <p class="text-sm text-gray-500 mt-2">${translate('fixableNumbersDescription', locale)}</p>
+                <h2 class="text-2xl font-semibold text-gray-900 dark:text-gray-100">${translate('fixableNumbersHeader', locale)}</h2>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">${translate('fixableNumbersDescription', locale)}</p>
             </div>
             <ul class="space-y-4">
                 ${fixableListContent}
             </ul>
             <div class="text-center">
-                <h2 class="text-2xl font-semibold text-gray-900">${translate('invalidNumbersHeader', locale)}</h2>
-                <p class="text-sm text-gray-500 mt-2">${translate('invalidNumbersDescription', locale)}</p>
+                <h2 class="text-2xl font-semibold text-gray-900 dark:text-gray-100">${translate('invalidNumbersHeader', locale)}</h2>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">${translate('invalidNumbersDescription', locale)}</p>
             </div>
             <ul class="space-y-4">
                 ${invalidListContent}
             </ul>
-            <div class="bg-white rounded-xl shadow-lg p-2 text-center">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-2 text-center">
                 ${createFooter(locale, translations)}
             </div>
         </div>
@@ -521,17 +526,17 @@ async function generateMainIndexHtml(countryStats, locale, translations) {
         const description = translate('invalidNumbersOutOf', itemLocale, [formattedInvalid, formattedFixable, formattedTotal]);
 
         return `
-            <a href="${countryPageName}" class="bg-white rounded-xl shadow-lg p-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 transition-transform transform hover:scale-105">
+            <a href="${countryPageName}" class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 transition-transform transform hover:scale-105">
                 <div class="flex-grow flex items-center space-x-4">
                     <div class="h-12 w-12 rounded-full flex-shrink-0" style="background-color: ${backgroundColor};"></div>
                     <div class="flex-grow">
-                        <h3 class="text-xl font-bold text-gray-900">${country.name}</h3>
-                        <p class="text-sm text-gray-500">${description}</p>
+                        <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100">${country.name}</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">${description}</p>
                     </div>
                 </div>
                 <div class="text-center sm:text-right">
-                    <p class="text-2xl font-bold text-gray-800">${validPercentage.toLocaleString(itemLocale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<span class="text-base font-normal">%</span></p>
-                    <p class="text-xs text-gray-500">${translate('invalid', itemLocale)}</p>
+                    <p class="text-2xl font-bold text-gray-800 dark:text-gray-100">${validPercentage.toLocaleString(itemLocale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<span class="text-base font-normal">%</span></p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">${translate('invalid', itemLocale)}</p>
                 </div>
             </a>
         `;
@@ -539,32 +544,39 @@ async function generateMainIndexHtml(countryStats, locale, translations) {
 
     const htmlContent = `
     <!DOCTYPE html>
-    <html lang="${locale}">
+    <html lang="${locale}" class="">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>${translate('mainIndexTitle', locale)}</title>
         ${favicon}
         <link href="./styles.css" rel="stylesheet">
+        <script src="theme.js"></script>
         <style>
-            body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+            body { font-family: 'Inter', sans-serif; @apply bg-gray-100 dark:bg-gray-900; }
         </style>
     </head>
     <body class="p-8">
         <div class="max-w-5xl mx-auto space-y-8">
-            <header class="text-center space-y-2">
-                <h1 class="text-4xl font-extrabold text-gray-900">${translate('osmPhoneNumberValidation', locale)}</h1>
-                <p class="text-sm text-gray-500">${translate('reportSubtitle', locale)}</p>
+            <header class="text-center space-y-2 relative">
+                <div class="absolute top-0 right-0">
+                    <button id="theme-toggle" type="button" class="text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 rounded-lg text-sm p-2.5">
+                        <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+                        <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.121-3.536a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM10 16a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM3.05 4.54a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zm1.414 10.606l.707.707a1 1 0 01-1.414 1.414l-.707-.707a1 1 0 011.414-1.414zM16.95 4.54a1 1 0 010 1.414l.707.707a1 1 0 111.414-1.414l-.707-.707a1 1 0 01-1.414 0z"></path></svg>
+                    </button>
+                </div>
+                <h1 class="text-4xl font-extrabold text-gray-900 dark:text-gray-100">${translate('osmPhoneNumberValidation', locale)}</h1>
+                <p class="text-sm text-gray-500 dark:text-gray-400">${translate('reportSubtitle', locale)}</p>
             </header>
-            <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
                 <div class="flex flex-col sm:flex-row justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold text-gray-900">${translate('countryReports', locale)}</h2>
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">${translate('countryReports', locale)}</h2>
                 </div>
                 <div class="space-y-4">
                     ${listContent}
                 </div>
             </div>
-            <div class="bg-white rounded-xl shadow-lg p-2 text-center">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-2 text-center">
                 ${createFooter(locale, translations)}
             </div>
         </div>
@@ -910,40 +922,47 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
 async function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, locale, translations) {
     const htmlContent = `
     <!DOCTYPE html>
-    <html lang="${locale}">
+    <html lang="${locale}" class="">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>${translate('countryReportTitle', locale, [countryName])}</title>
         ${favicon}
         <link href="./styles.css" rel="stylesheet">
+        <script src="theme.js"></script>
         <style>
-            body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+            body { font-family: 'Inter', sans-serif; @apply bg-gray-100 dark:bg-gray-900; }
         </style>
     </head>
     <body class="p-8">
         <div class="max-w-5xl mx-auto space-y-8">
-            <header class="text-center space-y-2">
+            <header class="text-center space-y-2 relative">
+                <div class="absolute top-0 right-0">
+                    <button id="theme-toggle" type="button" class="text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 rounded-lg text-sm p-2.5">
+                        <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+                        <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.121-3.536a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM10 16a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM3.05 4.54a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zm1.414 10.606l.707.707a1 1 0 01-1.414 1.414l-.707-.707a1 1 0 011.414-1.414zM16.95 4.54a1 1 0 010 1.414l.707.707a1 1 0 111.414-1.414l-.707-.707a1 1 0 01-1.414 0z"></path></svg>
+                    </button>
+                </div>
                 <a href="index.html" class="inline-block mb-4 text-blue-500 hover:text-blue-700 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline-block align-middle mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                     </svg>
                     <span class="align-middle">${translate('backToAllCountries', locale)}</span>
                 </a>
-                <h1 class="text-4xl font-extrabold text-gray-900">${translate('osmPhoneNumberValidation', locale)}</h1>
-                <p class="text-sm text-gray-500">${translate('reportSubtitle', locale, [countryName])}</p>
+                <h1 class="text-4xl font-extrabold text-gray-900 dark:text-gray-100">${translate('osmPhoneNumberValidation', locale)}</h1>
+                <p class="text-sm text-gray-500 dark:text-gray-400">${translate('reportSubtitle', locale, [countryName])}</p>
             </header>
             ${createStatsBox(totalTotalNumbers, totalInvalidCount, totalAutofixableCount, locale)}
-            <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
                 <div class="flex flex-col sm:flex-row justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold text-gray-900">${translate('divisionalReports', locale)}</h2>
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">${translate('divisionalReports', locale)}</h2>
                     <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 mt-4 sm:mt-0">
                         <div class="flex items-center">
                             <input type="checkbox" id="hide-empty" checked class="h-4 w-4 rounded text-blue-600 focus:ring-blue-500 border-gray-300">
-                            <label for="hide-empty" class="ml-2 text-sm font-medium text-gray-700">${translate('hideEmptyDivisions', locale)}</label>
+                            <label for="hide-empty" class="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">${translate('hideEmptyDivisions', locale)}</label>
                         </div>
                         <div class="flex flex-wrap items-center justify-end space-x-2 space-y-2">
-                            <span class="mr-2 text-sm font-medium text-gray-700">${translate('sortBy', locale)}</span>
+                            <span class="mr-2 text-sm font-medium text-gray-700 dark:text-gray-300">${translate('sortBy', locale)}</span>
                             <button id="sort-percentage" data-sort="percentage" class="sort-btn px-4 py-2 rounded-md text-sm font-medium transition-colors">${translate('invalidPercentage', locale)}</button>
                             <button id="sort-invalid" data-sort="invalidCount" class="sort-btn px-4 py-2 rounded-md text-sm font-medium transition-colors">${translate('invalidCount', locale)}</button>
                             <button id="sort-name" data-sort="name" class="sort-btn px-4 py-2 rounded-md text-sm font-medium transition-colors">${translate('name', locale)}</button>
@@ -953,7 +972,7 @@ async function generateCountryIndexHtml(countryName, groupedDivisionStats, total
                 <div id="division-list" class="space-y-4">
                 </div>
             </div>
-            <div class="bg-white rounded-xl shadow-lg p-2 text-center">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-2 text-center">
                 ${createFooter(locale, translations)}
             </div>
         </div>
