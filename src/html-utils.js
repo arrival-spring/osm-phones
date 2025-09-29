@@ -227,14 +227,14 @@ function createListItem(item, locale) {
                     <div class="col-span-1">
                         <span class="font-semibold text-xs text-gray-700 dark:text-gray-400">${translate('phone', locale)}</span>
                     </div>
-                    <div class="col-span-1 whitespace-nowrap">
+                    <div class="col-span-1">
                         <span>${phoneNumber}</span>
                     </div>
                     ${item.autoFixable ? `
                     <div class="col-span-1">
                         <span class="font-semibold text-xs text-gray-700">${translate('suggestedFix', locale)}</span>
                     </div>
-                    <div class="col-span-1 whitespace-nowrap">
+                    <div class="col-span-1">
                         <span>${fixedNumber}</span>
                     </div>
                     ` : ''}
