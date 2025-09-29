@@ -5,13 +5,41 @@ const { PUBLIC_DIR, OSM_EDITORS, ALL_EDITOR_IDS, DEFAULT_EDITORS_DESKTOP, DEFAUL
 const { safeName, getFeatureTypeName, isDisused } = require('./data-processor');
 const { translate } = require('./i18n');
 
-const githubLink = "https://github.com/arrival-spring/osm-phones/"
+const githubLink = "https://github.com/arrival-spring/osm-phones/";
 const favicon = '<link rel="icon" href="data:image/svg+xml,&lt;svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22&gt;&lt;text y=%22.9em%22 font-size=%2290%22&gt;📞&lt;/text&gt;&lt;/svg&gt;">';
 
 const themeButton = `<button id="theme-toggle" type="button" class="text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-sm p-2.5">
                         <svg id="theme-toggle-dark-icon" class="hidden w-7 h-7" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
                         <svg id="theme-toggle-light-icon" class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="5"/><line x1="12" y1="3" x2="12" y2="5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="19" x2="12" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="3" y1="12" x2="5" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="19" y1="12" x2="21" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="5.64" y1="5.64" x2="6.8" y2="6.8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="17.2" y1="17.2" x2="18.36" y2="18.36" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="5.64" y1="18.36" x2="6.8" y2="17.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="17.2" y1="6.8" x2="18.36" y2="5.64" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                    </button>`
+                    </button>`;
+
+const getBackgroundColourScript = `
+    <script>
+        function getBackgroundColor(percent, isDark) {
+            if (isDark) {
+                // Dark mode: less saturated, darker colors
+                if (percent > 2) return 'hsl(0, 40%, 30%)'; // Dark red
+                const hue = ((2 - percent) / 2) * 120;
+                return \`hsl(\${hue}, 40%, 30%)\`; // Dark green to dark yellow
+            } else {
+                // Light mode: vibrant colors
+                if (percent > 2) return 'hsl(0, 70%, 50%)'; // Bright red
+                const hue = ((2 - percent) / 2) * 120;
+                return \`hsl(\${hue}, 70%, 50%)\`; // Bright green to bright yellow
+            }
+        }
+
+        function applyColors() {
+            const isDark = document.documentElement.classList.contains('dark');
+            document.querySelectorAll('.color-indicator').forEach(el => {
+                const percentage = parseFloat(el.dataset.percentage);
+                el.style.backgroundColor = getBackgroundColor(percentage, isDark);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', applyColors);
+        window.addEventListener('themeChanged', applyColors);
+    </script>`;
 
 /**
  * Creates the HTML box displaying statistics.
@@ -516,7 +544,7 @@ async function generateMainIndexHtml(countryStats, locale, translations) {
         const safeCountryName = safeName(country.name);
         const countryPageName = `${safeCountryName}.html`;
         const percentage = country.totalNumbers > 0 ? (country.invalidCount / country.totalNumbers) * 100 : 0;
-        const validPercentage = Math.max(0, Math.min(100, percentage));
+        const invalidPercentage = Math.max(0, Math.min(100, percentage));
 
         // Use the country's specific locale for number formatting and description text
         const itemLocale = country.locale || locale; // Fallback to the main page locale
@@ -532,14 +560,14 @@ async function generateMainIndexHtml(countryStats, locale, translations) {
         return `
             <a href="${countryPageName}" class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 transition-transform transform hover:scale-105">
                 <div class="flex-grow flex items-center space-x-4">
-                    <div class="h-12 w-12 rounded-full flex-shrink-0 color-indicator" data-percentage="${validPercentage}"></div>
+                    <div class="h-12 w-12 rounded-full flex-shrink-0 color-indicator" data-percentage="${invalidPercentage}"></div>
                     <div class="flex-grow">
                         <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100">${country.name}</h3>
                         <p class="text-sm text-gray-500 dark:text-gray-400">${description}</p>
                     </div>
                 </div>
                 <div class="text-center sm:text-right">
-                    <p class="text-2xl font-bold text-gray-800 dark:text-gray-100">${validPercentage.toLocaleString(itemLocale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<span class="text-base font-normal">%</span></p>
+                    <p class="text-2xl font-bold text-gray-800 dark:text-gray-100">${invalidPercentage.toLocaleString(itemLocale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<span class="text-base font-normal">%</span></p>
                     <p class="text-xs text-gray-500 dark:text-gray-400">${translate('invalid', itemLocale)}</p>
                 </div>
             </a>
@@ -581,32 +609,7 @@ async function generateMainIndexHtml(countryStats, locale, translations) {
                 ${createFooter(locale, translations)}
             </div>
         </div>
-        <script>
-            function getBackgroundColor(percent, isDark) {
-                if (isDark) {
-                    // Dark mode: less saturated, darker colors
-                    if (percent > 2) return 'hsl(0, 40%, 30%)'; // Dark red
-                    const hue = ((2 - percent) / 2) * 120;
-                    return \`hsl(\${hue}, 40%, 30%)\`; // Dark green to dark yellow
-                } else {
-                    // Light mode: vibrant colors
-                    if (percent > 2) return 'hsl(0, 70%, 50%)'; // Bright red
-                    const hue = ((2 - percent) / 2) * 120;
-                    return \`hsl(\${hue}, 70%, 50%)\`; // Bright green to bright yellow
-                }
-            }
-
-            function applyColors() {
-                const isDark = document.documentElement.classList.contains('dark');
-                document.querySelectorAll('.color-indicator').forEach(el => {
-                    const percentage = parseFloat(el.dataset.percentage);
-                    el.style.backgroundColor = getBackgroundColor(percentage, isDark);
-                });
-            }
-
-            document.addEventListener('DOMContentLoaded', applyColors);
-            window.addEventListener('themeChanged', applyColors);
-        </script>
+        ${getBackgroundColourScript}
     </body>
     </html>
     `;
@@ -663,27 +666,6 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
                 minimumFractionDigits: 0, 
                 maximumFractionDigits: 0 
             });
-        }
-        
-        // Client-side color calculation logic (duplicated for client script access)
-        function getBackgroundColor(percent, isDark) {
-            if (isDark) {
-                if (percent > 2) return 'hsl(0, 40%, 30%)';
-                const hue = ((2 - percent) / 2) * 120;
-                return \`hsl(\${hue}, 40%, 30%)\`;
-            } else {
-                if (percent > 2) return \`hsl(0, 70%, 50%)\`;
-                const hue = ((2 - percent) / 2) * 120;
-                return \`hsl(\${hue}, 70%, 50%)\`;
-            }
-        }
-
-        // Calculates the colour for the division group header
-        function getGroupBackgroundColorClient(invalidCount, totalNumbers) {
-            const isDark = document.documentElement.classList.contains('dark');
-            if (totalNumbers === 0) return isDark ? 'hsl(0, 0%, 20%)' : 'hsl(0, 0%, 90%)';
-            const percentage = (invalidCount / totalNumbers) * 100;
-            return getBackgroundColor(percentage, isDark);
         }
 
         // Pre-calculate total stats for each division group 
@@ -776,8 +758,6 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
 
                     const groupPercentageNumber = groupStats.total > 0 ? (groupStats.invalid / groupStats.total) * 100 : 0;
                     const formattedGroupPercentage = groupPercentageNumber.toLocaleString(locale, percentageOptions);
-
-                    const groupBgColor = getGroupBackgroundColorClient(groupStats.invalid, groupStats.total);
                     
                     // Client-side substitution using the embedded template literal
                     const groupStatsLine = T_CLIENT.invalidNumbersOutOf
@@ -822,7 +802,7 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
 
                         const iconCircle = document.createElement('div'); 
                         iconCircle.className = 'h-12 w-12 rounded-full flex-shrink-0 flex items-center justify-center';
-                        iconCircle.style.backgroundColor = groupBgColor;
+                        iconCircle.setAttribute('data-percentage', \${groupPercentageNumber});
 
                         const collapseIcon = createCollapseIcon();
                         iconCircle.appendChild(collapseIcon); 
@@ -881,8 +861,7 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
                     sortedData.forEach(division => {
                         const safeDivisionName = division.name.replace(/\\s+|\\//g, '-').toLowerCase();
                         const percentage = division.totalNumbers > 0 ? (division.invalidCount / division.totalNumbers) * 100 : 0;
-                        const validPercentage = Math.max(0, Math.min(100, percentage));
-                        const backgroundColor = getBackgroundColor(validPercentage);
+                        const invalidPercentage = Math.max(0, Math.min(100, percentage));
 
                         const formattedInvalidCount = formatNumber(division.invalidCount);
                         const formattedFixableCount = formatNumber(division.autoFixableCount);
@@ -903,7 +882,7 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
 
                         li.innerHTML = \`
                             <a href="\${safeCountryName}/\${safeDivisionName}.html" class="flex-grow flex items-center space-x-4">
-                                <div class="h-12 w-12 rounded-full flex-shrink-0" style="background-color: \${backgroundColor};"></div>
+                                <div class="h-12 w-12 rounded-full flex-shrink-0" data-percentage="\${invalidPercentage}"></div>
                                 <div class="flex-grow">
                                     <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100">\${division.name}</h3>
                                     <p class="text-sm text-gray-500 dark:text-gray-400">\${itemStatsLine}</p>
@@ -1010,6 +989,7 @@ async function generateCountryIndexHtml(countryName, groupedDivisionStats, total
             </div>
         </div>
         ${createRenderListScript(countryName, groupedDivisionStats, locale)}
+        ${getBackgroundColourScript}
     </body>
     </html>
     `;
