@@ -4,7 +4,8 @@ const {
     processSingleNumber,
     validateNumbers,
     getFeatureTypeName,
-    isDisused
+    isDisused,
+    validateSingleTag
 } = require('../src/data-processor');
 
 const SAMPLE_COUNTRY_CODE_GB = 'GB';
@@ -209,227 +210,358 @@ describe('processSingleNumber', () => {
 });
 
 // =====================================================================
+// processSingleNumber Tests
+// =====================================================================
+decribe('validateSingleTag', () => {
+    test('correctly count total numbers processed', () => {
+        const result = validateSingleTag(
+            '020 1234 5678; +44 20 7946 0000',
+            'GB'
+        );
+        expect(result.numberOfValues).toBe(2);
+    });
+
+    test('single valid phone number is valid', () => {
+        const result = validateSingleTag(
+            '+44 20 1234 5678',
+            'GB'
+        );
+        expect(result.isInvalid).toBe(false);
+    });
+
+    test('single invalid phone number is invalid', () => {
+        const result = validateSingleTag(
+            '020 1234 5678', // too short
+            'GB'
+        );
+        expect(result.isInvalid).toBe(false);
+        expect(result.autoFixable).toBe(false);
+    });
+
+    test('single number in national format is fixable', () => {
+        const result = validateSingleTag(
+            '01389 123456',
+            'GB'
+        );
+        expect(result.isInvalid).toBe(true);
+        expect(result.autoFixable).toBe(true);
+        expect(result.suggestedFixes).toBe(['+44 1389 123456'])
+    });
+
+    test('leading 0 and country code is fixable', () => {
+        const result = validateSingleTag(
+            '+44 01389 123456',
+            'GB'
+        );
+        expect(result.isInvalid).toBe(true);
+        expect(result.autoFixable).toBe(true);
+        expect(result.suggestedFixes).toBe(['+44 1389 123456'])
+    });
+
+    test('leading 0 and extraneous brackets is fixable', () => {
+        const result = validateSingleTag(
+            '+44 (0) (1389) 123456',
+            'GB'
+        );
+        expect(result.isInvalid).toBe(true);
+        expect(result.autoFixable).toBe(true);
+        expect(result.suggestedFixes).toBe(['+44 1389 123456'])
+    });
+
+    test('number with extension is valid', () => {
+        const result = validateSingleTag(
+            '+44 1389 123456 x104',
+            'GB'
+        );
+        expect(result.isInvalid).toBe(false);
+    });
+
+    test('using "or" as seperator is fixable', () => {
+        const result = validateSingleTag(
+            '+44 1389 123456 or +44 1389 123457',
+            'GB'
+        );
+        expect(result.isInvalid).toBe(true);
+        expect(result.autoFixable).toBe(true);
+        expect(result.suggestedFixes).toBe(['+44 1389 123456', '+44 1389 123456'])
+    });
+
+    test('using "and" as seperator is fixable', () => {
+        const result = validateSingleTag(
+            '+44 1389 123456 and +44 1389 123457',
+            'GB'
+        );
+        expect(result.isInvalid).toBe(true);
+        expect(result.autoFixable).toBe(true);
+        expect(result.suggestedFixes).toBe(['+44 1389 123456', '+44 1389 123456'])
+    });
+
+    test('using comma as seperator is fixable', () => {
+        const result = validateSingleTag(
+            '+44 1389 123456, +44 1389 123457',
+            'GB'
+        );
+        expect(result.isInvalid).toBe(true);
+        expect(result.autoFixable).toBe(true);
+        expect(result.suggestedFixes).toBe(['+44 1389 123456', '+44 1389 123456'])
+    });
+
+    test('using forward slash as seperator is fixable', () => {
+        const result_no_space = validateSingleTag(
+            '+44 1389 123456/+44 1389 123457',
+            'GB'
+        );
+        expect(result_no_space.isInvalid).toBe(true);
+        expect(result_no_space.autoFixable).toBe(true);
+        expect(result_no_space.suggestedFixes).toBe(['+44 1389 123456', '+44 1389 123456'])
+
+        const result_one_space = validateSingleTag(
+            '+44 1389 123456/ +44 1389 123457',
+            'GB'
+        );
+        expect(result_one_space.isInvalid).toBe(true);
+        expect(result_one_space.autoFixable).toBe(true);
+        expect(result_one_space.suggestedFixes).toBe(['+44 1389 123456', '+44 1389 123456'])
+
+        const result_two_spaces = validateSingleTag(
+            '+44 1389 123456/ +44 1389 123457',
+            'GB'
+        );
+        expect(result_two_spaces.isInvalid).toBe(true);
+        expect(result_two_spaces.autoFixable).toBe(true);
+        expect(result_two_spaces.suggestedFixes).toBe(['+44 1389 123456', '+44 1389 123456'])
+    });
+
+    test('fix one fixable number and keep existing valid number', () => {
+        const result = validateSingleTag(
+            '+44 1389 123456; 01389 123457',
+            'GB'
+        );
+        expect(result.isInvalid).toBe(true);
+        expect(result.autoFixable).toBe(true);
+        expect(result.suggestedFixes).toBe(['+44 1389 123456', '+44 1389 123456'])
+    });
+
+    test('one valid and one invalid makes the whole thing invalid and unfixable', () => {
+        const result = validateSingleTag(
+            '+44 1389 123456; +44 1389',
+            'GB'
+        );
+        expect(result.isInvalid).toBe(true);
+        expect(result.autoFixable).toBe(false);
+    });
+});
+
+// =====================================================================
 // validateNumbers Tests
 // =====================================================================
 describe('validateNumbers', () => {
-    const mockElements = [{
-        type: 'node',
-        id: 101,
-        tags: {
-            name: 'London Pub',
-            phone: '020 7946 0000, +442079460001', // Bad separator (comma)
-            amenity: 'pub'
-        }
-    }, {
-        type: 'way',
-        id: 202,
-        tags: {
-            name: 'London Hotel',
-            // Missing a digit, and contains an extension
-            'contact:phone': '020 1234 567 x10; +44 20 7946 0000',
-            tourism: 'hotel',
-        }
-    }];
+    const COUNTRY_CODE = 'GB';
 
-    test('should correctly find and count total numbers processed across all elements', () => {
-        // London Pub: 2 numbers. London Hotel: 2 numbers = 4 total
-        const result = validateNumbers(mockElements, SAMPLE_COUNTRY_CODE_GB);
+    // UK numbers used for testing
+    const VALID_LANDLINE = '+44 20 7946 0000';
+    const FIXABLE_LANDLINE_INPUT = '0207 9460000';
+    const FIXABLE_LANDLINE_SUGGESTED_FIX = '+44 20 7946 0000';
+    const UNFIXABLE_INPUT = '020 794'; // Too short
+    const BAD_SEPARATOR_INPUT = '020 7946 0000, 07700 900000';
+    const BAD_SEPARATOR_FIX = '+44 20 7946 0000; +44 7700 900000';
+    const FIXABLE_MOBILE_INPUT = '07700  900000';
+    const FIXABLE_MOBILE_SUGGESTED_FIX = '+44 7700 900000';
+
+    test('should correctly identify a single valid number and return zero invalid items', () => {
+        const elements = [
+            {
+                type: 'node',
+                id: 1001,
+                tags: { phone: VALID_LANDLINE, name: 'Valid Shop' },
+                lat: 51.5,
+                lon: 0.0,
+            },
+        ];
+
+        const result = validateNumbers(elements, COUNTRY_CODE);
+
+        expect(result.totalNumbers).toBe(1);
+        expect(result.invalidNumbers).toHaveLength(0);
+    });
+
+    test('should identify a single fixable invalid number (no country code) and provide suggested fix', () => {
+        const elements = [
+            {
+                type: 'way',
+                id: 2002,
+                tags: { 'contact:phone': FIXABLE_LANDLINE_INPUT, name: 'Fixable Business' },
+                center: { lat: 52.0, lon: 1.0 },
+            },
+        ];
+
+        const result = validateNumbers(elements, COUNTRY_CODE);
+
+        expect(result.totalNumbers).toBe(1);
+        expect(result.invalidNumbers).toHaveLength(1);
+        const invalidItem = result.invalidNumbers[0];
+
+        expect(invalidItem.id).toBe(2002);
+        expect(invalidItem.autoFixable).toBe(true);
+        expect(invalidItem.invalidNumbers).toEqual({
+            'contact:phone': FIXABLE_LANDLINE_INPUT,
+        });
+        expect(invalidItem.suggestedFixes).toEqual({
+            'contact:phone': FIXABLE_LANDLINE_SUGGESTED_FIX,
+        });
+    });
+
+    test('should identify a fundamentally unfixable number (too short) and mark it as unfixable', () => {
+        const elements = [
+            {
+                type: 'node',
+                id: 3003,
+                tags: { mobile: UNFIXABLE_INPUT, name: 'Short Mobile' },
+                lat: 53.0,
+                lon: 2.0,
+            },
+        ];
+
+        const result = validateNumbers(elements, COUNTRY_CODE);
+
+        expect(result.totalNumbers).toBe(1);
+        expect(result.invalidNumbers).toHaveLength(1);
+        const invalidItem = result.invalidNumbers[0];
+
+        expect(invalidItem.autoFixable).toBe(false);
+        expect(invalidItem.invalidNumbers.mobile).toBe(UNFIXABLE_INPUT);
+        expect(invalidItem.suggestedFixes.mobile).toBe('No fix available');
+    });
+
+    test('should handle multiple numbers in a single tag using a bad separator (comma)', () => {
+        const elements = [
+            {
+                type: 'node',
+                id: 4004,
+                tags: { phone: BAD_SEPARATOR_INPUT, name: 'Multiple Contacts' },
+                lat: 54.0,
+                lon: 3.0,
+            },
+        ];
+
+        const result = validateNumbers(elements, COUNTRY_CODE);
+
+        expect(result.totalNumbers).toBe(2);
+        expect(result.invalidNumbers).toHaveLength(1);
+        const invalidItem = result.invalidNumbers[0];
+
+        expect(invalidItem.autoFixable).toBe(true);
+        expect(invalidItem.invalidNumbers.phone).toBe(BAD_SEPARATOR_INPUT);
+        expect(invalidItem.suggestedFixes.phone).toBe(BAD_SEPARATOR_FIX);
+    });
+
+    test('should aggregate results from multiple phone tags on a single element', () => {
+        const elements = [
+            {
+                type: 'relation',
+                id: 5005,
+                tags: {
+                    'contact:phone': FIXABLE_LANDLINE_INPUT,
+                    'contact:mobile': FIXABLE_MOBILE_INPUT,
+                    phone: VALID_LANDLINE,
+                    name: 'Mixed Contact Info',
+                },
+                center: { lat: 55.0, lon: 4.0 },
+            },
+        ];
+
+        const result = validateNumbers(elements, COUNTRY_CODE);
+
+        expect(result.totalNumbers).toBe(3);
+        expect(result.invalidNumbers).toHaveLength(1);
+        const invalidItem = result.invalidNumbers[0];
+
+        expect(invalidItem.autoFixable).toBe(true);
+        // Only the two invalid tags should be recorded in the maps
+        expect(invalidItem.invalidNumbers).toEqual({
+            'contact:phone': FIXABLE_LANDLINE_INPUT,
+            'contact:mobile': FIXABLE_MOBILE_INPUT,
+        });
+        expect(invalidItem.suggestedFixes).toEqual({
+            'contact:phone': FIXABLE_LANDLINE_SUGGESTED_FIX,
+            'contact:mobile': FIXABLE_MOBILE_SUGGESTED_FIX,
+        });
+    });
+
+    test('should correctly process website tag (without protocol) and include protocol in base item', () => {
+        const websiteInput = 'www.test-site.co.uk';
+        const elements = [
+            {
+                type: 'node',
+                id: 6006,
+                tags: { phone: FIXABLE_LANDLINE_INPUT, website: websiteInput },
+                lat: 56.0,
+                lon: 5.0,
+            },
+        ];
+
+        const result = validateNumbers(elements, COUNTRY_CODE);
+
+        expect(result.invalidNumbers).toHaveLength(1);
+        const invalidItem = result.invalidNumbers[0];
+
+        expect(invalidItem.website).toBe(`http://${websiteInput}`);
+    });
+
+    test('should not change website tag if it already has a protocol', () => {
+        const websiteInput = 'https://secure.site.com';
+        const elements = [
+            {
+                type: 'node',
+                id: 6006,
+                tags: { phone: FIXABLE_LANDLINE_INPUT, website: websiteInput },
+                lat: 56.0,
+                lon: 5.0,
+            },
+        ];
+
+        const result = validateNumbers(elements, COUNTRY_CODE);
+
+        expect(result.invalidNumbers).toHaveLength(1);
+        const invalidItem = result.invalidNumbers[0];
+
+        expect(invalidItem.website).toBe(websiteInput);
+    });
+
+    test('should correctly calculate totalNumbers across multiple elements', () => {
+        const elements = [
+            {
+                type: 'node',
+                id: 7001,
+                tags: { phone: VALID_LANDLINE }, // 1 valid number
+                lat: 57.0,
+                lon: 6.0,
+            },
+            {
+                type: 'way',
+                id: 7002,
+                tags: { 'contact:phone': FIXABLE_LANDLINE_INPUT }, // 1 number, invalid
+                center: { lat: 57.1, lon: 6.1 },
+            },
+            {
+                type: 'relation',
+                id: 7003,
+                tags: { mobile: BAD_SEPARATOR_INPUT }, // 2 numbers, invalid
+                center: { lat: 57.2, lon: 6.2 },
+            },
+            {
+                type: 'node',
+                id: 7004,
+                tags: {}, // 0 numbers
+                lat: 57.3,
+                lon: 6.3,
+            }
+        ];
+
+        const result = validateNumbers(elements, COUNTRY_CODE);
+
+        // 1 (7001) + 1 (7002) + 2 (7003) = 4 total numbers checked
         expect(result.totalNumbers).toBe(4);
-    });
-
-    test('should identify invalid items due to bad separators', () => {
-        const result = validateNumbers(mockElements, SAMPLE_COUNTRY_CODE_GB);
-        expect(result.invalidNumbers.length).toBe(2);
-
-        // Check the 'London Pub' node
-        const londonPub = result.invalidNumbers.find(item => item.id === 101);
-        expect(londonPub).toBeDefined();
-        // The original tag value is added because of the bad separator (comma)
-        expect(londonPub.invalidNumbers).toContain('020 7946 0000, +442079460001');
-        expect(londonPub.autoFixable).toBe(true); // Separator fix is auto-fixable
-
-        // Suggested fix: correctly formatted numbers joined by semicolon
-        expect(londonPub.suggestedFixes.join('; ')).toBe('+44 20 7946 0000; +44 20 7946 0001');
-    });
-
-    test('should identify invalid items due to invalid number', () => {
-        const result = validateNumbers(mockElements, SAMPLE_COUNTRY_CODE_GB);
-
-        // Check the 'London Hotel' way
-        const londonHotel = result.invalidNumbers.find(item => item.id === 202);
-        expect(londonHotel).toBeDefined();
-
-        // One number is invalid (020 1234 567 x10), give the whole string (to be displayed on the webpage)
-        expect(londonHotel.invalidNumbers).toEqual('020 1234 567 x10; +44 20 7946 0000');
-        // Invalid number makes the whole item unfixable
-        expect(londonHotel.autoFixable).toBe(false);
-    });
-
-    const singleNumberElements = [{
-        type: 'node',
-        id: 400,
-        tags: {
-            'phone': '01389 123456'
-        }
-    }, {
-        type: 'node',
-        id: 401,
-        tags: {
-            'phone': '+44 01389 123456'
-        }
-    }, {
-        type: 'node',
-        id: 402,
-        tags: {
-            'phone': '+44 (0) (1389) 123456'
-        }
-    }, {
-        type: 'node',
-        id: 403,
-        tags: {
-            'phone': '+44 1389 123456 x104'
-        }
-    }];
-
-    test('autofix single invalid numbers', () => {
-        const result = validateNumbers(singleNumberElements, SAMPLE_COUNTRY_CODE_GB);
-        const node400 = result.invalidNumbers.find(item => item.id === 400);
-        expect(node400).toBeDefined();
-        expect(node400.autoFixable).toBe(true);
-        expect(node400.suggestedFixes.join('; ')).toBe('+44 1389 123456')
-
-        const node401 = result.invalidNumbers.find(item => item.id === 401);
-        expect(node401).toBeDefined();
-        expect(node401.autoFixable).toBe(true);
-        expect(node401.suggestedFixes.join('; ')).toBe('+44 1389 123456')
-
-        const node402 = result.invalidNumbers.find(item => item.id === 402);
-        expect(node402).toBeDefined();
-        expect(node402.autoFixable).toBe(true);
-        expect(node402.suggestedFixes.join('; ')).toBe('+44 1389 123456')
-    });
-
-    const badSeparatorElements = [{
-        type: 'node',
-        id: 200,
-        tags: {
-            'phone': '+44 1389 123456 or +44 1389 123457'
-        }
-    }, {
-        type: 'node',
-        id: 201,
-        tags: {
-            'phone': '+44 1389 123456 and +44 1389 123457'
-        }
-    }, {
-        type: 'node',
-        id: 202,
-        tags: {
-            'phone': '+44 1389 123456, +44 1389 123457'
-        }
-    }, {
-        type: 'node',
-        id: 203,
-        tags: {
-            'phone': '+44 1389 123456/+44 1389 123457'
-        }
-    }];
-
-    test('autofix incorrect separators', () => {
-        const result = validateNumbers(badSeparatorElements, SAMPLE_COUNTRY_CODE_GB);
-        const node200 = result.invalidNumbers.find(item => item.id === 200);
-        expect(node200).toBeDefined();
-        expect(node200.autoFixable).toBe(true);
-        expect(node200.suggestedFixes.join('; ')).toBe('+44 1389 123456; +44 1389 123457')
-
-        const node201 = result.invalidNumbers.find(item => item.id === 201);
-        expect(node201).toBeDefined();
-        expect(node201.autoFixable).toBe(true);
-        expect(node201.suggestedFixes.join('; ')).toBe('+44 1389 123456; +44 1389 123457')
-
-        const node202 = result.invalidNumbers.find(item => item.id === 202);
-        expect(node202).toBeDefined();
-        expect(node202.autoFixable).toBe(true);
-        expect(node202.suggestedFixes.join('; ')).toBe('+44 1389 123456; +44 1389 123457')
-
-        const node203 = result.invalidNumbers.find(item => item.id === 203);
-        expect(node203).toBeDefined();
-        expect(node203.autoFixable).toBe(true);
-        expect(node203.suggestedFixes.join('; ')).toBe('+44 1389 123456; +44 1389 123457')
-    });
-
-    const mixedInvalidElements = [{
-        type: 'node',
-        id: 300,
-        tags: {
-            'phone': '+44 1389 123456; 01389 123457'
-        }
-    }, {
-        type: 'node',
-        id: 301,
-        tags: {
-            'phone': '+44 1389 123456; +44 1389'
-        }
-    }];
-
-    test('fix one fixable number and keep existing valid number', () => {
-        const result = validateNumbers(mixedInvalidElements, SAMPLE_COUNTRY_CODE_GB);
-        const node300 = result.invalidNumbers.find(item => item.id === 300);
-        expect(node300).toBeDefined();
-        expect(node300.autoFixable).toBe(true);
-        expect(node300.suggestedFixes.join('; ')).toBe('+44 1389 123456; +44 1389 123457')
-    });
-
-    test('one valid and one invalid makes the whole thing invalid', () => {
-        const result = validateNumbers(mixedInvalidElements, SAMPLE_COUNTRY_CODE_GB);
-        const node301 = result.invalidNumbers.find(item => item.id === 301);
-        expect(node301).toBeDefined();
-        expect(node301.autoFixable).toBe(false);
-    });
-
-    const websiteElements = [{
-        type: 'node',
-        id: 102,
-        tags: {
-            'phone': '1234', // needs invalid phone to be included in results
-            'website': 'www.pub.com'
-        }
-    }, {
-        type: 'node',
-        id: 103,
-        tags: {
-            'phone': '1234',
-            'contact:website': 'https://bar.com'
-        }
-    }, {
-        type: 'node',
-        id: 104,
-        tags: {
-            'phone': '1234',
-            'contact:website': 'https://bar.com',
-            'website': 'https://pub.com'
-        }
-    }];
-
-    test('add scheme to website if it has none', () => {
-        const result = validateNumbers(websiteElements, SAMPLE_COUNTRY_CODE_GB);
-
-        const pub = result.invalidNumbers.find(item => item.id === 102);
-        expect(pub).toBeDefined();
-        expect(pub.website).toBe('http://www.pub.com');
-    });
-    test('contact:website is also detected', () => {
-        const result = validateNumbers(websiteElements, SAMPLE_COUNTRY_CODE_GB);
-
-        const bar = result.invalidNumbers.find(item => item.id === 103);
-        expect(bar).toBeDefined();
-        expect(bar.website).toBe('https://bar.com');
-    });
-    test('website taken first over contact:website', () => {
-        const result = validateNumbers(websiteElements, SAMPLE_COUNTRY_CODE_GB);
-
-        const doubleWebsite = result.invalidNumbers.find(item => item.id === 104);
-        expect(doubleWebsite).toBeDefined();
-        expect(doubleWebsite.website).toBe('https://pub.com');
+        expect(result.invalidNumbers).toHaveLength(2); // Elements 7002 and 7003 are invalid
     });
 });

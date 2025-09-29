@@ -1,5 +1,5 @@
 const { parsePhoneNumber } = require('libphonenumber-js');
-const { FEATURE_TAGS, HISTORIC_AND_DISUSED_PREFIXES, EXCLUSIONS } = require('./constants');
+const { FEATURE_TAGS, HISTORIC_AND_DISUSED_PREFIXES, EXCLUSIONS, PHONE_TAGS, WEBSITE_TAGS } = require('./constants');
 
 /**
  * Creates a safe, slug-like name for filenames.
@@ -139,6 +139,7 @@ function checkExclusions(phoneNumber, countryCode, osmTags) {
  * Validates a single phone number string using libphonenumber-js.
  * @param {string} numberStr - The phone number string to validate.
  * @param {string} countryCode - The country code for validation.
+ * @param {map} osmTags - All the OSM tags of the object, to check against exclusions
  * @returns {{isInvalid: boolean, suggestedFix: string, autoFixable: boolean}}
  */
 function processSingleNumber(numberStr, countryCode, osmTags = {}) {
@@ -201,6 +202,72 @@ function processSingleNumber(numberStr, countryCode, osmTags = {}) {
 }
 
 /**
+ * Validates a whole phone number tag using libphonenumber-js.
+ * @param {string} tagValue - The phone number value string to validate (possibly containing multiple numbers).
+ * @param {string} countryCode - The country code for validation.
+ * @param {map} osmTags - All the OSM tags of the object, to check against exclusions
+ * @returns {object} - The status and details of the processed item.
+ * @property {boolean} isInvalid - Indicates whether the number is invalid.
+ * @property {boolean} isAutoFixable - Indicates whether the number can be automatically corrected.
+ * @property {Array<string>} suggestedNumbersList - A list of suggested corrections (as strings).
+ * @property {number} numberOfValues - The number of phone values checked.
+ */
+function validateSingleTag(tagValue, countryCode, osmTags) {
+    // Define the regex for separators that are definitively "bad" and should trigger a fix report.
+    const BAD_SEPARATOR_REGEX = /(\s*,\s*)|(\s*\/\s*)|(\s+or\s+)|(\s+and\s+)/gi;
+
+    // This regex is used for splitting. It catches ALL valid and invalid separators:
+    // Raw semicolon (';'), semicolon with optional space ('; ?'), comma, slash, 'or' or 'and'.
+    const UNIVERSAL_SPLIT_REGEX = /(?:; ?)|(?:\s*,\s*)|(?:\s*\/\s*)|(?:\s+or\s+)|(?:\s+and\s+)/gi;
+
+    const originalTagValue = tagValue.trim();
+
+    // Check if a bad separator was used
+    const hasBadSeparator = originalTagValue.match(BAD_SEPARATOR_REGEX);
+
+    // Single-step splitting: The regex finds all separators and removes them.
+    const numbers = originalTagValue
+        .split(UNIVERSAL_SPLIT_REGEX)
+        .map(s => s.trim())
+        .filter(s => s.length > 0);
+
+    let hasIndividualInvalidNumber = false;
+
+    const tagValidationResult = {
+        isInvalid: false,
+        isAutoFixable: true,
+        suggestedNumbersList: [],
+        numberOfValues: 0
+    };
+
+    numbers.forEach(numberStr => {
+        tagValidationResult.numberOfValues++;
+
+        const validationResult = processSingleNumber(numberStr, countryCode, osmTags);
+        const { isInvalid, suggestedFix, autoFixable } = validationResult;
+
+        if (suggestedFix) {
+            tagValidationResult.suggestedNumbersList.push(suggestedFix);
+        }
+
+        if (isInvalid) {
+            hasIndividualInvalidNumber = true;
+            tagValidationResult.isAutoFixable = tagValidationResult.isAutoFixable && autoFixable;
+        }
+    });
+
+    // Final check for invalidity due to bad separators
+    if (hasIndividualInvalidNumber || hasBadSeparator) {
+        tagValidationResult.isInvalid = true;
+        if (hasBadSeparator) {
+            tagValidationResult.isAutoFixable = tagValidationResult.isAutoFixable && true;
+        }
+    }
+
+    return tagValidationResult;
+}
+
+/**
  * Validates phone numbers using libphonenumber-js, marking tags as invalid if
  * they contain bad separators (comma, slash, 'or') or invalid numbers.
  * @param {Array<Object>} elements - OSM elements with phone tags.
@@ -211,20 +278,11 @@ function validateNumbers(elements, countryCode) {
     const invalidItemsMap = new Map();
     let totalNumbers = 0;
 
-    // Define the regex for separators that are definitively "bad" and should trigger a fix report.
-    const BAD_SEPARATOR_REGEX = /(\s*,\s*)|(\s*\/\s*)|(\s+or\s+)|(\s+and\s+)/gi;
-
-    // This regex is used for splitting. It catches ALL valid and invalid separators:
-    // Raw semicolon (';'), semicolon with optional space ('; ?'), comma, slash, 'or' or 'and'.
-    const UNIVERSAL_SPLIT_REGEX = /(?:; ?)|(?:\s*,\s*)|(?:\s*\/\s*)|(?:\s+or\s+)|(?:\s+and\s+)/gi;
-
     elements.forEach(element => {
         if (element.tags) {
             const tags = element.tags;
-            const phoneTags = ['phone', 'contact:phone'];
-            const websiteTags = ['website', 'contact:website'];
 
-            let website = websiteTags.map(tag => tags[tag]).find(url => url);
+            let website = WEBSITE_TAGS.map(tag => tags[tag]).find(url => url);
             if (website && !website.startsWith('http://') && !website.startsWith('https://')) {
                 website = `http://${website}`; // Otherwise it won't be clickable later
             }
@@ -237,80 +295,50 @@ function validateNumbers(elements, countryCode) {
                 type: element.type,
                 id: element.id,
                 osmUrl: `https://www.openstreetmap.org/${element.type}/${element.id}`,
-                tag: null,
                 website: website,
                 lat: lat,
                 lon: lon,
                 name: name,
                 allTags: tags,
-                invalidNumbers: '',
-                suggestedFixes: [],
+                invalidNumbers: new Map(),
+                suggestedFixes: new Map(),
             };
 
-            for (const tag of phoneTags) {
-                if (tags[tag]) {
-                    const originalTagValue = tags[tag].trim();
+            for (const tag of PHONE_TAGS) {
+                if (!tags[tag]) {
+                    continue
+                }
+                const phoneTagValue = tags[tag];
 
-                    // Check if a bad separator was used
-                    const hasBadSeparator = originalTagValue.match(BAD_SEPARATOR_REGEX);
+                const validationResult = validateSingleTag(phoneTagValue, countryCode, tags);
+                
+                const isInvalid = validationResult.isInvalid;
+                const suggestedFix = validationResult.suggestedNumbersList.join('; ')
+                const autoFixable = validationResult.autoFixable;
+                totalNumbers += validationResult.numberOfValues;
 
-                    // Single-step splitting: The regex finds all separators and removes them.
-                    const numbers = originalTagValue
-                        .split(UNIVERSAL_SPLIT_REGEX)
-                        .map(s => s.trim())
-                        .filter(s => s.length > 0);
-
-                    const suggestedNumbersList = [];
-                    let hasIndividualInvalidNumber = false;
-
-                    numbers.forEach(numberStr => {
-                        totalNumbers++;
-
-                        const validationResult = processSingleNumber(numberStr, countryCode, tags);
-                        const { isInvalid, suggestedFix, autoFixable } = validationResult;
-
-                        suggestedNumbersList.push(suggestedFix);
-
-                        if (isInvalid) {
-                            hasIndividualInvalidNumber = true;
-
-                            if (!invalidItemsMap.has(key)) {
-                                invalidItemsMap.set(key, { ...baseItem, tag: tag, autoFixable: true });
-                            }
-                            const item = invalidItemsMap.get(key);
-
-                            item.invalidNumbers = originalTagValue;
-
-                            if (!autoFixable) {
-                                item.autoFixable = false;
-                            }
-                        }
-                    });
-
-                    // Final check for invalidity due to bad separators
-                    if (hasIndividualInvalidNumber || hasBadSeparator) {
-
-                        const suggestedTagValue = suggestedNumbersList.join('; ');
-
-                        if (!invalidItemsMap.has(key)) {
-                            const isAutoFixable = !hasIndividualInvalidNumber;
-                            invalidItemsMap.set(key, { ...baseItem, tag: tag, autoFixable: isAutoFixable });
-                        }
-                        const item = invalidItemsMap.get(key);
-
-                        item.suggestedFixes.push(suggestedTagValue);
-
-                        if (hasBadSeparator) {
-                            item.invalidNumbers = originalTagValue;
-                            item.autoFixable = item.autoFixable === false ? false : true;
-                        }
+                if (isInvalid) {        
+                    if (!invalidItemsMap.has(key)) {
+                        invalidItemsMap.set(key, { ...baseItem, autoFixable: autoFixable });
                     }
+                    const item = invalidItemsMap.get(key);
+
+                    item.invalidNumbers.set(tag, phoneTagValue);
+                    item.suggestedFixes.set(tag, suggestedFix);
+
+                    item.autoFixable = item.autoFixable && autoFixable;
                 }
             }
         }
     });
 
-    return { invalidNumbers: Array.from(invalidItemsMap.values()), totalNumbers };
+    const invalidItemsArray = Array.from(invalidItemsMap.values()).map(item => ({
+        ...item,
+        invalidNumbers: Object.fromEntries(item.invalidNumbers),
+        suggestedFixes: Object.fromEntries(item.suggestedFixes)
+    }));
+
+    return { invalidNumbers: invalidItemsArray, totalNumbers };
 }
 
 module.exports = {
@@ -320,5 +348,6 @@ module.exports = {
     getFeatureTypeName,
     stripExtension,
     processSingleNumber,
+    validateSingleTag,
     checkExclusions
 };

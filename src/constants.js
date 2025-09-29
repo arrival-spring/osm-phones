@@ -4,6 +4,9 @@ const { translate } = require('./i18n');
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 const OVERPASS_API_URL = 'https://overpass-api.de/api/interpreter';
 
+const PHONE_TAGS = ['phone', 'contact:phone', 'mobile', 'contact:mobile'];
+const WEBSITE_TAGS = ['website', 'contact:website'];
+
 const COUNTRIES = {
     'Belgium': {
         name: 'België / Belgique / Belgien',
@@ -176,6 +179,8 @@ const EXCLUSIONS = {
 module.exports = {
     PUBLIC_DIR,
     OVERPASS_API_URL,
+    PHONE_TAGS,
+    WEBSITE_TAGS,
     COUNTRIES,
     FEATURE_TAGS,
     HISTORIC_AND_DISUSED_PREFIXES,
