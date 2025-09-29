@@ -8,6 +8,11 @@ const { translate } = require('./i18n');
 const githubLink = "https://github.com/arrival-spring/osm-phones/"
 const favicon = '<link rel="icon" href="data:image/svg+xml,&lt;svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22&gt;&lt;text y=%22.9em%22 font-size=%2290%22&gt;📞&lt;/text&gt;&lt;/svg&gt;">';
 
+const themeButton = `<button id="theme-toggle" type="button" class="text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 rounded-lg text-sm p-2.5">
+                        <svg id="theme-toggle-dark-icon" class="hidden w-7 h-7" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+                        <svg id="theme-toggle-light-icon" class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="5"/><line x1="12" y1="3" x2="12" y2="5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="19" x2="12" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="3" y1="12" x2="5" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="19" y1="12" x2="21" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="5.64" y1="5.64" x2="6.8" y2="6.8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="17.2" y1="17.2" x2="18.36" y2="18.36" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="5.64" y1="18.36" x2="6.8" y2="17.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="17.2" y1="6.8" x2="18.36" y2="5.64" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                    </button>`
+
 /**
  * Creates the HTML box displaying statistics.
  * @param {number} total - Total phone numbers
@@ -190,7 +195,7 @@ function createListItem(item, locale) {
         return `
             <a href="${href}" ${target} ${onClick} 
                 data-editor-id="${editorId}"
-                class="${commonButtonClass} bg-blue-500 hover:bg-blue-600 text-white">
+                class="${commonButtonClass} bg-blue-500 hover:bg-blue-600 text-white dark:bg-blue-900 dark:hover:bg-blue-800 dark:text-gray-200">
                 ${text}
             </a>
         `;
@@ -200,19 +205,19 @@ function createListItem(item, locale) {
     const josmFixButton = josmFixUrl ?
         `<a href="#" onclick="openInJosm('${josmFixUrl}', event)" 
             data-editor-id="josm-fix"
-            class="${commonButtonClass} bg-yellow-200 text-yellow-800 hover:bg-yellow-300">
+            class="${commonButtonClass} bg-yellow-200 text-yellow-800 hover:bg-yellow-300 dark:bg-yellow-600 dark:hover:bg-yellow-500 dark:text-yellow-200">
             ${translate('fixInJOSM', locale)}
         </a>` :
         '';
     const fixableLabel = item.autoFixable ?
-        `<span data-editor-id="fix-label" class="${commonLabelClass} bg-yellow-200 text-yellow-800">${translate('fixable', locale)}</span>` :
+        `<span data-editor-id="fix-label" class="${commonLabelClass} bg-yellow-200 text-yellow-800 dark:bg-yellow-600 dark:hover:bg-yellow-500 dark:text-yellow-200">${translate('fixable', locale)}</span>` :
         '';
 
     const phoneNumber = item.invalidNumbers;
     const websiteButton = item.website ?
-        `<a href="${item.website}" class="${commonButtonClass} bg-green-500 text-white hover:bg-green-600" target="_blank">${translate('website', locale)}</a>` :
+        `<a href="${item.website}" class="${commonButtonClass} bg-green-500 text-white hover:bg-green-600 dark:bg-green-700 dark:hover:bg-green-600 dark:text-gray-200" target="_blank">${translate('website', locale)}</a>` :
         '';
-    const disusedLabel = isDisused(item) ? `<span class="${commonLabelClass} bg-red-200 text-red-800">${translate('disused', locale)}</span>` : '';
+    const disusedLabel = isDisused(item) ? `<span class="${commonLabelClass} bg-red-200 text-red-800 dark:bg-red-600 dark:text-red-100">${translate('disused', locale)}</span>` : '';
 
     return `
         <li class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
@@ -227,14 +232,14 @@ function createListItem(item, locale) {
                     <div class="col-span-1">
                         <span class="font-semibold text-xs text-gray-700 dark:text-gray-400">${translate('phone', locale)}</span>
                     </div>
-                    <div class="col-span-1">
+                    <div class="col-span-1 text-gray-900 dark:text-gray-100">
                         <span>${phoneNumber}</span>
                     </div>
                     ${item.autoFixable ? `
                     <div class="col-span-1">
-                        <span class="font-semibold text-xs text-gray-700">${translate('suggestedFix', locale)}</span>
+                        <span class="font-semibold text-xs text-gray-700 dark:text-gray-400">${translate('suggestedFix', locale)}</span>
                     </div>
-                    <div class="col-span-1">
+                    <div class="col-span-1 text-gray-900 dark:text-gray-100">
                         <span>${fixedNumber}</span>
                     </div>
                     ` : ''}
@@ -321,10 +326,7 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
         <div class="max-w-4xl mx-auto space-y-8">
             <header class="text-center relative"> 
                 <div class="absolute top-0 right-0 flex items-center space-x-2">
-                    <button id="theme-toggle" type="button" class="text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 rounded-lg text-sm p-2.5">
-                        <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
-                        <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.121-3.536a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM10 16a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM3.05 4.54a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zm1.414 10.606l.707.707a1 1 0 01-1.414 1.414l-.707-.707a1 1 0 011.414-1.414zM16.95 4.54a1 1 0 010 1.414l.707.707a1 1 0 111.414-1.414l-.707-.707a1 1 0 01-1.414 0z"></path></svg>
-                    </button>
+                    ${themeButton}
                     <button id="settings-toggle" class="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors rounded-full" aria-label="${translate('settings', locale)}">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340.274 340.274" fill="currentColor" class="h-6 w-6">
                             <path d="M293.629,127.806l-5.795-13.739c19.846-44.856,18.53-46.189,14.676-50.08l-25.353-24.77l-2.516-2.12h-2.937 c-1.549,0-6.173,0-44.712,17.48l-14.184-5.719c-18.332-45.444-20.212-45.444-25.58-45.444h-35.765 c-5.362,0-7.446-0.006-24.448,45.606l-14.123,5.734C86.848,43.757,71.574,38.19,67.452,38.19l-3.381,0.105L36.801,65.032 c-4.138,3.891-5.582,5.263,15.402,49.425l-5.774,13.691C0,146.097,0,147.838,0,153.33v35.068c0,5.501,0,7.44,46.585,24.127 l5.773,13.667c-19.843,44.832-18.51,46.178-14.655,50.032l25.353,24.8l2.522,2.168h2.951c1.525,0,6.092,0,44.685-17.516 l14.159,5.758c18.335,45.438,20.218,45.427,25.598,45.427h35.771c5.47,0,7.41,0,24.463-45.589l14.195-5.74 c26.014,11,41.253,16.585,45.349,16.585l3.404-0.096l27.479-26.901c3.909-3.945,5.278-5.309-15.589-49.288l5.734-13.702 c46.496-17.967,46.496-19.853,46.496-25.221v-35.029C340.268,146.361,340.268,144.434,293.629,127.806z M170.128,228.474 c-32.798,0-59.504-26.187-59.504-58.364c0-32.153,26.707-58.315,59.504-58.315c32.78,0,59.43,26.168,59.43,58.315 C229.552,202.287,202.902,228.474,170.128,228.474z"/>
@@ -562,10 +564,7 @@ async function generateMainIndexHtml(countryStats, locale, translations) {
         <div class="max-w-5xl mx-auto space-y-8">
             <header class="text-center space-y-2 relative">
                 <div class="absolute top-0 right-0">
-                    <button id="theme-toggle" type="button" class="text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 rounded-lg text-sm p-2.5">
-                        <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
-                        <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.121-3.536a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM10 16a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM3.05 4.54a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zm1.414 10.606l.707.707a1 1 0 01-1.414 1.414l-.707-.707a1 1 0 011.414-1.414zM16.95 4.54a1 1 0 010 1.414l.707.707a1 1 0 111.414-1.414l-.707-.707a1 1 0 01-1.414 0z"></path></svg>
-                    </button>
+                    ${themeButton}
                 </div>
                 <h1 class="text-4xl font-extrabold text-gray-900 dark:text-gray-100">${translate('osmPhoneNumberValidation', locale)}</h1>
                 <p class="text-sm text-gray-500 dark:text-gray-400">${translate('reportSubtitle', locale)}</p>
@@ -737,7 +736,7 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
 
         function renderList() {
 
-            const TARGET_LI_CLASS = 'bg-white rounded-xl shadow-lg p-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 transition-transform transform hover:scale-105';
+            const TARGET_LI_CLASS = 'bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 transition-transform transform hover:scale-105';
 
             const divisionNames = Object.keys(groupedDivisionStats);
             const isGrouped = divisionNames.length > 1;
@@ -832,11 +831,11 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
                         divisionNameContainer.className = 'flex-grow'; 
 
                         const divisionHeader = document.createElement('h3');
-                        divisionHeader.className = 'text-2xl font-bold text-gray-900'; 
+                        divisionHeader.className = 'text-2xl font-bold text-gray-900 dark:text-gray-100'; 
                         divisionHeader.textContent = divisionName;
 
                         const statsLine = document.createElement('p');
-                        statsLine.className = 'text-sm text-gray-500'; 
+                        statsLine.className = 'text-sm text-gray-500 dark:text-gray-400';
                         // Use the dynamically generated translated string
                         statsLine.textContent = groupStatsLine;
 
@@ -850,11 +849,11 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
                         rightSide.className = 'text-center sm:text-right flex-shrink-0 w-full sm:w-auto';
 
                         const percentageText = document.createElement('p');
-                        percentageText.className = 'text-2xl font-bold text-gray-800';
+                        percentageText.className = 'text-2xl font-bold text-gray-800 dark:text-gray-100';
                         percentageText.innerHTML = \`\${formattedGroupPercentage}<span class="text-base font-normal">%</span>\`;
 
                         const percentageLabel = document.createElement('p');
-                        percentageLabel.className = 'text-xs text-gray-500';
+                        percentageLabel.className = 'text-xs text-gray-500 dark:text-gray-400';
                         percentageLabel.textContent = T_CLIENT.invalid; 
 
                         rightSide.appendChild(percentageText);
@@ -906,8 +905,8 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
                             <a href="\${safeCountryName}/\${safeDivisionName}.html" class="flex-grow flex items-center space-x-4">
                                 <div class="h-12 w-12 rounded-full flex-shrink-0" style="background-color: \${backgroundColor};"></div>
                                 <div class="flex-grow">
-                                    <h3 class="text-xl font-bold text-gray-900">\${division.name}</h3>
-                                    <p class="text-sm text-gray-500">\${itemStatsLine}</p>
+                                    <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100">\${division.name}</h3>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">\${itemStatsLine}</p>
                                 </div>
                             </a>
                             <div class="text-center sm:text-right">
@@ -975,10 +974,7 @@ async function generateCountryIndexHtml(countryName, groupedDivisionStats, total
         <div class="max-w-5xl mx-auto space-y-8">
             <header class="text-center space-y-2 relative">
                 <div class="absolute top-0 right-0">
-                    <button id="theme-toggle" type="button" class="text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 rounded-lg text-sm p-2.5">
-                        <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
-                        <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.121-3.536a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM10 16a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM3.05 4.54a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zm1.414 10.606l.707.707a1 1 0 01-1.414 1.414l-.707-.707a1 1 0 011.414-1.414zM16.95 4.54a1 1 0 010 1.414l.707.707a1 1 0 111.414-1.414l-.707-.707a1 1 0 01-1.414 0z"></path></svg>
-                    </button>
+                    ${themeButton}
                 </div>
                 <a href="index.html" class="inline-block mb-4 text-blue-500 hover:text-blue-700 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline-block align-middle mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
