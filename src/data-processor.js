@@ -42,6 +42,15 @@ function getFeatureType(item) {
             return item.allTags[tag];
         }
     }
+    // If nothing was found then look in at disused prefixes
+    // (disused label will be applied anyway)
+    for (const prefix of HISTORIC_AND_DISUSED_PREFIXES) {
+        for (const tag of FEATURE_TAGS) {
+            if (item.allTags[`${prefix}:${tag}`]) {
+                return item.allTags[tag];
+            }
+        }
+    }
     return null
 }
 
