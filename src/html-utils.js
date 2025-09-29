@@ -190,7 +190,7 @@ function createListItem(item, locale) {
         return `
             <a href="${href}" ${target} ${onClick} 
                 data-editor-id="${editorId}"
-                class="${commonButtonClass} bg-blue-500 hover:bg-blue-600">
+                class="${commonButtonClass} bg-blue-500 hover:bg-blue-600 text-white">
                 ${text}
             </a>
         `;
@@ -216,7 +216,7 @@ function createListItem(item, locale) {
 
     return `
         <li class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
-            <div class="min-w-0">
+            <div class="w-full sm:w-2/3">
                 <div class="flex-shrink-0 flex flex-wrap items-center gap-2">
                     <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100">
                         <a href="${item.osmUrl}" target="_blank" rel="noopener noreferrer" class="hover:text-gray-950 dark:hover:text-gray-200 underline transition-colors">${getFeatureTypeName(item)}</a>
@@ -227,21 +227,21 @@ function createListItem(item, locale) {
                     <div class="col-span-1">
                         <span class="font-semibold text-xs text-gray-700 dark:text-gray-400">${translate('phone', locale)}</span>
                     </div>
-                    <div class="col-span-1 whitespace-nowrap">
+                    <div class="col-span-1">
                         <span>${phoneNumber}</span>
                     </div>
                     ${item.autoFixable ? `
                     <div class="col-span-1">
                         <span class="font-semibold text-xs text-gray-700">${translate('suggestedFix', locale)}</span>
                     </div>
-                    <div class="col-span-1 whitespace-nowrap">
+                    <div class="col-span-1">
                         <span>${fixedNumber}</span>
                     </div>
                     ` : ''}
                 </div>
             </div>
             
-            <div class="flex flex-wrap gap-2 w-full justify-end text-sm font-semibold">
+            <div class="flex flex-wrap gap-2 w-full sm:w-2/3 justify-end text-sm font-semibold">
                 ${websiteButton}
                 ${fixableLabel}
                 ${josmFixButton}
@@ -268,13 +268,37 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
     const autofixableNumbers = invalidNumbers.filter(item => item.autoFixable);
     const manualFixNumbers = invalidNumbers.filter(item => !item.autoFixable);
 
-    const fixableListContent = autofixableNumbers.length > 0 ?
-        autofixableNumbers.map(item => createListItem(item, locale)).join('') :
-        `<li class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 text-center text-gray-500 dark:text-gray-400">${translate('noAutoFixable', locale)}</li>`;
+    const anyInvalid = manualFixNumbers.length > 0
+    const anyFixable = autofixableNumbers.length > 0
 
-    const invalidListContent = manualFixNumbers.length > 0 ?
-        manualFixNumbers.map(item => createListItem(item, locale)).join('') :
-        `<li class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 text-center text-gray-500 dark:text-gray-400">${translate('noInvalidNumbers', locale)}</li>`;
+    const fixableListContent = autofixableNumbers.map(item => createListItem(item, locale)).join('');
+    const invalidListContent = manualFixNumbers.map(item => createListItem(item, locale)).join('');
+
+    const fixableSectionAndHeader = `
+        <div class="text-center">
+            <h2 class="text-2xl font-semibold text-gray-900 dark:text-gray-100">${translate('fixableNumbersHeader', locale)}</h2>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">${translate('fixableNumbersDescription', locale)}</p>
+        </div>
+        <ul class="space-y-4">
+            ${fixableListContent}
+        </ul>`;
+
+    const invalidSectionAndHeader = `
+        <div class="text-center">
+            <h2 class="text-2xl font-semibold text-gray-900 dark:text-gray-100">${translate('invalidNumbersHeader', locale)}</h2>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">${translate('invalidNumbersDescription', locale)}</p>
+        </div>
+        <ul class="space-y-4">
+            ${invalidListContent}
+        </ul>`;
+
+    const noInvalidContent = `<li class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 text-center text-gray-500 dark:text-gray-400">${translate('noInvalidNumbers', locale)}</li>`;
+
+    const fixableAndInvalidSectionContent =
+        (anyFixable && anyInvalid) ? fixableSectionAndHeader + invalidSectionAndHeader :
+        anyFixable ? fixableSectionAndHeader :
+        anyInvalid ? invalidSectionAndHeader :
+        noInvalidContent
 
     // Dynamically create the list of all editor IDs for the client-side script
     const allEditorIdsClient = JSON.stringify(ALL_EDITOR_IDS);
@@ -319,20 +343,7 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
                 <h2 class="text-2xl font-semibold text-gray-700 dark:text-gray-300 mt-2">${subdivision.name}</h2>
             </header>
             ${createStatsBox(totalNumbers, invalidNumbers.length, autofixableNumbers.length, locale)}
-            <div class="text-center">
-                <h2 class="text-2xl font-semibold text-gray-900 dark:text-gray-100">${translate('fixableNumbersHeader', locale)}</h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">${translate('fixableNumbersDescription', locale)}</p>
-            </div>
-            <ul class="space-y-4">
-                ${fixableListContent}
-            </ul>
-            <div class="text-center">
-                <h2 class="text-2xl font-semibold text-gray-900 dark:text-gray-100">${translate('invalidNumbersHeader', locale)}</h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">${translate('invalidNumbersDescription', locale)}</p>
-            </div>
-            <ul class="space-y-4">
-                ${invalidListContent}
-            </ul>
+            ${fixableAndInvalidSectionContent}
             <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-2 text-center">
                 ${createFooter(locale, translations)}
             </div>
