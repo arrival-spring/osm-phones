@@ -63,7 +63,7 @@ function getFeatureTypeName(item) {
     if (item.name) {
         return `${item.name}`;
     }
-    
+
     const featureType = getFeatureType(item);
 
     if (featureType) {
@@ -108,7 +108,7 @@ function checkExclusions(phoneNumber, countryCode, osmTags) {
     if (!phoneNumber) {
         return null;
     }
-    
+
     const countryExclusions = EXCLUSIONS[countryCode];
 
     if (countryExclusions) {
@@ -131,7 +131,7 @@ function checkExclusions(phoneNumber, countryCode, osmTags) {
             }
         }
     }
-    
+
     return null;
 }
 
@@ -175,8 +175,8 @@ function processSingleNumber(numberStr, countryCode, osmTags = {}) {
 
             // Manually append the extension in the standard format (' x{ext}').
             const extension = phoneNumber.ext ? ` x${phoneNumber.ext}` : '';
-            
-            const suggestedFix = (() => {
+
+            suggestedFix = (() => {
                 if (countryCode === 'US') {
                     // Use dashes as separator, but space after country code
                     const parts = internationalFormat.split(' ', 2);
