@@ -309,6 +309,10 @@ function validateNumbers(elements, countryCode) {
                     continue
                 }
                 const phoneTagValue = tags[tag];
+                if (tag === 'mobile' && phoneTagValue === 'yes') {
+                    // May be considered valid tagging, is not a phone number
+                    continue
+                }
 
                 const validationResult = validateSingleTag(phoneTagValue, countryCode, tags);
                 

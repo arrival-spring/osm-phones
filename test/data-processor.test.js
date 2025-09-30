@@ -563,4 +563,33 @@ describe('validateNumbers', () => {
         expect(result.totalNumbers).toBe(4);
         expect(result.invalidNumbers).toHaveLength(2); // Elements 7002 and 7003 are invalid
     });
+
+    test('should do nothing with mobile=yes and process actual phone number', () => {
+        const elements = [
+            {
+                type: 'relation',
+                id: 5005,
+                tags: {
+                    'mobile': 'yes',
+                    phone: FIXABLE_LANDLINE_INPUT,
+                    name: 'Mobile caterer',
+                },
+                center: { lat: 55.0, lon: 4.0 },
+            },
+        ];
+
+        const result = validateNumbers(elements, COUNTRY_CODE);
+
+        expect(result.totalNumbers).toBe(1);
+        expect(result.invalidNumbers).toHaveLength(1);
+        const invalidItem = result.invalidNumbers[0];
+
+        expect(invalidItem.autoFixable).toBe(true);
+        expect(invalidItem.invalidNumbers).toEqual({
+            'phone': FIXABLE_LANDLINE_INPUT,
+        });
+        expect(invalidItem.suggestedFixes).toEqual({
+            'phone': FIXABLE_LANDLINE_SUGGESTED_FIX,
+        });
+    });
 });
