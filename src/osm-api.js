@@ -14,16 +14,12 @@ async function fetchAdminLevels(divisionId, divisionName, admin_level, retries =
     const queryTimeout = 180;
     const areaId = divisionId + 3600000000;
 
-    console.log(`areaId: ${areaId}`);
-
     const query = `
         [out:json][timeout:${queryTimeout}];
         area(${areaId})->.division;
         rel(area.division)["admin_level"="${admin_level}"]["boundary"="administrative"]["name"];
         out body;
     `;
-
-    console.log(`Using overpass query: ${query}`);
 
     try {
         const response = await fetch(OVERPASS_API_URL, {
@@ -48,7 +44,6 @@ async function fetchAdminLevels(divisionId, divisionName, admin_level, retries =
         }
 
         const data = await response.json();
-        console.log(`Received this data ${data}...`);
         const subdivisions = data.elements.map(el => ({
             name: el.tags.name,
             id: el.id
