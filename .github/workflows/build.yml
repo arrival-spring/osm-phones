@@ -117,11 +117,6 @@ jobs:
             
             The simplified page build has been created. You can **download the zipped artifact** directly here:
             
-            **[Download simplified-report.zip](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts/${{ steps.get_artifact.outputs.artifact_id }}/zip)**
+            **[Download github-pages.zip](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts/${{ steps.get_artifact.outputs.artifact_id }})**
             
             *Note: You must be logged into GitHub to download this file.*
-            
-            (this comment will update if further builds are triggered)
-            
-          edit-mode: replace
-          comment-tag: build-artifact-link
