@@ -868,7 +868,7 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
 
 
                         const li = document.createElement('li');
-                        li.className = 'list-item';
+                        li.className = 'report-list-item';
 
                         li.innerHTML = \`
                             <a href="\${safeCountryName}/\${safeDivisionName}.html" class="list-item-main-link">
