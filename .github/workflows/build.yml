@@ -1,9 +1,6 @@
 name: Build and Deploy OSM Report
 
 on:
-  push:
-    branches:
-      - main
   pull_request:
     branches:
       - main
@@ -44,7 +41,6 @@ jobs:
 
     env:
       BUILD_TYPE: ${{ (github.event_name == 'pull_request' || github.event_name == 'push') && 'simplified' || 'full' }}
-      DEPLOY: ${{ github.event_name == 'pull_request' && 'no' || 'yes' }}
 
     steps:
       - name: Checkout repository
@@ -67,12 +63,11 @@ jobs:
         run: echo "The build type is $BUILD_TYPE"
 
       - name: Upload Pages artifact
-        if: env.DEPLOY == 'yes'
         uses: actions/upload-pages-artifact@v3
         with:
           path: './public'
 
       - name: Deploy to GitHub Pages
-        if: env.DPLOY == 'yes'
+        if: env.BUILD_TYPE == 'full'
         id: deployment
         uses: actions/deploy-pages@v4

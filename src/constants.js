@@ -8,15 +8,15 @@ const PHONE_TAGS = ['phone', 'contact:phone', 'mobile', 'contact:mobile'];
 const WEBSITE_TAGS = ['website', 'contact:website'];
 
 const COUNTRIES = {
-    'Belgium': {
-        name: 'België / Belgique / Belgien',
-        divisions: {
-            'Belgium': 3600937244,
-        },
-        countryCode: 'BE',
-        locale: 'en', // I had to pick something. It would be possible to do a code refactor to allow the user to switch languages dynamically
-        subdivisionAdminLevel: 4
-    },
+    // 'Belgium': {
+    //     name: 'België / Belgique / Belgien',
+    //     divisions: {
+    //         'Belgium': 3600937244,
+    //     },
+    //     countryCode: 'BE',
+    //     locale: 'en', // I had to pick something. It would be possible to do a code refactor to allow the user to switch languages dynamically
+    //     subdivisionAdminLevel: 4
+    // },
     'France': {
         name: 'France',
         divisions: {

@@ -5,8 +5,41 @@ const { PUBLIC_DIR, OSM_EDITORS, ALL_EDITOR_IDS, DEFAULT_EDITORS_DESKTOP, DEFAUL
 const { safeName, getFeatureTypeName, isDisused } = require('./data-processor');
 const { translate } = require('./i18n');
 
-const githubLink = "https://github.com/arrival-spring/osm-phones/"
+const githubLink = "https://github.com/arrival-spring/osm-phones/";
 const favicon = '<link rel="icon" href="data:image/svg+xml,&lt;svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22&gt;&lt;text y=%22.9em%22 font-size=%2290%22&gt;📞&lt;/text&gt;&lt;/svg&gt;">';
+
+const themeButton = `<button id="theme-toggle" type="button" class="text-gray-500 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-700 rounded-lg text-sm p-2.5">
+                        <svg id="theme-toggle-dark-icon" class="hidden w-7 h-7" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+                        <svg id="theme-toggle-light-icon" class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="5"/><line x1="12" y1="3" x2="12" y2="5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="19" x2="12" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="3" y1="12" x2="5" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="19" y1="12" x2="21" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="5.64" y1="5.64" x2="6.8" y2="6.8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="17.2" y1="17.2" x2="18.36" y2="18.36" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="5.64" y1="18.36" x2="6.8" y2="17.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="17.2" y1="6.8" x2="18.36" y2="5.64" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                    </button>`;
+
+const getBackgroundColourScript = `
+    <script>
+        function getBackgroundColor(percent, isDark) {
+            if (isDark) {
+                // Dark mode: less saturated, darker colors
+                if (percent > 2) return 'hsl(0, 40%, 30%)'; // Dark red
+                const hue = ((2 - percent) / 2) * 120;
+                return \`hsl(\${hue}, 40%, 30%)\`; // Dark green to dark yellow
+            } else {
+                // Light mode: vibrant colors
+                if (percent > 2) return 'hsl(0, 70%, 50%)'; // Bright red
+                const hue = ((2 - percent) / 2) * 120;
+                return \`hsl(\${hue}, 70%, 50%)\`; // Bright green to bright yellow
+            }
+        }
+
+        function applyColors() {
+            const isDark = document.documentElement.classList.contains('dark');
+            document.querySelectorAll('.color-indicator').forEach(el => {
+                const percentage = parseFloat(el.dataset.percentage);
+                el.style.backgroundColor = getBackgroundColor(percentage, isDark);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', applyColors);
+        window.addEventListener('themeChanged', applyColors);
+    </script>`;
 
 /**
  * Creates the HTML box displaying statistics.
@@ -190,7 +223,7 @@ function createListItem(item, locale) {
         return `
             <a href="${href}" ${target} ${onClick} 
                 data-editor-id="${editorId}"
-                class="${commonButtonClass} bg-blue-500 hover:bg-blue-600 text-white">
+                class="${commonButtonClass} bg-blue-500 hover:bg-blue-600 text-white dark:bg-blue-900 dark:hover:bg-blue-800 dark:text-gray-200">
                 ${text}
             </a>
         `;
@@ -200,19 +233,19 @@ function createListItem(item, locale) {
     const josmFixButton = josmFixUrl ?
         `<a href="#" onclick="openInJosm('${josmFixUrl}', event)" 
             data-editor-id="josm-fix"
-            class="${commonButtonClass} bg-yellow-200 text-yellow-800 hover:bg-yellow-300">
+            class="${commonButtonClass} bg-yellow-200 text-yellow-800 hover:bg-yellow-300 dark:bg-yellow-600 dark:hover:bg-yellow-500 dark:text-yellow-50">
             ${translate('fixInJOSM', locale)}
         </a>` :
         '';
     const fixableLabel = item.autoFixable ?
-        `<span data-editor-id="fix-label" class="${commonLabelClass} bg-yellow-200 text-yellow-800">${translate('fixable', locale)}</span>` :
+        `<span data-editor-id="fix-label" class="${commonLabelClass} bg-yellow-200 text-yellow-800 dark:bg-yellow-600 dark:hover:bg-yellow-500 dark:text-yellow-50">${translate('fixable', locale)}</span>` :
         '';
 
     const phoneNumber = item.invalidNumbers;
     const websiteButton = item.website ?
-        `<a href="${item.website}" class="${commonButtonClass} bg-green-500 text-white hover:bg-green-600" target="_blank">${translate('website', locale)}</a>` :
+        `<a href="${item.website}" class="${commonButtonClass} bg-green-500 text-white hover:bg-green-600 dark:bg-green-700 dark:hover:bg-green-600 dark:text-gray-200" target="_blank">${translate('website', locale)}</a>` :
         '';
-    const disusedLabel = isDisused(item) ? `<span class="${commonLabelClass} bg-red-200 text-red-800">${translate('disused', locale)}</span>` : '';
+    const disusedLabel = isDisused(item) ? `<span class="${commonLabelClass} bg-red-200 text-red-800 dark:bg-red-600 dark:text-red-100">${translate('disused', locale)}</span>` : '';
 
     return `
         <li class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
@@ -227,14 +260,14 @@ function createListItem(item, locale) {
                     <div class="col-span-1">
                         <span class="font-semibold text-xs text-gray-700 dark:text-gray-400">${translate('phone', locale)}</span>
                     </div>
-                    <div class="col-span-1">
+                    <div class="col-span-1 text-gray-900 dark:text-gray-100">
                         <span>${phoneNumber}</span>
                     </div>
                     ${item.autoFixable ? `
                     <div class="col-span-1">
-                        <span class="font-semibold text-xs text-gray-700">${translate('suggestedFix', locale)}</span>
+                        <span class="font-semibold text-xs text-gray-700 dark:text-gray-400">${translate('suggestedFix', locale)}</span>
                     </div>
-                    <div class="col-span-1">
+                    <div class="col-span-1 text-gray-900 dark:text-gray-100">
                         <span>${fixedNumber}</span>
                     </div>
                     ` : ''}
@@ -314,23 +347,20 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
         <link href="../styles.css" rel="stylesheet">
         <script src="../theme.js"></script>
         <style>
-            body { font-family: 'Inter', sans-serif; @apply bg-gray-100 dark:bg-gray-900; }
+            body { font-family: 'Inter', sans-serif; }
         </style>
     </head>
-    <body class="p-8">
-        <div class="max-w-4xl mx-auto space-y-8">
+    <body class="p-8 bg-gray-100 dark:bg-gray-900">
+        <div class="max-w-5xl mx-auto space-y-8">
             <header class="text-center relative"> 
                 <div class="absolute top-0 right-0 flex items-center space-x-2">
-                    <button id="theme-toggle" type="button" class="text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 rounded-lg text-sm p-2.5">
-                        <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
-                        <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.121-3.536a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM10 16a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM3.05 4.54a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zm1.414 10.606l.707.707a1 1 0 01-1.414 1.414l-.707-.707a1 1 0 011.414-1.414zM16.95 4.54a1 1 0 010 1.414l.707.707a1 1 0 111.414-1.414l-.707-.707a1 1 0 01-1.414 0z"></path></svg>
-                    </button>
-                    <button id="settings-toggle" class="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors rounded-full" aria-label="${translate('settings', locale)}">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340.274 340.274" fill="currentColor" class="h-6 w-6">
+                    ${themeButton}
+                    <button id="settings-toggle" class="hover:bg-gray-300 dark:hover:bg-gray-700 rounded-lg p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors" aria-label="${translate('settings', locale)}">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340.274 340.274" fill="currentColor" class="7 w-7">
                             <path d="M293.629,127.806l-5.795-13.739c19.846-44.856,18.53-46.189,14.676-50.08l-25.353-24.77l-2.516-2.12h-2.937 c-1.549,0-6.173,0-44.712,17.48l-14.184-5.719c-18.332-45.444-20.212-45.444-25.58-45.444h-35.765 c-5.362,0-7.446-0.006-24.448,45.606l-14.123,5.734C86.848,43.757,71.574,38.19,67.452,38.19l-3.381,0.105L36.801,65.032 c-4.138,3.891-5.582,5.263,15.402,49.425l-5.774,13.691C0,146.097,0,147.838,0,153.33v35.068c0,5.501,0,7.44,46.585,24.127 l5.773,13.667c-19.843,44.832-18.51,46.178-14.655,50.032l25.353,24.8l2.522,2.168h2.951c1.525,0,6.092,0,44.685-17.516 l14.159,5.758c18.335,45.438,20.218,45.427,25.598,45.427h35.771c5.47,0,7.41,0,24.463-45.589l14.195-5.74 c26.014,11,41.253,16.585,45.349,16.585l3.404-0.096l27.479-26.901c3.909-3.945,5.278-5.309-15.589-49.288l5.734-13.702 c46.496-17.967,46.496-19.853,46.496-25.221v-35.029C340.268,146.361,340.268,144.434,293.629,127.806z M170.128,228.474 c-32.798,0-59.504-26.187-59.504-58.364c0-32.153,26.707-58.315,59.504-58.315c32.78,0,59.43,26.168,59.43,58.315 C229.552,202.287,202.902,228.474,170.128,228.474z"/>
                         </svg>
                     </button>
-                    <div id="editor-settings-menu" class="hidden absolute right-0 mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl z-10 text-left border border-gray-200 dark:border-gray-700 divide-y divide-gray-200 dark:divide-gray-700">
+                    <div id="editor-settings-menu" class="hidden absolute right-0 top-full mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl z-10 text-left border border-gray-200 dark:border-gray-700 divide-y divide-gray-200 dark:divide-gray-700">
                         </div>
                 </div>
                 <a href="../${safeCountryName}.html" class="inline-block mb-4 text-blue-500 hover:text-blue-700 transition-colors">
@@ -412,13 +442,13 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
         // 2. UI Rendering and Event Handlers
 
         function createSettingsCheckboxes() {
-            settingsMenu.innerHTML = ''; 
+            settingsMenu.innerHTML = '';
 
             ALL_EDITOR_IDS.forEach(id => {
                 const isChecked = currentActiveEditors.includes(id);
                 const checkboxHtml = \`
                     <div class="flex items-center justify-between py-5 px-5">
-                        <label for="editor-\${id}" class="text-sm text-gray-700 w-full text-right mr-2">\${id}</label>
+                        <label for="editor-\${id}" class="text-sm text-gray-700 dark:text-gray-300 w-full text-right mr-2">\${id}</label>
                         <input id="editor-\${id}" type="checkbox" data-editor-id="\${id}" \${isChecked ? 'checked' : ''}
                             class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 flex-shrink-0">
                     </div>
@@ -514,19 +544,10 @@ async function generateMainIndexHtml(countryStats, locale, translations) {
         const safeCountryName = safeName(country.name);
         const countryPageName = `${safeCountryName}.html`;
         const percentage = country.totalNumbers > 0 ? (country.invalidCount / country.totalNumbers) * 100 : 0;
-        const validPercentage = Math.max(0, Math.min(100, percentage));
+        const invalidPercentage = Math.max(0, Math.min(100, percentage));
 
         // Use the country's specific locale for number formatting and description text
         const itemLocale = country.locale || locale; // Fallback to the main page locale
-
-        function getBackgroundColor(percent) {
-            if (percent > 2) {
-                return `hsl(0, 70%, 50%)`;
-            }
-            const hue = ((2 - percent) / 2) * 120;
-            return `hsl(${hue}, 70%, 50%)`;
-        }
-        const backgroundColor = getBackgroundColor(validPercentage);
 
         // Format numbers using the *country's* specific locale
         const formattedInvalid = country.invalidCount.toLocaleString(itemLocale);
@@ -539,14 +560,14 @@ async function generateMainIndexHtml(countryStats, locale, translations) {
         return `
             <a href="${countryPageName}" class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 transition-transform transform hover:scale-105">
                 <div class="flex-grow flex items-center space-x-4">
-                    <div class="h-12 w-12 rounded-full flex-shrink-0" style="background-color: ${backgroundColor};"></div>
+                    <div class="h-12 w-12 rounded-full flex-shrink-0 color-indicator" data-percentage="${invalidPercentage}"></div>
                     <div class="flex-grow">
                         <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100">${country.name}</h3>
                         <p class="text-sm text-gray-500 dark:text-gray-400">${description}</p>
                     </div>
                 </div>
                 <div class="text-center sm:text-right">
-                    <p class="text-2xl font-bold text-gray-800 dark:text-gray-100">${validPercentage.toLocaleString(itemLocale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<span class="text-base font-normal">%</span></p>
+                    <p class="text-2xl font-bold text-gray-800 dark:text-gray-100">${invalidPercentage.toLocaleString(itemLocale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<span class="text-base font-normal">%</span></p>
                     <p class="text-xs text-gray-500 dark:text-gray-400">${translate('invalid', itemLocale)}</p>
                 </div>
             </a>
@@ -564,17 +585,14 @@ async function generateMainIndexHtml(countryStats, locale, translations) {
         <link href="./styles.css" rel="stylesheet">
         <script src="theme.js"></script>
         <style>
-            body { font-family: 'Inter', sans-serif; @apply bg-gray-100 dark:bg-gray-900; }
+            body { font-family: 'Inter', sans-serif; }
         </style>
     </head>
-    <body class="p-8">
+    <body class="p-8 bg-gray-100 dark:bg-gray-900">
         <div class="max-w-5xl mx-auto space-y-8">
             <header class="text-center space-y-2 relative">
                 <div class="absolute top-0 right-0">
-                    <button id="theme-toggle" type="button" class="text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 rounded-lg text-sm p-2.5">
-                        <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
-                        <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.121-3.536a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM10 16a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM3.05 4.54a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zm1.414 10.606l.707.707a1 1 0 01-1.414 1.414l-.707-.707a1 1 0 011.414-1.414zM16.95 4.54a1 1 0 010 1.414l.707.707a1 1 0 111.414-1.414l-.707-.707a1 1 0 01-1.414 0z"></path></svg>
-                    </button>
+                    ${themeButton}
                 </div>
                 <h1 class="text-4xl font-extrabold text-gray-900 dark:text-gray-100">${translate('osmPhoneNumberValidation', locale)}</h1>
                 <p class="text-sm text-gray-500 dark:text-gray-400">${translate('reportSubtitle', locale)}</p>
@@ -591,6 +609,7 @@ async function generateMainIndexHtml(countryStats, locale, translations) {
                 ${createFooter(locale, translations)}
             </div>
         </div>
+        ${getBackgroundColourScript}
     </body>
     </html>
     `;
@@ -648,22 +667,6 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
                 maximumFractionDigits: 0 
             });
         }
-        
-        // Client-side color calculation logic (duplicated for client script access)
-        function getBackgroundColor(percent) {
-            if (percent > 2) {
-                return \`hsl(0, 70%, 50%)\`;
-            }
-            const hue = ((2 - percent) / 2) * 120;
-            return \`hsl(\${hue}, 70%, 50%)\`;
-        }
-
-        // Calculates the colour for the division group header
-        function getGroupBackgroundColorClient(invalidCount, totalNumbers) {
-            if (totalNumbers === 0) return 'hsl(0, 0%, 90%)';
-            const percentage = (invalidCount / totalNumbers) * 100;
-            return getBackgroundColor(percentage);
-        }
 
         // Pre-calculate total stats for each division group 
         const calculatedDivisionTotals = {};
@@ -684,14 +687,18 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
         }
 
         function updateButtonStyles() {
+            const isDark = document.documentElement.classList.contains('dark');
             sortButtons.forEach(button => {
-                if (button.dataset.sort === currentSort) {
-                    button.classList.add('bg-blue-500', 'text-white', 'shadow');
-                    button.classList.remove('bg-gray-200', 'text-gray-800', 'hover:bg-gray-300');
-                } else {
-                    button.classList.remove('bg-blue-500', 'text-white', 'shadow');
-                    button.classList.add('bg-gray-200', 'text-gray-800', 'hover:bg-gray-300');
-                }
+                const isActive = button.dataset.sort === currentSort;
+                button.classList.toggle('bg-blue-500', isActive);
+                button.classList.toggle('text-white', isActive);
+                button.classList.toggle('shadow', isActive);
+                button.classList.toggle('bg-gray-200', !isActive);
+                button.classList.toggle('dark:bg-gray-700', !isActive);
+                button.classList.toggle('text-gray-800', !isActive);
+                button.classList.toggle('dark:text-gray-200', !isActive);
+                button.classList.toggle('hover:bg-gray-300', !isActive);
+                button.classList.toggle('dark:hover:bg-gray-600', !isActive);
             });
         }
 
@@ -711,7 +718,7 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
 
         function renderList() {
 
-            const TARGET_LI_CLASS = 'bg-white rounded-xl shadow-lg p-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 transition-transform transform hover:scale-105';
+            const TARGET_LI_CLASS = 'bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 transition-transform transform hover:scale-105';
 
             const divisionNames = Object.keys(groupedDivisionStats);
             const isGrouped = divisionNames.length > 1;
@@ -751,8 +758,6 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
 
                     const groupPercentageNumber = groupStats.total > 0 ? (groupStats.invalid / groupStats.total) * 100 : 0;
                     const formattedGroupPercentage = groupPercentageNumber.toLocaleString(locale, percentageOptions);
-
-                    const groupBgColor = getGroupBackgroundColorClient(groupStats.invalid, groupStats.total);
                     
                     // Client-side substitution using the embedded template literal
                     const groupStatsLine = T_CLIENT.invalidNumbersOutOf
@@ -779,7 +784,7 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
                     if (isGrouped) {
                         // --- RENDER GROUPED ---
                         let detailsGroup = document.createElement('details'); 
-                        detailsGroup.className = 'group mt-8 border border-gray-200 rounded-xl shadow-lg';
+                        detailsGroup.className = 'group mt-8 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg';
 
                         // Restore open state after sort
                         if (currentlyOpenDivisions.has(divisionName)) {
@@ -787,7 +792,7 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
                         }
 
                         const summaryHeader = document.createElement('summary');
-                        summaryHeader.className = 'list-none cursor-pointer p-6 flex transition-colors rounded-t-xl group/summary bg-gray-50 hover:bg-gray-100'; 
+                        summaryHeader.className = 'list-none cursor-pointer p-6 flex transition-colors rounded-t-xl group/summary bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-950'; 
 
                         const summaryContent = document.createElement('div');
                         summaryContent.className = 'flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 w-full';
@@ -796,8 +801,8 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
                         leftSide.className = 'flex-grow flex items-center space-x-4 w-full sm:w-auto'; 
 
                         const iconCircle = document.createElement('div'); 
-                        iconCircle.className = 'h-12 w-12 rounded-full flex-shrink-0 flex items-center justify-center';
-                        iconCircle.style.backgroundColor = groupBgColor;
+                        iconCircle.className = 'h-12 w-12 rounded-full flex-shrink-0 flex items-center justify-center color-indicator';
+                        iconCircle.setAttribute('data-percentage', groupPercentageNumber);
 
                         const collapseIcon = createCollapseIcon();
                         iconCircle.appendChild(collapseIcon); 
@@ -806,11 +811,11 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
                         divisionNameContainer.className = 'flex-grow'; 
 
                         const divisionHeader = document.createElement('h3');
-                        divisionHeader.className = 'text-2xl font-bold text-gray-900'; 
+                        divisionHeader.className = 'text-2xl font-bold text-gray-900 dark:text-gray-100'; 
                         divisionHeader.textContent = divisionName;
 
                         const statsLine = document.createElement('p');
-                        statsLine.className = 'text-sm text-gray-500'; 
+                        statsLine.className = 'text-sm text-gray-500 dark:text-gray-400';
                         // Use the dynamically generated translated string
                         statsLine.textContent = groupStatsLine;
 
@@ -824,11 +829,11 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
                         rightSide.className = 'text-center sm:text-right flex-shrink-0 w-full sm:w-auto';
 
                         const percentageText = document.createElement('p');
-                        percentageText.className = 'text-2xl font-bold text-gray-800';
+                        percentageText.className = 'text-2xl font-bold text-gray-800 dark:text-gray-100';
                         percentageText.innerHTML = \`\${formattedGroupPercentage}<span class="text-base font-normal">%</span>\`;
 
                         const percentageLabel = document.createElement('p');
-                        percentageLabel.className = 'text-xs text-gray-500';
+                        percentageLabel.className = 'text-xs text-gray-500 dark:text-gray-400';
                         percentageLabel.textContent = T_CLIENT.invalid; 
 
                         rightSide.appendChild(percentageText);
@@ -842,7 +847,7 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
                         detailsGroup.appendChild(summaryHeader);
 
                         ul = document.createElement('ul'); 
-                        ul.className = 'space-y-4 p-4 border-t border-gray-200';
+                        ul.className = 'space-y-4 p-4 border-t border-gray-200 dark:border-gray-700';
 
                         detailsGroup.appendChild(ul);
                         listContainer.appendChild(detailsGroup);
@@ -856,8 +861,7 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
                     sortedData.forEach(division => {
                         const safeDivisionName = division.name.replace(/\\s+|\\//g, '-').toLowerCase();
                         const percentage = division.totalNumbers > 0 ? (division.invalidCount / division.totalNumbers) * 100 : 0;
-                        const validPercentage = Math.max(0, Math.min(100, percentage));
-                        const backgroundColor = getBackgroundColor(validPercentage);
+                        const invalidPercentage = Math.max(0, Math.min(100, percentage));
 
                         const formattedInvalidCount = formatNumber(division.invalidCount);
                         const formattedFixableCount = formatNumber(division.autoFixableCount);
@@ -878,15 +882,15 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
 
                         li.innerHTML = \`
                             <a href="\${safeCountryName}/\${safeDivisionName}.html" class="flex-grow flex items-center space-x-4">
-                                <div class="h-12 w-12 rounded-full flex-shrink-0" style="background-color: \${backgroundColor};"></div>
+                                <div class="h-12 w-12 rounded-full flex-shrink-0 color-indicator" data-percentage="\${invalidPercentage}"></div>
                                 <div class="flex-grow">
-                                    <h3 class="text-xl font-bold text-gray-900">\${division.name}</h3>
-                                    <p class="text-sm text-gray-500">\${itemStatsLine}</p>
+                                    <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100">\${division.name}</h3>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">\${itemStatsLine}</p>
                                 </div>
                             </a>
                             <div class="text-center sm:text-right">
-                                <p class="text-2xl font-bold text-gray-800">\${formattedPercentage}<span class="text-base font-normal">%</span></p>
-                                <p class="text-xs text-gray-500">\${T_CLIENT.invalid}</p>
+                                <p class="text-2xl font-bold text-gray-800 dark:text-gray-100">\${formattedPercentage}<span class="text-base font-normal">%</span></p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">\${T_CLIENT.invalid}</p>
                             </div>
                         \`;
                         ul.appendChild(li);
@@ -942,17 +946,14 @@ async function generateCountryIndexHtml(countryName, groupedDivisionStats, total
         <link href="./styles.css" rel="stylesheet">
         <script src="theme.js"></script>
         <style>
-            body { font-family: 'Inter', sans-serif; @apply bg-gray-100 dark:bg-gray-900; }
+            body { font-family: 'Inter', sans-serif; }
         </style>
     </head>
-    <body class="p-8">
+    <body class="p-8 bg-gray-100 dark:bg-gray-900">
         <div class="max-w-5xl mx-auto space-y-8">
             <header class="text-center space-y-2 relative">
                 <div class="absolute top-0 right-0">
-                    <button id="theme-toggle" type="button" class="text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 rounded-lg text-sm p-2.5">
-                        <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
-                        <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.121-3.536a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM10 16a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM3.05 4.54a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zm1.414 10.606l.707.707a1 1 0 01-1.414 1.414l-.707-.707a1 1 0 011.414-1.414zM16.95 4.54a1 1 0 010 1.414l.707.707a1 1 0 111.414-1.414l-.707-.707a1 1 0 01-1.414 0z"></path></svg>
-                    </button>
+                    ${themeButton}
                 </div>
                 <a href="index.html" class="inline-block mb-4 text-blue-500 hover:text-blue-700 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline-block align-middle mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -988,6 +989,7 @@ async function generateCountryIndexHtml(countryName, groupedDivisionStats, total
             </div>
         </div>
         ${createRenderListScript(countryName, groupedDivisionStats, locale)}
+        ${getBackgroundColourScript}
     </body>
     </html>
     `;
