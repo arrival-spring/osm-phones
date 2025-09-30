@@ -21,6 +21,8 @@ async function fetchAdminLevels(divisionId, divisionName, admin_level, retries =
         out body;
     `;
 
+    console.log(`Using overpass query: ${query}`);
+
     try {
         const response = await fetch(OVERPASS_API_URL, {
             method: 'POST',
@@ -44,6 +46,7 @@ async function fetchAdminLevels(divisionId, divisionName, admin_level, retries =
         }
 
         const data = await response.json();
+        console.log(`Received this data ${data}...`);
         const subdivisions = data.elements.map(el => ({
             name: el.tags.name,
             id: el.id
