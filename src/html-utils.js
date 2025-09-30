@@ -246,7 +246,7 @@ function createListItem(item, locale) {
     const disusedLabel = isDisused(item) ? `<span class="label label-disused">${translate('disused', locale)}</span>` : '';
 
     return `
-        <li class="list-item">
+        <li class="report-list-item">
             <div class="list-item-content">
                 <div class="list-item-header">
                     <h3 class="list-item-title">
@@ -323,7 +323,7 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
             ${invalidListContent}
         </ul>`;
 
-    const noInvalidContent = `<li class="list-item-empty">${translate('noInvalidNumbers', locale)}</li>`;
+    const noInvalidContent = `<li class="report-list-item-empty">${translate('noInvalidNumbers', locale)}</li>`;
 
     const fixableAndInvalidSectionContent =
         (anyFixable && anyInvalid) ? fixableSectionAndHeader + invalidSectionAndHeader :
