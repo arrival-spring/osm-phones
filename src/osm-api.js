@@ -12,10 +12,11 @@ async function fetchAdminLevels(divisionAreaId, divisionName, admin_level, retri
     const { default: fetch } = await import('node-fetch');
 
     const queryTimeout = 180;
+    const areaId = division.id + 3600000000;
 
     const query = `
         [out:json][timeout:${queryTimeout}];
-        area(${divisionAreaId})->.division;
+        area(${areaId})->.division;
         rel(area.division)["admin_level"="${admin_level}"]["boundary"="administrative"]["name"];
         out body;
     `;
