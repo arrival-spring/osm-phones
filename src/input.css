@@ -3,3 +3,27 @@
 @tailwind utilities;
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+@layer components {
+    .btn {
+      @apply inline-flex items-center rounded-full px-3 py-1.5 shadow-sm transition-colors;
+    }
+    .btn-editor {
+      @apply bg-blue-500 hover:bg-blue-600 text-white dark:bg-blue-900 dark:hover:bg-blue-800 dark:text-gray-200;
+    }
+    .btn-josm-fix {
+      @apply bg-yellow-200 text-yellow-800 hover:bg-yellow-300 dark:bg-yellow-600 dark:hover:bg-yellow-500 dark:text-yellow-50;
+    }
+    .btn-website {
+      @apply bg-green-500 text-white hover:bg-green-600 dark:bg-green-700 dark:hover:bg-green-600 dark:text-gray-200;
+    }
+    .label {
+      @apply text-xs font-semibold inline-flex items-center px-2 py-1 rounded-full;
+    }
+    .label-fixable {
+      @apply bg-yellow-200 text-yellow-800 dark:bg-yellow-600 dark:hover:bg-yellow-500 dark:text-yellow-50;
+    }
+    .label-disused {
+      @apply bg-red-200 text-red-800 dark:bg-red-600 dark:text-red-100;
+    }
+  }

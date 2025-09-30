@@ -201,9 +201,6 @@ function createListItem(item, locale) {
     const josmFixUrl = item.autoFixable ?
         `${josmEditUrl}&addtags=${item.tag}=${encodeURIComponent(fixedNumber)}` :
         null;
-    const commonButtonClass = 'inline-flex items-center rounded-full px-3 py-1.5 shadow-sm transition-colors';
-    const commonLabelClass = 'text-xs font-semibold inline-flex items-center px-2 py-1 rounded-full';
-
     // Generate buttons for ALL editors so client-side script can hide them
     const editorButtons = ALL_EDITOR_IDS.map(editorId => {
         const editor = OSM_EDITORS[editorId];
@@ -223,7 +220,7 @@ function createListItem(item, locale) {
         return `
             <a href="${href}" ${target} ${onClick} 
                 data-editor-id="${editorId}"
-                class="${commonButtonClass} bg-blue-500 hover:bg-blue-600 text-white dark:bg-blue-900 dark:hover:bg-blue-800 dark:text-gray-200">
+                class="btn btn-editor">
                 ${text}
             </a>
         `;
@@ -233,19 +230,19 @@ function createListItem(item, locale) {
     const josmFixButton = josmFixUrl ?
         `<a href="#" onclick="openInJosm('${josmFixUrl}', event)" 
             data-editor-id="josm-fix"
-            class="${commonButtonClass} bg-yellow-200 text-yellow-800 hover:bg-yellow-300 dark:bg-yellow-600 dark:hover:bg-yellow-500 dark:text-yellow-50">
+            class="btn btn-josm-fix">
             ${translate('fixInJOSM', locale)}
         </a>` :
         '';
     const fixableLabel = item.autoFixable ?
-        `<span data-editor-id="fix-label" class="${commonLabelClass} bg-yellow-200 text-yellow-800 dark:bg-yellow-600 dark:hover:bg-yellow-500 dark:text-yellow-50">${translate('fixable', locale)}</span>` :
+        `<span data-editor-id="fix-label" class="label label-fixable">${translate('fixable', locale)}</span>` :
         '';
 
     const phoneNumber = item.invalidNumbers;
     const websiteButton = item.website ?
-        `<a href="${item.website}" class="${commonButtonClass} bg-green-500 text-white hover:bg-green-600 dark:bg-green-700 dark:hover:bg-green-600 dark:text-gray-200" target="_blank">${translate('website', locale)}</a>` :
+        `<a href="${item.website}" class="btn btn-website" target="_blank">${translate('website', locale)}</a>` :
         '';
-    const disusedLabel = isDisused(item) ? `<span class="${commonLabelClass} bg-red-200 text-red-800 dark:bg-red-600 dark:text-red-100">${translate('disused', locale)}</span>` : '';
+    const disusedLabel = isDisused(item) ? `<span class="label label-disused">${translate('disused', locale)}</span>` : '';
 
     return `
         <li class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
