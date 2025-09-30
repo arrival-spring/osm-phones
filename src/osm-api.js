@@ -14,6 +14,8 @@ async function fetchAdminLevels(divisionId, divisionName, admin_level, retries =
     const queryTimeout = 180;
     const areaId = divisionId + 3600000000;
 
+    console.log(`areaId: ${areaId}`);
+
     const query = `
         [out:json][timeout:${queryTimeout}];
         area(${areaId})->.division;
