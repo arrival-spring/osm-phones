@@ -80,7 +80,7 @@ async function main() {
         for (const divisionName in divisions) {
             console.log(`Processing subdivisions for ${divisionName}...`);
 
-            const subdivisions = (async () => {
+            const subdivisions = await (async () => {
                 if (countryData.divisions) {
                     const divisionId = countryData.divisions[divisionName];
                     return await fetchAdminLevels(divisionId, divisionName, countryData.subdivisionAdminLevel);
