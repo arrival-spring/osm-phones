@@ -247,32 +247,32 @@ function createListItem(item, locale) {
 
     return `
         <li class="list-item">
-            <div class="w-full sm:w-2/3">
-                <div class="flex-shrink-0 flex flex-wrap items-center gap-2">
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100">
+            <div class="list-item-content">
+                <div class="list-item-header">
+                    <h3 class="list-item-title">
                         <a href="${item.osmUrl}" target="_blank" rel="noopener noreferrer" class="list-item-link">${getFeatureTypeName(item)}</a>
                     </h3>
                     ${disusedLabel}
                 </div>
-                <div class="grid grid-cols-[max-content,1fr] gap-x-4">
-                    <div class="col-span-1">
+                <div class="list-item-details-grid">
+                    <div class="grid-col-span-1">
                         <span class="list-item-phone-label">${translate('phone', locale)}</span>
                     </div>
-                    <div class="col-span-1 list-item-phone-number">
+                    <div class="grid-col-span-1 list-item-phone-number">
                         <span>${phoneNumber}</span>
                     </div>
                     ${item.autoFixable ? `
-                    <div class="col-span-1">
+                    <div class="grid-col-span-1">
                         <span class="list-item-phone-label">${translate('suggestedFix', locale)}</span>
                     </div>
-                    <div class="col-span-1 list-item-phone-number">
+                    <div class="grid-col-span-1 list-item-phone-number">
                         <span>${fixedNumber}</span>
                     </div>
                     ` : ''}
                 </div>
             </div>
             
-            <div class="flex flex-wrap gap-2 w-full sm:w-2/3 justify-end text-sm font-semibold">
+            <div class="list-item-actions">
                 ${websiteButton}
                 ${fixableLabel}
                 ${josmFixButton}
@@ -355,7 +355,7 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
                             <path d="M293.629,127.806l-5.795-13.739c19.846-44.856,18.53-46.189,14.676-50.08l-25.353-24.77l-2.516-2.12h-2.937 c-1.549,0-6.173,0-44.712,17.48l-14.184-5.719c-18.332-45.444-20.212-45.444-25.58-45.444h-35.765 c-5.362,0-7.446-0.006-24.448,45.606l-14.123,5.734C86.848,43.757,71.574,38.19,67.452,38.19l-3.381,0.105L36.801,65.032 c-4.138,3.891-5.582,5.263,15.402,49.425l-5.774,13.691C0,146.097,0,147.838,0,153.33v35.068c0,5.501,0,7.44,46.585,24.127 l5.773,13.667c-19.843,44.832-18.51,46.178-14.655,50.032l25.353,24.8l2.522,2.168h2.951c1.525,0,6.092,0,44.685-17.516 l14.159,5.758c18.335,45.438,20.218,45.427,25.598,45.427h35.771c5.47,0,7.41,0,24.463-45.589l14.195-5.74 c26.014,11,41.253,16.585,45.349,16.585l3.404-0.096l27.479-26.901c3.909-3.945,5.278-5.309-15.589-49.288l5.734-13.702 c46.496-17.967,46.496-19.853,46.496-25.221v-35.029C340.268,146.361,340.268,144.434,293.629,127.806z M170.128,228.474 c-32.798,0-59.504-26.187-59.504-58.364c0-32.153,26.707-58.315,59.504-58.315c32.78,0,59.43,26.168,59.43,58.315 C229.552,202.287,202.902,228.474,170.128,228.474z"/>
                         </svg>
                     </button>
-                    <div id="editor-settings-menu" class="settings-menu">
+                    <div id="editor-settings-menu" class="settings-menu hidden">
                         </div>
                 </div>
                 <a href="../${safeCountryName}.html" class="back-link">
@@ -774,7 +774,7 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
                     if (isGrouped) {
                         // --- RENDER GROUPED ---
                         let detailsGroup = document.createElement('details'); 
-                        detailsGroup.className = 'group mt-8 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg';
+                        detailsGroup.className = 'details-group group';
 
                         // Restore open state after sort
                         if (currentlyOpenDivisions.has(divisionName)) {
@@ -782,16 +782,16 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
                         }
 
                         const summaryHeader = document.createElement('summary');
-                        summaryHeader.className = 'list-none cursor-pointer p-6 flex transition-colors rounded-t-xl group/summary bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-950'; 
+                        summaryHeader.className = 'summary-header group/summary';
 
                         const summaryContent = document.createElement('div');
-                        summaryContent.className = 'flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 w-full';
+                        summaryContent.className = 'summary-content';
 
                         const leftSide = document.createElement('div');
-                        leftSide.className = 'flex-grow flex items-center space-x-4 w-full sm:w-auto'; 
+                        leftSide.className = 'summary-left-side';
 
                         const iconCircle = document.createElement('div'); 
-                        iconCircle.className = 'color-indicator flex items-center justify-center';
+                        iconCircle.className = 'summary-icon';
                         iconCircle.setAttribute('data-percentage', groupPercentageNumber);
 
                         const collapseIcon = createCollapseIcon();
@@ -801,11 +801,11 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
                         divisionNameContainer.className = 'flex-grow'; 
 
                         const divisionHeader = document.createElement('h3');
-                        divisionHeader.className = 'text-2xl font-bold text-gray-900 dark:text-gray-100'; 
+                        divisionHeader.className = 'summary-title';
                         divisionHeader.textContent = divisionName;
 
                         const statsLine = document.createElement('p');
-                        statsLine.className = 'text-sm text-gray-500 dark:text-gray-400';
+                        statsLine.className = 'summary-stats';
                         // Use the dynamically generated translated string
                         statsLine.textContent = groupStatsLine;
 
@@ -816,14 +816,14 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
                         leftSide.appendChild(divisionNameContainer);
 
                         const rightSide = document.createElement('div');
-                        rightSide.className = 'text-center sm:text-right flex-shrink-0 w-full sm:w-auto';
+                        rightSide.className = 'summary-right-side';
 
                         const percentageText = document.createElement('p');
-                        percentageText.className = 'text-2xl font-bold text-gray-800 dark:text-gray-100';
+                        percentageText.className = 'summary-percentage';
                         percentageText.innerHTML = \`\${formattedGroupPercentage}<span class="text-base font-normal">%</span>\`;
 
                         const percentageLabel = document.createElement('p');
-                        percentageLabel.className = 'text-xs text-gray-500 dark:text-gray-400';
+                        percentageLabel.className = 'summary-percentage-label';
                         percentageLabel.textContent = T_CLIENT.invalid; 
 
                         rightSide.appendChild(percentageText);
@@ -837,7 +837,7 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
                         detailsGroup.appendChild(summaryHeader);
 
                         ul = document.createElement('ul'); 
-                        ul.className = 'space-y-4 p-4 border-t border-gray-200 dark:border-gray-700';
+                        ul.className = 'details-content';
 
                         detailsGroup.appendChild(ul);
                         listContainer.appendChild(detailsGroup);
@@ -871,16 +871,16 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
                         li.className = 'list-item';
 
                         li.innerHTML = \`
-                            <a href="\${safeCountryName}/\${safeDivisionName}.html" class="flex-grow flex items-center space-x-4">
+                            <a href="\${safeCountryName}/\${safeDivisionName}.html" class="list-item-main-link">
                                 <div class="color-indicator" data-percentage="\${invalidPercentage}"></div>
                                 <div class="flex-grow">
-                                    <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100">\${division.name}</h3>
-                                    <p class="text-sm text-gray-500 dark:text-gray-400">\${itemStatsLine}</p>
+                                    <h3 class="list-item-sub-title">\${division.name}</h3>
+                                    <p class="country-description">\${itemStatsLine}</p>
                                 </div>
                             </a>
-                            <div class="text-center sm:text-right">
-                                <p class="text-2xl font-bold text-gray-800 dark:text-gray-100">\${formattedPercentage}<span class="text-base font-normal">%</span></p>
-                                <p class="text-xs text-gray-500 dark:text-gray-400">\${T_CLIENT.invalid}</p>
+                            <div class="summary-right-side">
+                                <p class="summary-percentage">\${formattedPercentage}<span class="text-base font-normal">%</span></p>
+                                <p class="summary-percentage-label">\${T_CLIENT.invalid}</p>
                             </div>
                         \`;
                         ul.appendChild(li);
@@ -938,8 +938,8 @@ async function generateCountryIndexHtml(countryName, groupedDivisionStats, total
     </head>
     <body class="body-styles">
         <div class="container">
-            <header class="text-center space-y-2 relative">
-                <div class="absolute top-0 right-0">
+            <header class="header">
+                <div class="header-actions">
                     ${themeButton}
                 </div>
                 <a href="index.html" class="back-link">
@@ -953,18 +953,18 @@ async function generateCountryIndexHtml(countryName, groupedDivisionStats, total
             </header>
             ${createStatsBox(totalTotalNumbers, totalInvalidCount, totalAutofixableCount, locale)}
             <div class="card">
-                <div class="flex flex-col sm:flex-row justify-between items-center mb-6">
+                <div class="card-header">
                     <h2 class="card-title">${translate('divisionalReports', locale)}</h2>
-                    <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 mt-4 sm:mt-0">
-                        <div class="flex items-center">
-                            <input type="checkbox" id="hide-empty" checked class="h-4 w-4 rounded text-blue-600 focus:ring-blue-500 border-gray-300">
-                            <label for="hide-empty" class="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">${translate('hideEmptyDivisions', locale)}</label>
+                    <div class="card-actions">
+                        <div class="checkbox-container">
+                            <input type="checkbox" id="hide-empty" checked class="checkbox-input">
+                            <label for="hide-empty" class="checkbox-label">${translate('hideEmptyDivisions', locale)}</label>
                         </div>
-                        <div class="flex flex-wrap items-center justify-end space-x-2 space-y-2">
-                            <span class="mr-2 text-sm font-medium text-gray-700 dark:text-gray-300">${translate('sortBy', locale)}</span>
-                            <button id="sort-percentage" data-sort="percentage" class="sort-btn px-4 py-2 rounded-md text-sm font-medium transition-colors">${translate('invalidPercentage', locale)}</button>
-                            <button id="sort-invalid" data-sort="invalidCount" class="sort-btn px-4 py-2 rounded-md text-sm font-medium transition-colors">${translate('invalidCount', locale)}</button>
-                            <button id="sort-name" data-sort="name" class="sort-btn px-4 py-2 rounded-md text-sm font-medium transition-colors">${translate('name', locale)}</button>
+                        <div class="sort-controls">
+                            <span class="sort-label">${translate('sortBy', locale)}</span>
+                            <button id="sort-percentage" data-sort="percentage" class="sort-btn-style">${translate('invalidPercentage', locale)}</button>
+                            <button id="sort-invalid" data-sort="invalidCount" class="sort-btn-style">${translate('invalidCount', locale)}</button>
+                            <button id="sort-name" data-sort="name" class="sort-btn-style">${translate('name', locale)}</button>
                         </div>
                     </div>
                 </div>

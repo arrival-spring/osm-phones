@@ -108,7 +108,7 @@
         @apply hover:bg-gray-300 dark:hover:bg-gray-700 rounded-lg p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors;
     }
     .settings-menu {
-        @apply hidden absolute right-0 top-full mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl z-10 text-left border border-gray-200 dark:border-gray-700 divide-y divide-gray-200 dark:divide-gray-700;
+        @apply absolute right-0 top-full mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl z-10 text-left border border-gray-200 dark:border-gray-700 divide-y divide-gray-200 dark:divide-gray-700;
     }
     .back-link {
         @apply inline-block mb-4 text-blue-500 hover:text-blue-700 transition-colors;
@@ -130,5 +130,86 @@
     }
     .country-invalid-label {
       @apply text-xs text-gray-500 dark:text-gray-400;
+    }
+    .list-item-content {
+        @apply w-full sm:w-2/3;
+    }
+    .list-item-header {
+        @apply flex-shrink-0 flex flex-wrap items-center gap-2;
+    }
+    .list-item-title {
+        @apply text-lg font-bold text-gray-900 dark:text-gray-100;
+    }
+    .list-item-details-grid {
+        @apply grid grid-cols-[max-content,1fr] gap-x-4;
+    }
+    .grid-col-span-1 {
+        @apply col-span-1;
+    }
+    .list-item-actions {
+        @apply flex flex-wrap gap-2 w-full sm:w-2/3 justify-end text-sm font-semibold;
+    }
+    .details-group {
+        @apply mt-8 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg;
+    }
+    .summary-header {
+        @apply list-none cursor-pointer p-6 flex transition-colors rounded-t-xl bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-950;
+    }
+    .summary-content {
+        @apply flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 w-full;
+    }
+    .summary-left-side {
+        @apply flex-grow flex items-center space-x-4 w-full sm:w-auto;
+    }
+    .summary-icon {
+        @apply color-indicator flex items-center justify-center;
+    }
+    .summary-title {
+        @apply text-2xl font-bold text-gray-900 dark:text-gray-100;
+    }
+    .summary-stats {
+        @apply text-sm text-gray-500 dark:text-gray-400;
+    }
+    .summary-right-side {
+        @apply text-center sm:text-right flex-shrink-0 w-full sm:w-auto;
+    }
+    .summary-percentage {
+        @apply text-2xl font-bold text-gray-800 dark:text-gray-100;
+    }
+    .summary-percentage-label {
+        @apply text-xs text-gray-500 dark:text-gray-400;
+    }
+    .details-content {
+        @apply space-y-4 p-4 border-t border-gray-200 dark:border-gray-700;
+    }
+    .list-item-main-link {
+        @apply flex-grow flex items-center space-x-4;
+    }
+    .list-item-sub-title {
+        @apply text-xl font-bold text-gray-900 dark:text-gray-100;
+    }
+    .card-header {
+        @apply flex flex-col sm:flex-row justify-between items-center mb-6;
+    }
+    .card-actions {
+        @apply flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 mt-4 sm:mt-0;
+    }
+    .checkbox-container {
+        @apply flex items-center;
+    }
+    .checkbox-input {
+        @apply h-4 w-4 rounded text-blue-600 focus:ring-blue-500 border-gray-300;
+    }
+    .checkbox-label {
+        @apply ml-2 text-sm font-medium text-gray-700 dark:text-gray-300;
+    }
+    .sort-controls {
+        @apply flex flex-wrap items-center justify-end space-x-2 space-y-2;
+    }
+    .sort-label {
+        @apply mr-2 text-sm font-medium text-gray-700 dark:text-gray-300;
+    }
+    .sort-btn-style {
+        @apply px-4 py-2 rounded-md text-sm font-medium transition-colors;
     }
   }
