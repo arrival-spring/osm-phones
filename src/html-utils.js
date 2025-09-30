@@ -962,9 +962,9 @@ async function generateCountryIndexHtml(countryName, groupedDivisionStats, total
                         </div>
                         <div class="sort-controls">
                             <span class="sort-label">${translate('sortBy', locale)}</span>
-                            <button id="sort-percentage" data-sort="percentage" class="sort-btn-style">${translate('invalidPercentage', locale)}</button>
-                            <button id="sort-invalid" data-sort="invalidCount" class="sort-btn-style">${translate('invalidCount', locale)}</button>
-                            <button id="sort-name" data-sort="name" class="sort-btn-style">${translate('name', locale)}</button>
+                            <button id="sort-percentage" data-sort="percentage" class="sort-btn sort-btn-style">${translate('invalidPercentage', locale)}</button>
+                            <button id="sort-invalid" data-sort="invalidCount" class="sort-btn sort-btn-style">${translate('invalidCount', locale)}</button>
+                            <button id="sort-name" data-sort="name" class="sort-btn sort-btn-style">${translate('name', locale)}</button>
                         </div>
                     </div>
                 </div>

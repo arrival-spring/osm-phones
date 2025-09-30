@@ -132,7 +132,7 @@
       @apply text-xs text-gray-500 dark:text-gray-400;
     }
     .list-item-content {
-        @apply w-full sm:w-2/3;
+        @apply w-full sm:w-auto flex-grow;
     }
     .list-item-header {
         @apply flex-shrink-0 flex flex-wrap items-center gap-2;
