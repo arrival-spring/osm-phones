@@ -2,17 +2,17 @@ const { OVERPASS_API_URL } = require('./constants');
 
 /**
  * Recursive unction to fetch admin_level=6 subdivisions from Overpass API.
- * @param {number} divisionAreaId - The area ID for the subdivision.
+ * @param {number} divisionId - The area ID for the subdivision.
  * @param {string} divisionName - The name of the division (for logging).
  * @param {number} retries - Number of retries left.
  * @returns {Promise<Array<{name: string, id: number}>>}
  */
-async function fetchAdminLevels(divisionAreaId, divisionName, admin_level, retries = 3) {
-    console.log(`Fetching all subdivisions for ${divisionName}...`);
+async function fetchAdminLevels(divisionId, divisionName, admin_level, retries = 3) {
+    console.log(`Fetching all subdivisions for ${divisionName} (ID: ${divisionId})...`);
     const { default: fetch } = await import('node-fetch');
 
     const queryTimeout = 180;
-    const areaId = division.id + 3600000000;
+    const areaId = divisionId + 3600000000;
 
     const query = `
         [out:json][timeout:${queryTimeout}];
@@ -33,7 +33,7 @@ async function fetchAdminLevels(divisionAreaId, divisionName, admin_level, retri
                 const retryAfter = response.headers.get('Retry-After') || 60;
                 console.warn(`Overpass API rate limit or gateway timeout hit (error ${response.status}). Retrying in ${retryAfter} seconds... (${retries} retries left)`);
                 await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
-                return fetchAdminLevels(divisionAreaId, divisionName, admin_level, retries - 1);
+                return fetchAdminLevels(divisionId, divisionName, admin_level, retries - 1);
             } else {
                 throw new Error(`Overpass API response error: ${response.statusText}`);
             }

@@ -82,8 +82,8 @@ async function main() {
 
             const subdivisions = (async () => {
                 if (countryData.divisions) {
-                    const divisionAreaId = countryData.divisions[divisionName];
-                    return await fetchAdminLevels(divisionAreaId, divisionName, countryData.subdivisionAdminLevel);
+                    const divisionId = countryData.divisions[divisionName];
+                    return await fetchAdminLevels(divisionId, divisionName, countryData.subdivisionAdminLevel);
                 } else if (countryData.divisionMap) {
                     return countryData.divisionMap[divisionName]
                 } else {
