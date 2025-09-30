@@ -74,27 +74,30 @@ async function main() {
         let totalTotalNumbers = 0;
         const groupedDivisionStats = {};
 
-        let divisionCount = 0;
-        for (const divisionName in countryData.divisions) {
-            const divisionAreaId = countryData.divisions[divisionName];
+        const divisions = countryData.divisions ?? countryData.divisionMap;
+
+        let divisionCount = 0; 
+        for (const divisionName in divisions) {
             console.log(`Processing subdivisions for ${divisionName}...`);
 
-            const subdivisions = await fetchAdminLevels(divisionAreaId, divisionName, countryData.subdivisionAdminLevel);
+            const subdivisions = await (async () => {
+                if (countryData.divisions) {
+                    const divisionId = countryData.divisions[divisionName];
+                    return await fetchAdminLevels(divisionId, divisionName, countryData.subdivisionAdminLevel);
+                } else if (countryData.divisionMap) {
+                    return countryData.divisionMap[divisionName]
+                } else {
+                    console.error(`Data for ${countryName} set up incorreectly, no divisions or divisionMap found`)
+                    return null
+                }
+            })();
+
             groupedDivisionStats[divisionName] = [];
 
-            const processedSubDivisions = new Set();
-            const uniqueSubdivisions = subdivisions.filter(subdivision => {
-                if (processedSubDivisions.has(subdivision.name)) {
-                    return false;
-                }
-                processedSubDivisions.add(subdivision.name);
-                return true;
-            });
-
-            console.log(`Processing phone numbers for ${uniqueSubdivisions.length} subdivisions in ${divisionName}.`);
+            console.log(`Processing phone numbers for ${subdivisions.length} subdivisions in ${divisionName}.`);
 
             let subdivisionCount = 0;
-            for (const subdivision of uniqueSubdivisions) {
+            for (const subdivision of subdivisions) {
 
                 const elements = await fetchOsmDataForDivision(subdivision);
                 const { invalidNumbers, totalNumbers } = validateNumbers(elements, countryData.countryCode);
