@@ -271,7 +271,7 @@ function createListItem(item, locale) {
                 </div>
             </div>
             
-            <div class="flex flex-wrap gap-2 w-full sm:w-2/3 justify-end text-sm font-semibold">
+            <div class="flex flex-wrap gap-2 w-full sm:w-1/3 justify-end text-sm font-semibold">
                 ${websiteButton}
                 ${fixableLabel}
                 ${josmFixButton}
