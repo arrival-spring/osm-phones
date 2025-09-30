@@ -346,9 +346,6 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
         ${favicon}
         <link href="../styles.css" rel="stylesheet">
         <script src="../theme.js"></script>
-        <style>
-            body { font-family: 'Inter', sans-serif; }
-        </style>
     </head>
     <body class="p-8 bg-gray-100 dark:bg-gray-900">
         <div class="max-w-5xl mx-auto space-y-8">
@@ -584,9 +581,6 @@ async function generateMainIndexHtml(countryStats, locale, translations) {
         ${favicon}
         <link href="./styles.css" rel="stylesheet">
         <script src="theme.js"></script>
-        <style>
-            body { font-family: 'Inter', sans-serif; }
-        </style>
     </head>
     <body class="p-8 bg-gray-100 dark:bg-gray-900">
         <div class="max-w-5xl mx-auto space-y-8">
