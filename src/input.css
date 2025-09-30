@@ -5,6 +5,57 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 @layer components {
+    .body-styles {
+      @apply p-8 bg-gray-100 dark:bg-gray-900;
+    }
+    .container {
+      @apply max-w-5xl mx-auto space-y-8;
+    }
+    .card {
+      @apply bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6;
+    }
+    .card-title {
+      @apply text-2xl font-bold text-gray-900 dark:text-gray-100;
+    }
+    .footer-container {
+      @apply bg-white dark:bg-gray-800 rounded-xl shadow-lg p-2 text-center;
+    }
+    .footer-text {
+      @apply text-sm text-gray-500 dark:text-gray-400 mt-2;
+    }
+    .footer-link {
+      @apply text-blue-500 hover:text-blue-700 underline transition-colors;
+    }
+    .page-title {
+      @apply text-4xl font-extrabold text-gray-900 dark:text-gray-100;
+    }
+    .page-subtitle {
+      @apply text-2xl font-semibold text-gray-700 dark:text-gray-300 mt-2;
+    }
+    .report-subtitle {
+        @apply text-sm text-gray-500 dark:text-gray-400;
+    }
+    .section-header {
+      @apply text-2xl font-semibold text-gray-900 dark:text-gray-100;
+    }
+    .section-description {
+      @apply text-sm text-gray-500 dark:text-gray-400 mt-2;
+    }
+    .list-item {
+      @apply list-none bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4;
+    }
+    .list-item-empty {
+        @apply bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 text-center text-gray-500 dark:text-gray-400;
+    }
+    .list-item-link {
+        @apply hover:text-gray-950 dark:hover:text-gray-200 underline transition-colors;
+    }
+    .list-item-phone-label {
+        @apply font-semibold text-xs text-gray-700 dark:text-gray-400;
+    }
+    .list-item-phone-number {
+        @apply text-gray-900 dark:text-gray-100;
+    }
     .btn {
       @apply inline-flex items-center rounded-full px-3 py-1.5 shadow-sm transition-colors;
     }
@@ -25,5 +76,140 @@
     }
     .label-disused {
       @apply bg-red-200 text-red-800 dark:bg-red-600 dark:text-red-100;
+    }
+    .stats-box {
+      @apply bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 grid grid-cols-1 sm:grid-cols-3 gap-6 text-center;
+    }
+    .stats-box-number {
+      @apply text-4xl font-extrabold text-gray-800 dark:text-gray-100;
+    }
+    .stats-box-number-invalid {
+      @apply text-4xl font-extrabold text-blue-700 dark:text-blue-400;
+    }
+    .stats-box-number-fixable {
+      @apply text-4xl font-extrabold text-green-700 dark:text-green-400;
+    }
+    .stats-box-label {
+      @apply text-sm text-gray-500 dark:text-gray-400;
+    }
+    .stats-box-percentage {
+      @apply text-sm text-gray-400 dark:text-gray-500;
+    }
+    .theme-toggle-button {
+        @apply text-gray-500 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-700 rounded-lg text-sm p-2.5;
+    }
+    .header {
+        @apply text-center relative space-y-2;
+    }
+    .header-actions {
+        @apply absolute top-0 right-0 flex items-center space-x-2;
+    }
+    .settings-button {
+        @apply hover:bg-gray-300 dark:hover:bg-gray-700 rounded-lg p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors;
+    }
+    .settings-menu {
+        @apply absolute right-0 top-full mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl z-10 text-left border border-gray-200 dark:border-gray-700 divide-y divide-gray-200 dark:divide-gray-700;
+    }
+    .back-link {
+        @apply inline-block mb-4 text-blue-500 hover:text-blue-700 transition-colors;
+    }
+    .country-link {
+      @apply bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 transition-transform transform hover:scale-105;
+    }
+    .color-indicator {
+      @apply h-12 w-12 rounded-full flex-shrink-0;
+    }
+    .country-name {
+      @apply text-xl font-bold text-gray-900 dark:text-gray-100;
+    }
+    .country-description {
+      @apply text-sm text-gray-500 dark:text-gray-400;
+    }
+    .country-percentage {
+      @apply text-2xl font-bold text-gray-800 dark:text-gray-100;
+    }
+    .country-invalid-label {
+      @apply text-xs text-gray-500 dark:text-gray-400;
+    }
+    .list-item-content {
+        @apply flex-grow;
+    }
+    .list-item-header {
+        @apply flex-shrink-0 flex flex-wrap items-center gap-2;
+    }
+    .list-item-title {
+        @apply text-lg font-bold text-gray-900 dark:text-gray-100;
+    }
+    .list-item-details-grid {
+        @apply grid grid-cols-[max-content,1fr] gap-x-4;
+    }
+    .grid-col-span-1 {
+        @apply col-span-1;
+    }
+    .list-item-actions {
+        @apply flex-shrink-0 flex flex-wrap gap-2 justify-end;
+    }
+    .details-group {
+        @apply mt-8 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg;
+    }
+    .summary-header {
+        @apply list-none cursor-pointer p-6 flex transition-colors rounded-t-xl bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-950;
+    }
+    .summary-content {
+        @apply flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 w-full;
+    }
+    .summary-left-side {
+        @apply flex-grow flex items-center space-x-4;
+    }
+    .summary-icon {
+        @apply color-indicator flex items-center justify-center;
+    }
+    .summary-title {
+        @apply text-2xl font-bold text-gray-900 dark:text-gray-100;
+    }
+    .summary-stats {
+        @apply text-sm text-gray-500 dark:text-gray-400;
+    }
+    .summary-right-side {
+        @apply text-center sm:text-right flex-shrink-0;
+    }
+    .summary-percentage {
+        @apply text-2xl font-bold text-gray-800 dark:text-gray-100;
+    }
+    .summary-percentage-label {
+        @apply text-xs text-gray-500 dark:text-gray-400;
+    }
+    .details-content {
+        @apply space-y-4 p-4 border-t border-gray-200 dark:border-gray-700;
+    }
+    .list-item-main-link {
+        @apply flex-grow flex items-center space-x-4;
+    }
+    .list-item-sub-title {
+        @apply text-xl font-bold text-gray-900 dark:text-gray-100;
+    }
+    .card-header {
+        @apply flex flex-col sm:flex-row justify-between items-center mb-6;
+    }
+    .card-actions {
+        @apply flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 mt-4 sm:mt-0;
+    }
+    .checkbox-container {
+        @apply flex items-center;
+    }
+    .checkbox-input {
+        @apply h-4 w-4 rounded text-blue-600 focus:ring-blue-500 border-gray-300;
+    }
+    .checkbox-label {
+        @apply ml-2 text-sm font-medium text-gray-700 dark:text-gray-300;
+    }
+    .sort-controls {
+        @apply flex flex-wrap items-center justify-end space-x-2 space-y-2;
+    }
+    .sort-label {
+        @apply mr-2 text-sm font-medium text-gray-700 dark:text-gray-300;
+    }
+    .sort-btn-style {
+        @apply px-4 py-2 rounded-md text-sm font-medium transition-colors;
     }
   }
