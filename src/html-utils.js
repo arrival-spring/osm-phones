@@ -346,13 +346,10 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
         ${favicon}
         <link href="../styles.css" rel="stylesheet">
         <script src="../theme.js"></script>
-        <style>
-            body { font-family: 'Inter', sans-serif; }
-        </style>
     </head>
     <body class="p-8 bg-gray-100 dark:bg-gray-900">
         <div class="max-w-5xl mx-auto space-y-8">
-            <header class="text-center relative"> 
+            <header class="text-center relative">
                 <div class="absolute top-0 right-0 flex items-center space-x-2">
                     ${themeButton}
                     <button id="settings-toggle" class="hover:bg-gray-300 dark:hover:bg-gray-700 rounded-lg p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors" aria-label="${translate('settings', locale)}">
@@ -584,9 +581,6 @@ async function generateMainIndexHtml(countryStats, locale, translations) {
         ${favicon}
         <link href="./styles.css" rel="stylesheet">
         <script src="theme.js"></script>
-        <style>
-            body { font-family: 'Inter', sans-serif; }
-        </style>
     </head>
     <body class="p-8 bg-gray-100 dark:bg-gray-900">
         <div class="max-w-5xl mx-auto space-y-8">
@@ -792,13 +786,13 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
                         }
 
                         const summaryHeader = document.createElement('summary');
-                        summaryHeader.className = 'list-none cursor-pointer p-6 flex transition-colors rounded-t-xl group/summary bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-950'; 
+                        summaryHeader.className = 'list-none cursor-pointer p-6 flex transition-colors rounded-t-xl group/summary bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-950';
 
                         const summaryContent = document.createElement('div');
                         summaryContent.className = 'flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 w-full';
 
                         const leftSide = document.createElement('div');
-                        leftSide.className = 'flex-grow flex items-center space-x-4 w-full sm:w-auto'; 
+                        leftSide.className = 'flex-grow flex items-center space-x-4 w-full sm:w-auto';
 
                         const iconCircle = document.createElement('div'); 
                         iconCircle.className = 'h-12 w-12 rounded-full flex-shrink-0 flex items-center justify-center color-indicator';
@@ -811,7 +805,7 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
                         divisionNameContainer.className = 'flex-grow'; 
 
                         const divisionHeader = document.createElement('h3');
-                        divisionHeader.className = 'text-2xl font-bold text-gray-900 dark:text-gray-100'; 
+                        divisionHeader.className = 'text-2xl font-bold text-gray-900 dark:text-gray-100';
                         divisionHeader.textContent = divisionName;
 
                         const statsLine = document.createElement('p');
