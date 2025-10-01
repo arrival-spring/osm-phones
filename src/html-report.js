@@ -3,27 +3,23 @@ const path = require('path');
 const { PUBLIC_DIR, OSM_EDITORS, ALL_EDITOR_IDS, DEFAULT_EDITORS_DESKTOP, DEFAULT_EDITORS_MOBILE } = require('./constants');
 const { safeName, getFeatureTypeName, isDisused } = require('./data-processor');
 const { translate } = require('./i18n');
-const {favicon, themeButton, createFooter, createStatsBox} = require('./html-utils')
+const {favicon, themeButton, createFooter, createStatsBox} = require('./html-utils');
+const { diffStrings } = require('./diff');
 
 function createDetailsGrid(item, locale) {
     let detailsGrid = '';
     for (const key in item.invalidNumbers) {
+        const originalNumber = item.invalidNumbers[key];
+        const suggestedFix = item.suggestedFixes[key];
+
         detailsGrid += `
         <div class="list-item-details-grid">
             <div class="grid-col-span-1">
                 <span class="list-item-phone-label">${key}</span>
             </div>
             <div class="list-item-phone-value-container">
-                <span>${item.invalidNumbers[key]}</span>
+                <span>${ suggestedFix ? diffStrings(originalNumber, suggestedFix) : originalNumber }</span>
             </div>
-            ${item.suggestedFixes[key] ? `
-            <div class="grid-col-span-1">
-                <span class="list-item-phone-label">${translate('suggestedFix', locale)}</span>
-            </div>
-            <div class="list-item-phone-value-container">
-                <span>${item.suggestedFixes[key]}</span>
-            </div>
-            ` : ''}
         </div>
         `
     }
