@@ -142,7 +142,7 @@ function checkExclusions(phoneNumber, countryCode, osmTags) {
  * @returns {{isInvalid: boolean, suggestedFix: string, autoFixable: boolean}}
  */
 function processSingleNumber(numberStr, countryCode, osmTags = {}) {
-    let suggestedFix = 'No fix available';
+    let suggestedFix = 'Initial: No fix available';
     let autoFixable = true;
     let isInvalid = false;
 
@@ -205,7 +205,7 @@ function processSingleNumber(numberStr, countryCode, osmTags = {}) {
         // Parsing failed due to an exception (unfixable invalid number)
         isInvalid = true;
         autoFixable = false;
-        suggestedFix = 'No fix available';
+        suggestedFix = 'Error: No fix available';
     }
 
     return { isInvalid, suggestedFix, autoFixable };
