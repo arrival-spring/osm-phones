@@ -17,8 +17,7 @@ permissions:
   pages: write
   id-token: write
   pull-requests: write # Needed to post comments
-  # Add actions read permission to list artifacts
-  actions: read
+  actions: read # Needed to list artifacts
 
 jobs:
   run-tests:
@@ -62,6 +61,10 @@ jobs:
           node src/main.js
           npm run build:css
 
+      - name: Run HTML Minifier
+        run: find public -name "*.html" | xargs -I {} sh -c 'npx html-minifier-terser "$0" --output "$0" --collapse-whitespace --remove-comments --minify-css true --minify-js true' {}
+        shell: bash
+
       - name: Check Build Type
         run: echo "The build type is $BUILD_TYPE"
 
@@ -81,7 +84,7 @@ jobs:
     needs: build-report
     runs-on: ubuntu-latest
     steps:
-      # Step 1: Get the Artifact ID from the workflow run (NO CHANGE NEEDED HERE)
+      # Step 1: Get the Artifact ID from the workflow run
       - name: Get Artifact ID
         id: get_artifact
         uses: actions/github-script@v7
