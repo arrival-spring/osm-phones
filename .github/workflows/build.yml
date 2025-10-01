@@ -16,6 +16,8 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  pull-requests: write # Needed to post comments
+  actions: read # Needed to list artifacts
 
 jobs:
   run-tests:
@@ -59,6 +61,10 @@ jobs:
           node src/main.js
           npm run build:css
 
+      - name: Run HTML Minifier
+        run: find public -name "*.html" | xargs -I {} sh -c 'npx html-minifier-terser "$0" --output "$0" --collapse-whitespace --remove-comments --minify-css true --minify-js true' {}
+        shell: bash
+
       - name: Check Build Type
         run: echo "The build type is $BUILD_TYPE"
 
@@ -71,3 +77,49 @@ jobs:
         if: env.BUILD_TYPE == 'full'
         id: deployment
         uses: actions/deploy-pages@v4
+
+  comment-on-pr:
+    # Only run this job for pull_request events
+    if: github.event_name == 'pull_request'
+    needs: build-report
+    runs-on: ubuntu-latest
+    steps:
+      # Step 1: Get the Artifact ID from the workflow run
+      - name: Get Artifact ID
+        id: get_artifact
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const artifacts = await github.rest.actions.listWorkflowRunArtifacts({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: context.runId,
+            });
+
+            // The artifact uploaded by 'actions/upload-pages-artifact@v3' is usually named 'github-pages'
+            const pagesArtifact = artifacts.data.artifacts.find(
+              artifact => artifact.name === 'github-pages'
+            );
+            
+            if (pagesArtifact) {
+              // Set the artifact ID as an output for the next step
+              core.setOutput('artifact_id', pagesArtifact.id);
+            } else {
+              core.setFailed("Could not find the 'github-pages' artifact.");
+            }
+          
+      # Step 2: Create the direct download link and post the comment
+      - name: Create or update comment
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ✅ **Build Complete!**
+            
+            The simplified page build has been created. You can **download the zipped artifact** directly here:
+            
+            **[Download github-pages.zip](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts/${{ steps.get_artifact.outputs.artifact_id }})**
+            
+            *Note: You must be logged into GitHub to download this file.*

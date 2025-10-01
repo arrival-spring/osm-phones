@@ -63,7 +63,7 @@ function getFeatureTypeName(item) {
     if (item.name) {
         return `${item.name}`;
     }
-    
+
     const featureType = getFeatureType(item);
 
     if (featureType) {
@@ -108,7 +108,7 @@ function checkExclusions(phoneNumber, countryCode, osmTags) {
     if (!phoneNumber) {
         return null;
     }
-    
+
     const countryExclusions = EXCLUSIONS[countryCode];
 
     if (countryExclusions) {
@@ -131,7 +131,7 @@ function checkExclusions(phoneNumber, countryCode, osmTags) {
             }
         }
     }
-    
+
     return null;
 }
 
@@ -143,12 +143,13 @@ function checkExclusions(phoneNumber, countryCode, osmTags) {
  * @returns {{isInvalid: boolean, suggestedFix: string, autoFixable: boolean}}
  */
 function processSingleNumber(numberStr, countryCode, osmTags = {}) {
-    let suggestedFix = 'No fix available';
+    let suggestedFix = 'Initial: No fix available';
     let autoFixable = true;
     let isInvalid = false;
 
     const NON_STANDARD_EXT_PREFIX_REGEX = /([eE][xX][tT])|(\s*\([eE][xX][tT]\)\s*)/;
     const hasNonStandardExtension = NON_STANDARD_EXT_PREFIX_REGEX.test(numberStr);
+    const spacingRegex = countryCode === 'US' ? /[\s-]/g : /\s/g;
 
     try {
         const phoneNumber = parsePhoneNumber(numberStr, countryCode);
@@ -160,7 +161,7 @@ function processSingleNumber(numberStr, countryCode, osmTags = {}) {
 
         // Strip the extension from the original string for normalization
         const numberToValidate = stripExtension(numberStr);
-        const normalizedOriginal = numberToValidate.replace(/\s/g, '');
+        const normalizedOriginal = numberToValidate.replace(spacingRegex, '');
 
         let normalizedParsed = '';
 
@@ -175,11 +176,25 @@ function processSingleNumber(numberStr, countryCode, osmTags = {}) {
 
             // Manually append the extension in the standard format (' x{ext}').
             const extension = phoneNumber.ext ? ` x${phoneNumber.ext}` : '';
-            suggestedFix = coreFormatted + extension;
+
+            suggestedFix = (() => {
+                if (countryCode === 'US') {
+                    // Use dashes as separator, but space after country code
+                    const countryCodePrefix = `+${phoneNumber.countryCallingCode}`;
+
+                    let nationalNumberFormatted = phoneNumber.format('NATIONAL');
+                    nationalNumberFormatted = nationalNumberFormatted.replace(/[\(\)]/g, '').trim();
+                    nationalNumberFormatted = nationalNumberFormatted.replace(/\s/g, '-');
+
+                    return `${countryCodePrefix} ${nationalNumberFormatted}${extension}`;
+                } else {
+                    return coreFormatted + extension;
+                }
+            })();
         }
 
         if (phoneNumber && phoneNumber.isValid()) {
-            normalizedParsed = phoneNumber.number.replace(/\s/g, '');
+            normalizedParsed = phoneNumber.number.replace(spacingRegex, '');
 
             isInvalid = normalizedOriginal !== normalizedParsed;
 
@@ -195,7 +210,7 @@ function processSingleNumber(numberStr, countryCode, osmTags = {}) {
         // Parsing failed due to an exception (unfixable invalid number)
         isInvalid = true;
         autoFixable = false;
-        suggestedFix = 'No fix available';
+        suggestedFix = 'Error: No fix available';
     }
 
     return { isInvalid, suggestedFix, autoFixable };
