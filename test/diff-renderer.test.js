@@ -5,13 +5,6 @@ const {
     getDiffHtml 
 } = require('../src/diff-renderer');
 
-import { 
-    normalize, 
-    consolidatePlusSigns, 
-    diffPhoneNumbers, 
-    getDiffHtml 
-} from './phoneDiff';
-
 // --- Mocking the external 'diffChars' library ---
 // Since the real jsdiff is complex, we mock it for the critical test cases
 // based on what we *expect* it to return after normalization.
