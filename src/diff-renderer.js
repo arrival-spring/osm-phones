@@ -96,6 +96,31 @@ function diffPhoneNumbers(original, suggested) {
 const NEW_SPLIT_CAPTURE_REGEX = /(; ?)/g;
 
 /**
+ * Helper function to consolidate lone '+' signs with the following segment, 
+ * ensuring the full international number is treated as one segment.
+ * @param {Array<string>} parts - Array of segments from a split operation.
+ * @returns {Array<string>} Consolidated array.
+ */
+function consolidatePlusSigns(parts) {
+    let consolidated = [];
+    for (let i = 0; i < parts.length; i++) {
+        const part = parts[i];
+        const trimmedPart = part.trim();
+        
+        // If the segment is ONLY '+', AND the next segment exists, merge them
+        if (trimmedPart === '+' && i + 1 < parts.length) {
+            // Merge '+' with the trimmed version of the next segment
+            consolidated.push(trimmedPart + parts[i + 1].trim());
+            i++; // Skip the next segment, as it was consumed
+        } else {
+            // Otherwise, keep the segment as is (trimmed)
+            consolidated.push(trimmedPart);
+        }
+    }
+    return consolidated;
+}
+
+/**
  * Creates an HTML string with diff highlighting for two phone number strings, 
  * handling multiple numbers separated by various delimiters.
  * @param {string} oldString - The original phone number string(s).
@@ -103,45 +128,34 @@ const NEW_SPLIT_CAPTURE_REGEX = /(; ?)/g;
  * @returns {{oldDiff: string, newDiff: string}} - An object containing the HTML for both diffs.
  */
 function getDiffHtml(oldString, newString) {
-    // 1. Split and initial filter
+    // 1. Split and initial filter for both strings
     const oldPartsUnfiltered = oldString.split(UNIVERSAL_SPLIT_CAPTURE_REGEX);
     const oldParts = oldPartsUnfiltered.filter(s => s && s.trim().length > 0);
-    const newParts = newString.split(NEW_SPLIT_CAPTURE_REGEX).filter(s => s && s.trim().length > 0);
 
-    // 2. CONSOLIDATION FIX: Merge any lone '+' segment with the next number segment
-    let consolidatedOldParts = [];
-    for (let i = 0; i < oldParts.length; i++) {
-        const part = oldParts[i];
-        const trimmedPart = part.trim();
+    const newPartsUnfiltered = newString.split(NEW_SPLIT_CAPTURE_REGEX);
+    const newParts = newPartsUnfiltered.filter(s => s && s.trim().length > 0);
 
-        // If the segment is ONLY '+', AND the next segment exists, merge them
-        if (trimmedPart === '+' && i + 1 < oldParts.length) {
-            // Merge '+' with the trimmed version of the next segment
-            consolidatedOldParts.push(trimmedPart + oldParts[i + 1].trim());
-            i++; // Skip the next segment, as it was consumed
-        } else {
-            // Otherwise, keep the segment as is (trimmed)
-            consolidatedOldParts.push(trimmedPart);
-        }
-    }
+    // 2. CONSOLIDATION FIX: Apply consolidation to both old and new parts
+    const consolidatedOldParts = consolidatePlusSigns(oldParts);
+    const consolidatedNewParts = consolidatePlusSigns(newParts);
 
     let oldDiffHtml = '';
     let newDiffHtml = '';
-
-    // We iterate over the minimum length of the new, consolidated arrays
-    const numSegments = Math.min(consolidatedOldParts.length, newParts.length);
-
+    
+    // Iterate over the minimum length of the new, consolidated arrays
+    const numSegments = Math.min(consolidatedOldParts.length, consolidatedNewParts.length);
+    
     for (let i = 0; i < numSegments; i++) {
         const oldSegment = consolidatedOldParts[i];
-        const newSegment = newParts[i].trim(); // Ensure new segment is always trimmed
-
+        const newSegment = consolidatedNewParts[i];
+        
         // Identify a phone number: MUST contain at least one digit.
-        const isPhoneNumber = /\d/.test(oldSegment);
+        const isPhoneNumber = /\d/.test(oldSegment); 
 
         if (isPhoneNumber) {
             // --- This is a phone number segment ---
-            const { originalDiff, suggestedDiff } = diffPhoneNumbers(oldSegment, newSegment);
-
+            const { originalDiff, suggestedDiff } = diffPhoneNumbers(oldSegment, newSegment, diffChars);
+            
             originalDiff.forEach((part) => {
                 const colorClass = part.removed ? 'diff-removed' : 'diff-unchanged';
                 oldDiffHtml += `<span class="${colorClass}">${part.value}</span>`;
@@ -153,17 +167,17 @@ function getDiffHtml(oldString, newString) {
             });
         } else {
             // --- This is a separator (e.g., ';', 'or', ',') ---
-            // If the old segment was a separator, it is removed/replaced
+            // Old segment (original separator) is marked removed
             oldDiffHtml += `<span class="diff-removed">${oldSegment}</span>`;
-
-            // The new segment (expected to be '; ' or similar) is added
+            
+            // New segment (new standard separator like '; ') is marked added
             newDiffHtml += `<span class="diff-added">${newSegment}</span>`;
         }
     }
 
-    // Append any trailing parts if one string was longer than the other
-    oldDiffHtml += oldParts.slice(numSegments).join('');
-    newDiffHtml += newParts.slice(numSegments).join('');
+    // Append any trailing parts
+    oldDiffHtml += consolidatedOldParts.slice(numSegments).join('');
+    newDiffHtml += consolidatedNewParts.slice(numSegments).join('');
 
     return { oldDiff: oldDiffHtml, newDiff: newDiffHtml };
 }
