@@ -11,75 +11,79 @@ const normalize = (str) => str.replace(/[^\d]/g, '');
 /**
  * Performs a two-way diff on phone numbers, separating semantic (digit)
  * changes from visual (formatting) changes.
- * * @param {string} original - The phone number to be fixed.
+ * @param {string} original - The phone number to be fixed.
  * @param {string} suggested - The fixed phone number.
  * @returns {{
  * originalDiff: Array<{value: string, added: boolean, removed: boolean}>, 
  * suggestedDiff: Array<{value: string, added: boolean, removed: boolean}>
- * }} The diff objects for rendering two separate lines (Original and Suggested).
+ * }} The diff objects for rendering two separate lines.
  */
 function diffPhoneNumbers(original, suggested) {
-
     // --- 1. Semantic Diff (Digits only) ---
     const normalizedOriginal = normalize(original);
     const normalizedSuggested = normalize(suggested);
-
-    // Get the semantic diff (which digits were added/removed/kept)
     const semanticParts = diffChars(normalizedOriginal, normalizedSuggested);
 
-    // Map the semantic parts back to a simple state array for easy lookup
-    let semanticMap = [];
+    // Create a sequential map of digits for the common sequence
+    let commonDigits = [];
     semanticParts.forEach(part => {
-        const state = part.added ? 'added' : (part.removed ? 'removed' : 'unchanged');
-        for (let i = 0; i < part.value.length; i++) {
-            semanticMap.push(state);
+        if (!part.added && !part.removed) {
+            commonDigits.push(...part.value.split(''));
         }
     });
 
-    // --- 2. Visual Diff for Original String (Shows Removals) ---
+    // --- 2. Visual Diff for Original String (Removals) ---
     let originalDiff = [];
-    let semanticIndex = 0; // Pointer for the semantic map
+    let semanticIndex = 0; 
 
     for (let i = 0; i < original.length; i++) {
         const char = original[i];
         
         if (/\d/.test(char)) {
-            // It's a digit. Check its semantic state.
-            const state = semanticMap[semanticIndex];
-            
+            // Check semantic map state at current digit index
+            const state = semanticParts.reduce((acc, part) => {
+                if (acc.remaining === 0) return acc;
+                
+                const len = part.value.length;
+                if (acc.targetIndex >= acc.processed && acc.targetIndex < acc.processed + len) {
+                    acc.state = part.added ? 'added' : part.removed ? 'removed' : 'unchanged';
+                    acc.remaining = 0;
+                }
+                acc.processed += len;
+                return acc;
+            }, { processed: 0, targetIndex: semanticIndex, remaining: 1, state: 'unchanged' }).state;
+
             if (state === 'removed') {
-                // Digit was removed (e.g., the leading '0')
                 originalDiff.push({ value: char, removed: true });
             } else {
-                // Digit was kept (unchanged)
                 originalDiff.push({ value: char, added: false, removed: false }); 
             }
             semanticIndex++;
         } else {
-            // It's a non-digit (formatting). Mark all original formatting as removed/replaced.
+            // Formatting removal
             originalDiff.push({ value: char, removed: true });
         }
     }
     
-    // --- 3. Visual Diff for Suggested String (Shows Additions) ---
+    // --- 3. Visual Diff for Suggested String (Additions) ---
     let suggestedDiff = [];
-    let originalDigitPtr = 0; // Pointer for the common sequence digits
-
+    let commonDigitPtr = 0; // Pointer for the commonDigits array
+    
     for (let i = 0; i < suggested.length; i++) {
         const char = suggested[i];
         
         if (/\d/.test(char)) {
-            // It's a digit. Check if it's a common digit or a new addition.
-            if (originalDigitPtr < normalizedOriginal.length && normalizedOriginal[originalDigitPtr] === char) {
-                // Digit is part of the common sequence. Keep it UNCHANGED.
+            // It's a digit. Check if it's the next digit in the common sequence.
+            if (commonDigitPtr < commonDigits.length && commonDigits[commonDigitPtr] === char) {
+                // Digit is part of the common sequence. UNCHANGED.
                 suggestedDiff.push({ value: char, removed: false, added: false });
-                originalDigitPtr++;
+                commonDigitPtr++;
             } else {
-                // Digit is NEW (e.g., the prefix '32').
+                // Digit is NEW (e.g., prefix '32' or a replaced digit). ADDED.
                 suggestedDiff.push({ value: char, added: true });
             }
         } else {
-            // It's a non-digit ('+' or space/separator). Mark as ADDED formatting.
+            // Non-digit ('+' or space/separator). ADDED formatting.
             suggestedDiff.push({ value: char, added: true });
         }
     }
