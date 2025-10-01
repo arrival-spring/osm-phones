@@ -77,6 +77,8 @@ function diffPhoneNumbers(original, suggested) {
     let suggestedRemainder = suggested;
 
     for (let i = 0; i < original.length; i++) {
+        console.log(`Original loop: original: >${originalRemainder}<, suggested: >${suggestedRemainder}<`)
+
         const char = original[i];
 
         // + should only appear at the start
@@ -106,7 +108,6 @@ function diffPhoneNumbers(original, suggested) {
             originalDiff.push({ value: char, removed: false, added: false });
             suggestedRemainder = suggestedRemainder.slice(1)
         } else {
-            console.log(`Original loop: original: >${originalRemainder}<, suggested: >${suggestedRemainder}<`)
             // Non-digit (formatting like ( ), etc.). Mark as removed.
             originalDiff.push({ value: char, removed: true });
         }
@@ -122,6 +123,8 @@ function diffPhoneNumbers(original, suggested) {
     let suggestedRemainderNew = suggested;
 
     for (let i = 0; i < suggested.length; i++) {
+        console.log(`Suggested loop: original: >${originalRemainderNew}<, suggested: >${suggestedRemainderNew}<`)
+        
         const char = suggested[i];
 
         // + should only appear at the start
@@ -150,7 +153,6 @@ function diffPhoneNumbers(original, suggested) {
             suggestedDiff.push({ value: char, removed: false, added: false });
             originalRemainderNew = originalRemainderNew.slice(1);
         } else {
-            console.log(`Suggested loop: original: >${originalRemainderNew}<, suggested: >${suggestedRemainderNew}<`)
             // Non-digit, non-space. I don't know why we'd get here. ADDED formatting.
             suggestedDiff.push({ value: char, added: true });
         }
