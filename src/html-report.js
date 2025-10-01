@@ -39,7 +39,6 @@ function createDetailsGrid(item, locale) {
 function createListItem(item, locale) {
 
     const josmFixBaseUrl = 'http://127.0.0.1:8111/load_object';
-    const fixedNumber = item.suggestedFixes.join('; ');
     const josmEditUrl = `${josmFixBaseUrl}?objects=${item.type[0]}${item.id}`;
 
     // Construct JOSM fix URL including all fixable values, if the whole thing is fixable
