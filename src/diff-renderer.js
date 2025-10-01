@@ -78,7 +78,7 @@ function diffPhoneNumbers(original, suggested) {
 
         // + should only appear at the start
         if (i === 0 && char === '+' && suggested[i] === '+') {
-            suggestedDiff.push({ value: char, removed: false, added: false});
+            originalDiff.push({ value: char, removed: false, added: false });
         } else if (/\d/.test(char)) {
             // It's a digit. Determine if it was removed in the semantic diff.
             if (commonPointer < commonDigits.length && char === commonDigits[commonPointer]) {
@@ -105,7 +105,7 @@ function diffPhoneNumbers(original, suggested) {
 
         // + should only appear at the start
         if (i === 0 && char === '+' && original[i] === '+') {
-            suggestedDiff.push({ value: char, removed: false, added: false});
+            suggestedDiff.push({ value: char, removed: false, added: false });
         } else if (/\d/.test(char)) {
             // It's a digit. Check if it's the next digit in the common sequence.
             if (commonPointerNew < commonDigits.length && commonDigits[commonPointerNew] === char) {
@@ -180,17 +180,17 @@ function getDiffHtml(oldString, newString) {
             // --- This is a separator (e.g., ';', 'or', ',') ---
             // Just do a regular diffChars on the separators
             separatorDiffResult = diffChars(normalizedOriginal, normalizedSuggested);
-            
+
             for (const part of separatorDiffResult) {
                 if (part.removed) {
                     oldDiffHtml += `<span class="diff-removed">${part.value}</span>`;
                 } else if (part.added) {
-                  newDiffHtml += `<span class="diff-added">${part.value}</span>`;;
+                    newDiffHtml += `<span class="diff-added">${part.value}</span>`;;
                 } else {
-                  oldDiffHtml += `<span class="diff-unchanged">${part.value}</span>`;
-                  newDiffHtml += `<span class="diff-unchanged">${part.value}</span>`;
+                    oldDiffHtml += `<span class="diff-unchanged">${part.value}</span>`;
+                    newDiffHtml += `<span class="diff-unchanged">${part.value}</span>`;
                 }
-              }
+            }
         }
     }
 
