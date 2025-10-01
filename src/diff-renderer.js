@@ -73,15 +73,14 @@ function splitPhoneNumbers(phoneString) {
  */
 function diffPhoneNumbers(oldNumber, newNumber) {
     const dmp = new diff_match_patch();
-    let diff = dmp.diff_main(oldNumber, newNumber);
-    dmp.diff_cleanupSemantic(diff);
+    // Use raw diff only, as dmp.diff_cleanupSemantic interferes with character-level formatting changes
+    let diff = dmp.diff_main(oldNumber, newNumber); 
 
-    // --- FIX: Force Character-by-Character Breakdown of UNCHANGED segments ---
-    // This allows the heuristic to correctly isolate single formatting characters.
+    // --- Force Character-by-Character Breakdown of ALL segments ---
+    // This ensures every single character (digit or formatting) gets its own diff part.
     const granularDiff = [];
     diff.forEach(([type, text]) => {
-        // Only break down type 0 (unchanged) segments with length > 1
-        if (type === 0 && text.length > 1) { 
+        if (text.length > 1) { 
             text.split('').forEach(char => {
                 granularDiff.push([type, char]);
             });
@@ -99,8 +98,9 @@ function diffPhoneNumbers(oldNumber, newNumber) {
         const type = part[0]; // -1: removed, 0: unchanged, 1: added
         const text = part[1];
         
-        // Check for non-digit/non-plus character. Digits and '+' are considered part of the number.
-        const isFormattingChar = !text.match(/[\d+]/) && text.length === 1; 
+        // We rely on granularization, so text.length should be 1. 
+        // Check for non-digit/non-plus character. '+' is part of a digit segment.
+        const isFormattingChar = !text.match(/[\d+]/); 
 
         if (type === 1) { // Added (new number)
             suggestedDiff.push({ value: text, added: true });
@@ -172,25 +172,21 @@ function getDiffHtml(oldText, newText) {
             newDiffHtml += diffResult.newDiff;
 
         } else if (oldSegment || newSegment) {
-            // Treat as a separator and run a simple character diff
-            const dmp = new diff_match_patch();
-            const diff = dmp.diff_main(oldSegment, newSegment);
-            dmp.diff_cleanupSemantic(diff);
-
-            diff.forEach(part => {
-                const type = part[0]; // -1: removed, 0: unchanged, 1: added
-                const text = part[1];
-                const escapedText = escapeHtml(text);
-
-                if (type === 1) { // Added
-                    newDiffHtml += `<span class="diff-added">${escapedText}</span>`;
-                } else if (type === 0) { // Unchanged
-                    oldDiffHtml += `<span class="diff-unchanged">${escapedText}</span>`;
-                    newDiffHtml += `<span class="diff-unchanged">${escapedText}</span>`;
-                } else if (type === -1) { // Removed
-                    oldDiffHtml += `<span class="diff-removed">${escapedText}</span>`;
+            // --- Revised Separator Logic ---
+            // Treat as a separator. If they are not identical, treat old as fully removed and new as fully added.
+            if (oldSegment === newSegment) {
+                const escapedText = escapeHtml(oldSegment);
+                oldDiffHtml += `<span class="diff-unchanged">${escapedText}</span>`;
+                newDiffHtml += `<span class="diff-unchanged">${escapedText}</span>`;
+            } else {
+                if (oldSegment) {
+                    oldDiffHtml += `<span class="diff-removed">${escapeHtml(oldSegment)}</span>`;
                 }
-            });
+                if (newSegment) {
+                    newDiffHtml += `<span class="diff-added">${escapeHtml(newSegment)}</span>`;
+                }
+            }
+            // --- End Revised Separator Logic ---
         }
     }
 

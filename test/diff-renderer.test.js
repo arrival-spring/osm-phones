@@ -4,7 +4,7 @@ const {
     diffPhoneNumbers, 
     getDiffHtml
 } = require('../src/diff-renderer'); 
-const { diff_match_patch } = require('diff-match-patch'); // Include the library used by the logic
+const { diff_match_patch } = require('diff-match-patch');
 
 
 // --- Test Suites ---
@@ -29,7 +29,6 @@ describe('diffPhoneNumbers (Single Number Diff Logic)', () => {
         const original = '0471 124 380';
         const suggested = '+32 471 12 43 80';
         
-        // Use the function (which now has the granular diff and heuristic fix)
         const result = diffPhoneNumbers(original, suggested);
 
         // 1. Check Original Diff: '0' removed, spaces removed (heuristic), digits unchanged.
@@ -60,7 +59,6 @@ describe('diffPhoneNumbers (Single Number Diff Logic)', () => {
         expect(result.suggestedDiff.map(p => `<span class="diff-${p.added ? 'added' : 'unchanged'}">${p.value}</span>`).join('')).toBe(expectedSuggestedHtml);
     });
 
-    // The new test is identical to the failing old one and is included for verification.
     test('should correctly handle a non-digit character removal and formatting change (0 removal, brackets removed, space added)', () => {
         const original = '+44 (0) 1234 5678';
         const suggested = '+44 1234 5678';
@@ -90,21 +88,25 @@ describe('getDiffHtml (Multi-Number Diff Logic)', () => {
         const result = getDiffHtml(original, suggested);
         
         // --- Original HTML (Removals) ---
+        // N1 Removals: ' ', '0', ' ', ' '
         const expectedOriginalN1 = '<span class="diff-unchanged">+</span><span class="diff-unchanged">3</span><span class="diff-unchanged">2</span><span class="diff-removed"> </span><span class="diff-removed">0</span><span class="diff-unchanged">5</span><span class="diff-unchanged">8</span><span class="diff-removed"> </span><span class="diff-unchanged">5</span><span class="diff-unchanged">1</span><span class="diff-unchanged">5</span><span class="diff-removed"> </span><span class="diff-unchanged">5</span><span class="diff-unchanged">9</span><span class="diff-unchanged">2</span>';
         
         // Separator is UNCHANGED ';'
         const expectedOriginalSeparator = '<span class="diff-unchanged">;</span>';
         
+        // N2 Removals: ' ', '0', ' ', ' '
         const expectedOriginalN2 = '<span class="diff-unchanged">+</span><span class="diff-unchanged">3</span><span class="diff-unchanged">2</span><span class="diff-removed"> </span><span class="diff-removed">0</span><span class="diff-unchanged">4</span><span class="diff-unchanged">7</span><span class="diff-unchanged">3</span><span class="diff-removed"> </span><span class="diff-unchanged">7</span><span class="diff-unchanged">9</span><span class="diff-unchanged">2</span><span class="diff-removed"> </span><span class="diff-unchanged">9</span><span class="diff-unchanged">5</span><span class="diff-unchanged">1</span>';
         expect(result.oldDiff).toBe(expectedOriginalN1 + expectedOriginalSeparator + expectedOriginalN2);
 
 
         // --- Suggested HTML (Additions) ---
+        // N1 Additions: ' ', ' ', ' '
         const expectedSuggestedN1 = '<span class="diff-unchanged">+</span><span class="diff-unchanged">3</span><span class="diff-unchanged">2</span><span class="diff-added"> </span><span class="diff-unchanged">5</span><span class="diff-unchanged">8</span><span class="diff-added"> </span><span class="diff-unchanged">5</span><span class="diff-unchanged">1</span><span class="diff-added"> </span><span class="diff-unchanged">5</span><span class="diff-unchanged">5</span><span class="diff-added"> </span><span class="diff-unchanged">9</span><span class="diff-unchanged">2</span>';
         
-        // Separator is UNCHANGED ';' and ADDED ' ' (due to char diffing on "; " vs ";")
+        // Separator is UNCHANGED ';' and ADDED ' ' (because old is ';', new is '; ')
         const expectedSuggestedSeparator = '<span class="diff-unchanged">;</span><span class="diff-added"> </span>';
         
+        // N2 Additions: ' ', ' ', ' '
         const expectedSuggestedN2 = '<span class="diff-unchanged">+</span><span class="diff-unchanged">3</span><span class="diff-unchanged">2</span><span class="diff-added"> </span><span class="diff-unchanged">4</span><span class="diff-unchanged">7</span><span class="diff-unchanged">3</span><span class="diff-added"> </span><span class="diff-unchanged">7</span><span class="diff-unchanged">9</span><span class="diff-added"> </span><span class="diff-unchanged">2</span><span class="diff-unchanged">9</span><span class="diff-added"> </span><span class="diff-unchanged">5</span><span class="diff-unchanged">1</span>';
         expect(result.newDiff).toBe(expectedSuggestedN1 + expectedSuggestedSeparator + expectedSuggestedN2);
     });
@@ -117,10 +119,9 @@ describe('getDiffHtml (Multi-Number Diff Logic)', () => {
         const result = getDiffHtml(original, suggested);
         
         // --- Original HTML (Removals) ---
-        // '0' is removed (semantic change), and space is removed (heuristic)
         const expectedOriginalN1 = '<span class="diff-removed">0</span><span class="diff-unchanged">1</span><span class="diff-unchanged">2</span><span class="diff-unchanged">3</span>';
         
-        // Separator is fully removed, as ' / ' and '; ' have different delimiters
+        // Separator ' / ' is NOT equal to '; ' so it is fully removed (simplified logic)
         const expectedOriginalSeparator = '<span class="diff-removed"> / </span>';
         
         const expectedOriginalN2 = '<span class="diff-unchanged">4</span><span class="diff-unchanged">5</span><span class="diff-unchanged">6</span><span class="diff-unchanged">7</span>';
@@ -129,9 +130,8 @@ describe('getDiffHtml (Multi-Number Diff Logic)', () => {
         // --- Suggested HTML (Additions) ---
         const expectedSuggestedN1 = '<span class="diff-added">+</span><span class="diff-added">9</span><span class="diff-added">0</span><span class="diff-added"> </span><span class="diff-unchanged">1</span><span class="diff-unchanged">2</span><span class="diff-unchanged">3</span>';
         
-        // FIX: The expectation must match the actual granular output from dmp on '; '
-        // The original test had an incorrect expected separator. This is the correct granular split.
-        const expectedSuggestedSeparator = '<span class="diff-added">;</span><span class="diff-added"> </span>';
+        // Separator '; ' is fully added (simplified logic)
+        const expectedSuggestedSeparator = '<span class="diff-added">; </span>';
         
         const expectedSuggestedN2 = '<span class="diff-added">+</span><span class="diff-added">9</span><span class="diff-added">0</span><span class="diff-added"> </span><span class="diff-unchanged">4</span><span class="diff-unchanged">5</span><span class="diff-unchanged">6</span><span class="diff-unchanged">7</span>';
         expect(result.newDiff).toBe(expectedSuggestedN1 + expectedSuggestedSeparator + expectedSuggestedN2);
