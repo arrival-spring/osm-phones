@@ -201,7 +201,6 @@ function createListItem(item, locale) {
     const josmFixUrl = item.autoFixable ?
         `${josmEditUrl}&addtags=${item.tag}=${encodeURIComponent(fixedNumber)}` :
         null;
-
     // Generate buttons for ALL editors so client-side script can hide them
     const editorButtons = ALL_EDITOR_IDS.map(editorId => {
         const editor = OSM_EDITORS[editorId];
@@ -247,7 +246,7 @@ function createListItem(item, locale) {
 
     return `
         <li class="report-list-item">
-            <div class="list-item-content">
+            <div class="list-item-content-wrapper">
                 <div class="list-item-header">
                     <h3 class="list-item-title">
                         <a href="${item.osmUrl}" target="_blank" rel="noopener noreferrer" class="list-item-link">${getFeatureTypeName(item)}</a>
@@ -258,21 +257,21 @@ function createListItem(item, locale) {
                     <div class="grid-col-span-1">
                         <span class="list-item-phone-label">${translate('phone', locale)}</span>
                     </div>
-                    <div class="grid-col-span-1 list-item-phone-number">
+                    <div class="list-item-phone-value-container">
                         <span>${phoneNumber}</span>
                     </div>
                     ${item.autoFixable ? `
                     <div class="grid-col-span-1">
                         <span class="list-item-phone-label">${translate('suggestedFix', locale)}</span>
                     </div>
-                    <div class="grid-col-span-1 list-item-phone-number">
+                    <div class="list-item-phone-value-container">
                         <span>${fixedNumber}</span>
                     </div>
                     ` : ''}
                 </div>
             </div>
             
-            <div class="list-item-actions">
+            <div class="list-item-actions-container">
                 ${websiteButton}
                 ${fixableLabel}
                 ${josmFixButton}
@@ -306,11 +305,11 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
     const invalidListContent = manualFixNumbers.map(item => createListItem(item, locale)).join('');
 
     const fixableSectionAndHeader = `
-        <div class="text-center">
+        <div class="section-header-container">
             <h2 class="section-header">${translate('fixableNumbersHeader', locale)}</h2>
             <p class="section-description">${translate('fixableNumbersDescription', locale)}</p>
         </div>
-        <ul class="space-y-4">
+        <ul class="report-list">
             ${fixableListContent}
         </ul>`;
 
@@ -319,7 +318,7 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
             <h2 class="section-header">${translate('invalidNumbersHeader', locale)}</h2>
             <p class="section-description">${translate('invalidNumbersDescription', locale)}</p>
         </div>
-        <ul class="space-y-4">
+        <ul class="report-list">
             ${invalidListContent}
         </ul>`;
 
@@ -346,9 +345,9 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
         <script src="../theme.js"></script>
     </head>
     <body class="body-styles">
-        <div class="container">
-            <header class="header">
-                <div class="header-actions">
+        <div class="page-container">
+            <header class="page-header">
+                <div class="absolute top-0 right-0 flex items-center space-x-2">
                     ${themeButton}
                     <button id="settings-toggle" class="settings-button" aria-label="${translate('settings', locale)}">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340.274 340.274" fill="currentColor" class="7 w-7">
@@ -554,15 +553,15 @@ async function generateMainIndexHtml(countryStats, locale, translations) {
 
         return `
             <a href="${countryPageName}" class="country-link">
-                <div class="flex-grow flex items-center space-x-4">
+                <div class="country-link-content">
                     <div class="color-indicator" data-percentage="${invalidPercentage}"></div>
-                    <div class="flex-grow">
+                    <div class="country-link-text-container">
                         <h3 class="country-name">${country.name}</h3>
                         <p class="country-description">${description}</p>
                     </div>
                 </div>
-                <div class="text-center sm:text-right">
-                    <p class="country-percentage">${invalidPercentage.toLocaleString(itemLocale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<span class="text-base font-normal">%</span></p>
+                <div class="country-stats-container">
+                    <p class="country-percentage">${invalidPercentage.toLocaleString(itemLocale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<span class="country-percentage-symbol">%</span></p>
                     <p class="country-invalid-label">${translate('invalid', itemLocale)}</p>
                 </div>
             </a>
@@ -581,8 +580,8 @@ async function generateMainIndexHtml(countryStats, locale, translations) {
         <script src="theme.js"></script>
     </head>
     <body class="body-styles">
-        <div class="container">
-            <header class="text-center space-y-2 relative">
+        <div class="page-container">
+            <header class="page-header">
                 <div class="absolute top-0 right-0">
                     ${themeButton}
                 </div>
@@ -590,7 +589,7 @@ async function generateMainIndexHtml(countryStats, locale, translations) {
                 <p class="report-subtitle">${translate('reportSubtitle', locale)}</p>
             </header>
             <div class="card">
-                <div class="flex flex-col sm:flex-row justify-between items-center mb-6">
+                <div class="card-header">
                     <h2 class="card-title">${translate('countryReports', locale)}</h2>
                 </div>
                 <div class="space-y-4">
@@ -697,7 +696,7 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
         // Function to create the collapsible icon (right-pointing arrow)
         function createCollapseIcon() {
             const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-            svg.setAttribute('class', 'h-6 w-6 transform transition-transform duration-200 group-open:rotate-90 group-hover/summary:scale-110 text-white'); 
+            svg.setAttribute('class', 'collapse-icon');
             svg.setAttribute('fill', 'currentColor');
             svg.setAttribute('viewBox', '0 0 20 20');
             const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -709,6 +708,7 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
         }
 
         function renderList() {
+            const TARGET_LI_CLASS = 'list-item';
 
             const divisionNames = Object.keys(groupedDivisionStats);
             const isGrouped = divisionNames.length > 1;
@@ -798,7 +798,7 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
                         iconCircle.appendChild(collapseIcon); 
 
                         const divisionNameContainer = document.createElement('div');
-                        divisionNameContainer.className = 'flex-grow'; 
+                        divisionNameContainer.className = 'list-item-content';
 
                         const divisionHeader = document.createElement('h3');
                         divisionHeader.className = 'summary-title';
@@ -820,7 +820,7 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
 
                         const percentageText = document.createElement('p');
                         percentageText.className = 'summary-percentage';
-                        percentageText.innerHTML = \`\${formattedGroupPercentage}<span class="text-base font-normal">%</span>\`;
+                        percentageText.innerHTML = \`\${formattedGroupPercentage}<span class="country-percentage-symbol">%</span>\`;
 
                         const percentageLabel = document.createElement('p');
                         percentageLabel.className = 'summary-percentage-label';
@@ -873,13 +873,13 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
                         li.innerHTML = \`
                             <a href="\${safeCountryName}/\${safeDivisionName}.html" class="list-item-main-link">
                                 <div class="color-indicator" data-percentage="\${invalidPercentage}"></div>
-                                <div class="flex-grow">
+                                <div class="list-item-content-wrapper">
                                     <h3 class="list-item-sub-title">\${division.name}</h3>
                                     <p class="country-description">\${itemStatsLine}</p>
                                 </div>
                             </a>
                             <div class="summary-right-side">
-                                <p class="summary-percentage">\${formattedPercentage}<span class="text-base font-normal">%</span></p>
+                                <p class="summary-percentage">\${formattedPercentage}<span class="country-percentage-symbol">%</span></p>
                                 <p class="summary-percentage-label">\${T_CLIENT.invalid}</p>
                             </div>
                         \`;
@@ -892,7 +892,7 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
             if (listContainer.querySelectorAll('li').length === 0) {
                 listContainer.innerHTML = '';
                 const li = document.createElement('li');
-                li.className = 'report-list-item-empty';
+                li.className = 'no-subdivisions-item';
                 // Use the translated fallback message
                 li.textContent = T_CLIENT.noSubdivisionsFound;
                 listContainer.appendChild(li);
@@ -938,9 +938,9 @@ async function generateCountryIndexHtml(countryName, groupedDivisionStats, total
         <script src="theme.js"></script>
     </head>
     <body class="body-styles">
-        <div class="container">
-            <header class="header">
-                <div class="header-actions">
+        <div class="page-container">
+            <header class="page-header">
+                <div class="absolute top-0 right-0">
                     ${themeButton}
                 </div>
                 <a href="index.html" class="back-link">
