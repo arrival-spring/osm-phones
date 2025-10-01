@@ -3,11 +3,9 @@ const path = require('path');
 const { PUBLIC_DIR, COUNTRIES } = require('./constants');
 const { fetchAdminLevels, fetchOsmDataForDivision } = require('./osm-api');
 const { safeName, validateNumbers } = require('./data-processor');
-const {
-    generateHtmlReport,
-    generateMainIndexHtml,
-    generateCountryIndexHtml
-} = require('./html-utils');
+const {generateCountryIndexHtml} = require('./html-country')
+const {generateMainIndexHtml} = require('./html-index')
+const {generateHtmlReport} = require('./html-report')
 const { getTranslations } = require('./i18n');
 
 const CLIENT_KEYS = [
