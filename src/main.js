@@ -19,6 +19,9 @@ const CLIENT_KEYS = [
 ];
 
 const BUILD_TYPE = process.env.BUILD_TYPE;
+
+// A test build will only fetch and process numbers for one subdivision of one division of one country
+// (the first found of each, using the constants file)
 const testMode = BUILD_TYPE === 'simplified';
 
 /**
