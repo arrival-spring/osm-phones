@@ -178,11 +178,19 @@ function getDiffHtml(oldString, newString) {
             });
         } else {
             // --- This is a separator (e.g., ';', 'or', ',') ---
-            // Old segment (original separator) is marked removed
-            oldDiffHtml += `<span class="diff-removed">${oldSegment}</span>`;
-
-            // New segment (new standard separator like '; ' or just ';') is marked added
-            newDiffHtml += `<span class="diff-added">${newSegment}</span>`;
+            // Just do a regular diffChars on the separators
+            separatorDiffResult = diffChars(normalizedOriginal, normalizedSuggested);
+            
+            for (const part of separatorDiffResult) {
+                if (part.removed) {
+                    oldDiffHtml += `<span class="diff-removed">${part.value}</span>`;
+                } else if (part.added) {
+                  newDiffHtml += `<span class="diff-added">${part.value}</span>`;;
+                } else {
+                  oldDiffHtml += `<span class="diff-unchanged">${part.value}</span>`;
+                  newDiffHtml += `<span class="diff-unchanged">${part.value}</span>`;
+                }
+              }
         }
     }
 
