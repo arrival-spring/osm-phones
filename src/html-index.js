@@ -79,7 +79,7 @@ async function generateMainIndexHtml(countryStats, locale, translations) {
                 ${createFooter(locale, translations)}
             </div>
         </div>
-        <script>./backgroundColor.js</script>
+        <script src="./backgroundColor.js"></script>
     </body>
     </html>
     `;
