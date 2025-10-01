@@ -17,7 +17,8 @@
     "tailwindcss": "^3.4.4",
     "postcss": "^8.4.38",
     "autoprefixer": "^10.4.19",
-    "html-minifier-terser": "^7.0.0"
+    "html-minifier-terser": "^7.0.0",
+    "terser": "^5.0.0"
   },
   "author": "Your Name",
   "license": "GNU GPL v3.0"
