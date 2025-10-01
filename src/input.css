@@ -218,6 +218,9 @@
     .list-item-phone-value-container {
         @apply col-span-1 text-gray-900 dark:text-gray-100;
     }
+    .phone-separator-line {
+      @apply col-span-full my-1 border-t border-gray-200;
+    }
     .list-item-actions-container {
         @apply flex flex-wrap gap-2 w-full sm:w-[40%] justify-end text-sm font-semibold;
     }
