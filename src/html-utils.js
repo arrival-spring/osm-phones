@@ -241,9 +241,7 @@ function createListItem(item, locale) {
     const phoneNumber = item.invalidNumbers;
     const websiteButton = item.website ?
         `<a href="${item.website}" class="btn btn-website" target="_blank">${translate('website', locale)}</a>` :
-        `<a href="${item.website}" class="btn btn-website" target="_blank">${translate('website', locale)}</a>` :
         '';
-    const disusedLabel = isDisused(item) ? `<span class="label label-disused">${translate('disused', locale)}</span>` : '';
     const disusedLabel = isDisused(item) ? `<span class="label label-disused">${translate('disused', locale)}</span>` : '';
 
     return `
