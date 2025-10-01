@@ -179,7 +179,7 @@ function processSingleNumber(numberStr, countryCode, osmTags = {}) {
             suggestedFix = (() => {
                 if (countryCode === 'US') {
                     // Use dashes as separator, but space after country code
-                    const parts = internationalFormat.split(' ', 2);
+                    const parts = coreFormatted.split(' ', 2);
                     const nationalNumberWithDashes = parts[1].replace(/\s/g, '-');
                     return `${parts[0]} ${nationalNumberWithDashes}`;
                 } else {
