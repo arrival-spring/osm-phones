@@ -1,293 +1,194 @@
-/**
- * Removes all non-digit characters from a string to create a normalized phone number.
- * @param {string} phoneNumber - The phone number string to normalize.
- * @returns {string} The normalized phone number string (digits only).
- */
-const normalize = (phoneNumber) => {
-    // Remove all characters that are not digits (0-9)
-    return phoneNumber.replace(/\D/g, '');
-};
+const { diffChars } = require('diff');
+const { UNIVERSAL_SPLIT_CAPTURE_REGEX } = require('./constants.js');
+
+// Used for splitting the suggested fix (assuming standard semicolon separation)
+const NEW_SPLIT_CAPTURE_REGEX = /(; ?)/g;
+
+
+// --- Helper Functions ---
 
 /**
- * A private helper function to convert the diff array segments into HTML spans.
- * @param {{value: string, removed?: boolean, added?: boolean}[]} diffSegments
- * @returns {string} The HTML string.
+ * Normalizes a phone number string to contain only digits.
+ * Used for finding true (semantic) changes in the numbers.
+ * @param {string} str - The phone number string.
+ * @returns {string} The normalized string (digits only).
  */
-const convertToHtml = (diffSegments) => {
-    return diffSegments.map(p => {
-        let className = 'diff-unchanged';
-        if (p.removed) {
-            className = 'diff-removed';
-        } else if (p.added) {
-            className = 'diff-added';
-        }
-        // If no status is set, it defaults to 'diff-unchanged'
-        return `<span class="${className}">${p.value}</span>`;
-    }).join('');
-};
+const normalize = (str) => str.replace(/[^\d]/g, '');
 
 /**
- * Simple LCS diff for two strings (used for separators).
- * @param {string} original
- * @param {string} suggested
- * @returns {{original: {value: string, removed?: boolean, added?: boolean}[], suggested: {value: string, removed?: boolean, added?: boolean}[]}}
+ * Helper function to consolidate lone '+' signs with the following segment, 
+ * ensuring the full international number is treated as one segment.
+ * * FIX: We must avoid trimming the separators (like ' / ' or '; ') 
+ * that are correctly captured by the regex split.
+ * * @param {Array<string>} parts - Array of segments from a split operation.
+ * @returns {Array<string>} Consolidated array.
  */
-const simpleLCSDiff = (original, suggested) => {
-    // A simplified LCS calculation (only for characters, no need for common digits tracking)
-    const dp = Array(original.length + 1).fill(0).map(() => Array(suggested.length + 1).fill(0));
-    for (let i = 1; i <= original.length; i++) {
-        for (let j = 1; j <= suggested.length; j++) {
-            if (original[i - 1] === suggested[j - 1]) {
-                dp[i][j] = dp[i - 1][j - 1] + 1;
-            } else {
-                dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
-            }
+function consolidatePlusSigns(parts) {
+    let consolidated = [];
+    for (let i = 0; i < parts.length; i++) {
+        const part = parts[i];
+
+        // 1. Check if the part is a lone '+' (must trim for this check)
+        if (part.trim() === '+' && i + 1 < parts.length) {
+            // If it is, merge '+' with the next segment (we trim the next segment as it should be a number)
+            consolidated.push('+' + parts[i + 1].trim());
+            i++; // Skip the next segment, as it was consumed
+        } else {
+            // 2. Otherwise, keep the segment as is, preserving separator spaces.
+            consolidated.push(part);
         }
     }
+    // 3. Filter out any remaining pure whitespace or empty strings.
+    return consolidated.filter(s => s && s.trim().length > 0);
+}
 
-    const originalDiff = [];
-    const suggestedDiff = [];
-    let i = original.length;
-    let j = suggested.length;
 
-    // Backtrack to build the diff
-    while (i > 0 || j > 0) {
-        if (i > 0 && j > 0 && original[i - 1] === suggested[j - 1]) {
-            // Unchanged
-            originalDiff.unshift({ value: original[i - 1] });
-            suggestedDiff.unshift({ value: suggested[j - 1] });
-            i--;
-            j--;
-        } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
-            // Added to suggested (S)
-            suggestedDiff.unshift({ value: suggested[j - 1], added: true });
-            j--;
-        } else if (i > 0 && (j === 0 || dp[i - 1][j] > dp[i][j - 1])) {
-            // Removed from original (O)
-            originalDiff.unshift({ value: original[i - 1], removed: true });
-            i--;
-        }
-    }
-
-    return { original: originalDiff, suggested: suggestedDiff };
-};
+// --- Core Diff Logic ---
 
 /**
- * Compares two single phone numbers (original and suggested) and produces two arrays
- * of diff segments, preserving the original formatting while highlighting changes.
- *
- * The logic uses Longest Common Subsequence (LCS) on the normalized (digit-only) strings
- * to guide the alignment of the formatted strings.
- *
- * @param {string} original - The original formatted phone number.
- * @param {string} suggested - The suggested formatted phone number.
- * @returns {{originalDiff: {value: string, removed?: boolean}[], suggestedDiff: {value: string, added?: boolean}[]}}
+ * Performs a two-way diff on phone numbers, separating semantic (digit)
+ * changes from visual (formatting) changes.
+ * Assumes 'diffChars' is available in the scope (e.g., imported via require('diff')).
+ * @param {string} original - The phone number to be fixed.
+ * @param {string} suggested - The fixed phone number.
+ * @returns {{
+ * originalDiff: Array<{value: string, added: boolean, removed: boolean}>, 
+ * suggestedDiff: Array<{value: string, added: boolean, removed: boolean}>
+ * }} The diff objects for rendering two separate lines.
  */
-const diffPhoneNumbers = (original, suggested) => {
-    const normOriginal = normalize(original);
-    const normSuggested = normalize(suggested);
+function diffPhoneNumbers(original, suggested) {
+    // The previous diffChars function validation has been removed.
+    // We rely on 'diffChars' being available in the current scope.
 
+    // --- 1. Semantic Diff (Digits only) ---
+    const normalizedOriginal = normalize(original);
+    const normalizedSuggested = normalize(suggested);
+    const semanticParts = diffChars(normalizedOriginal, normalizedSuggested); // Using global/imported diffChars
+
+    // Create a sequential map of digits for the common sequence
+    let commonDigits = [];
+    semanticParts.forEach(part => {
+        if (!part.added && !part.removed) {
+            commonDigits.push(...part.value.split(''));
+        }
+    });
+
+    // --- 2. Visual Diff for Original String (Removals) ---
     let originalDiff = [];
-    let suggestedDiff = [];
+    let commonPointer = 0; // Tracks position in the commonDigits array
 
-    // Helper to check if a char is a digit
-    const isDigit = (char) => /\d/.test(char);
+    for (let i = 0; i < original.length; i++) {
+        const char = original[i];
 
-    // A simple digit-based LCS to determine the common *digits*
-    const getCommonDigits = (oNorm, sNorm) => {
-        let common = '';
-        const dp = Array(oNorm.length + 1).fill(0).map(() => Array(sNorm.length + 1).fill(0));
-        for (let i = 1; i <= oNorm.length; i++) {
-            for (let j = 1; j <= sNorm.length; j++) {
-                if (oNorm[i - 1] === sNorm[j - 1]) {
-                    dp[i][j] = dp[i - 1][j - 1] + 1;
-                } else {
-                    dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
-                }
-            }
-        }
-
-        let i = oNorm.length;
-        let j = sNorm.length;
-        while (i > 0 && j > 0) {
-            if (oNorm[i - 1] === sNorm[j - 1]) {
-                common = oNorm[i - 1] + common;
-                i--;
-                j--;
-            } else if (dp[i - 1][j] > dp[i][j - 1]) {
-                i--;
+        if (/\d/.test(char)) {
+            // It's a digit. Determine if it was removed in the semantic diff.
+            if (commonPointer < commonDigits.length && char === commonDigits[commonPointer]) {
+                // Digit is part of the common sequence. UNCHANGED.
+                originalDiff.push({ value: char, added: false, removed: false });
+                commonPointer++;
             } else {
-                j--;
+                // Digit was part of the normalized original string, but NOT in the common sequence. REMOVED.
+                originalDiff.push({ value: char, removed: true });
             }
-        }
-        return common;
-    };
-
-    const commonDigits = getCommonDigits(normOriginal, normSuggested);
-
-    let oFmtIdx = 0;
-    let sFmtIdx = 0;
-    let oNormIdx = 0; // Tracks position in normOriginal
-    let sNormIdx = 0; // Tracks position in normSuggested
-    let commonPtr = 0; // Tracks position in commonDigits
-
-    while (oFmtIdx < original.length || sFmtIdx < suggested.length) {
-        const oChar = original[oFmtIdx];
-        const sChar = suggested[sFmtIdx];
-        const oIsDigit = oFmtIdx < original.length && isDigit(oChar);
-        const sIsDigit = sFmtIdx < suggested.length && isDigit(sChar);
-
-        // Determine if the current formatted digit is the next one expected in the LCS path
-        const oIsNextCommonDigit = oIsDigit && commonPtr < commonDigits.length && oChar === commonDigits[commonPtr] && oChar === normOriginal[oNormIdx];
-        const sIsNextCommonDigit = sIsDigit && commonPtr < commonDigits.length && sChar === commonDigits[commonPtr] && sChar === normSuggested[sNormIdx];
-
-        // --- 1. Aligned Common Digits ---
-        if (oIsNextCommonDigit && sIsNextCommonDigit) {
-            originalDiff.push({ value: oChar });
-            suggestedDiff.push({ value: sChar });
-            commonPtr++;
-            oNormIdx++;
-            sNormIdx++;
-            oFmtIdx++;
-            sFmtIdx++;
-        }
-
-        // --- 2. Aligned Identical Formatting ---
-        // FIX: Removed the strict normalized index check (oNormIdx === sNormIdx) for identical formatting characters. 
-        // This allows common spacing/symbols to be marked as 'unchanged' even if a preceding digit 
-        // was added or removed, preventing unnecessary 'removed'/'added' marking of formatting.
-        else if (oFmtIdx < original.length && sFmtIdx < suggested.length && !oIsDigit && !sIsDigit && oChar === sChar) {
-            originalDiff.push({ value: oChar });
-            suggestedDiff.push({ value: sChar });
-            oFmtIdx++;
-            sFmtIdx++;
-        }
-
-        // --- 3. Independent Consumption (Removed/Added blocks) ---
-        else {
-
-            // Priority O: Consume O if it has content that is NOT common, OR S is waiting on its common digit.
-            const oShouldConsume = oFmtIdx < original.length && (
-                sFmtIdx >= suggested.length || // S exhausted
-                (oIsDigit && !oIsNextCommonDigit) || // O is a digit that must be removed
-                (oIsDigit && commonPtr >= commonDigits.length) || // O is digit after LCS is exhausted
-                (!oIsDigit && sIsNextCommonDigit) // O is formatting preceding S's common digit
-            );
-
-            // Priority S: Consume S if it has content that is NOT common, OR O is waiting on its common digit.
-            const sShouldConsume = sFmtIdx < suggested.length && (
-                oFmtIdx >= original.length || // O exhausted
-                (sIsDigit && !sIsNextCommonDigit) || // S is a digit that must be added
-                (sIsDigit && commonPtr >= commonDigits.length) || // S is digit after LCS is exhausted
-                (!sIsDigit && oIsNextCommonDigit) // S is formatting preceding O's common digit
-            );
-
-            if (oShouldConsume && !sShouldConsume) {
-                 originalDiff.push({ value: oChar, removed: true });
-                 if (oIsDigit) oNormIdx++;
-                 oFmtIdx++;
-            } else if (sShouldConsume && !oShouldConsume) {
-                 suggestedDiff.push({ value: sChar, added: true });
-                 if (sIsDigit) sNormIdx++;
-                 sFmtIdx++;
-            } else if (oFmtIdx < original.length && sFmtIdx < suggested.length && !oIsNextCommonDigit && !sIsNextCommonDigit) {
-                 // Fallback for character mismatch (O: 'a', S: 'b') or non-LCS digits.
-                 originalDiff.push({ value: oChar, removed: true });
-                 suggestedDiff.push({ value: sChar, added: true });
-                 if (oIsDigit) oNormIdx++;
-                 if (sIsDigit) sNormIdx++;
-                 oFmtIdx++;
-                 sFmtIdx++;
-            } else {
-                 // Final end-of-string consumption (catches remaining characters)
-                 if (oFmtIdx < original.length) {
-                     originalDiff.push({ value: original[oFmtIdx], removed: true });
-                     if (isDigit(original[oFmtIdx])) oNormIdx++;
-                     oFmtIdx++;
-                 } else if (sFmtIdx < suggested.length) {
-                     suggestedDiff.push({ value: suggested[sFmtIdx], added: true });
-                     if (isDigit(suggested[sFmtIdx])) sNormIdx++;
-                     sFmtIdx++;
-                 }
-            }
+        } else {
+            // Non-digit (formatting like spaces, +, ( ), etc.). Mark all original formatting as REMOVED.
+            // This ensures a clean slate for the suggested formatting.
+            originalDiff.push({ value: char, removed: true });
         }
     }
 
-    return {
-        originalDiff: originalDiff,
-        suggestedDiff: suggestedDiff,
-    };
-};
+    // --- 3. Visual Diff for Suggested String (Additions) ---
+    let suggestedDiff = [];
+    let commonPointerNew = 0; // Separate pointer for suggested string traversal
+
+    for (let i = 0; i < suggested.length; i++) {
+        const char = suggested[i];
+
+        if (/\d/.test(char)) {
+            // It's a digit. Check if it's the next digit in the common sequence.
+            if (commonPointerNew < commonDigits.length && commonDigits[commonPointerNew] === char) {
+                // Digit is part of the common sequence. UNCHANGED.
+                suggestedDiff.push({ value: char, removed: false, added: false });
+                commonPointerNew++;
+            } else {
+                // Digit is NEW (e.g., prefix '32' or a replaced digit). ADDED.
+                suggestedDiff.push({ value: char, added: true });
+            }
+        } else {
+            // Non-digit ('+' or space/separator). ADDED formatting.
+            suggestedDiff.push({ value: char, added: true });
+        }
+    }
+
+    return { originalDiff, suggestedDiff };
+}
+
+
+// --- HTML Generation Logic ---
 
 /**
- * Compares two potentially multi-number strings and returns the HTML-diffed strings.
- * It handles splitting the strings into individual numbers and separators,
- * and calls diffPhoneNumbers for the number segments.
- *
- * @param {string} original - The original string (may contain multiple numbers).
- * @param {string} suggested - The suggested string (may contain multiple numbers).
- * @returns {{oldDiff: string, newDiff: string}} The HTML-diffed strings.
+ * Creates an HTML string with diff highlighting for two phone number strings, 
+ * handling multiple numbers separated by various delimiters.
+ * Assumes 'diffChars' is available in the scope (e.g., imported via require('diff')).
+ * @param {string} oldString - The original phone number string(s).
+ * @param {string} newString - The suggested phone number string(s).
+ * @returns {{oldDiff: string, newDiff: string}} - An object containing the HTML for both diffs.
  */
-const getDiffHtml = (original, suggested) => {
-    // The regex captures the common multi-number separators: semicolon, comma, or slash, 
-    // including surrounding spaces which we want to keep for diffing.
-    const splitter = /( *; *| *, *| *\/ *)/g;
+function getDiffHtml(oldString, newString) {
+    // 1. Split and initial filter for both strings
+    const oldPartsUnfiltered = oldString.split(UNIVERSAL_SPLIT_CAPTURE_REGEX);
+    // Filter out falsey values (undefined from capturing groups) and empty strings
+    const oldParts = oldPartsUnfiltered.filter(s => s && s.trim().length > 0);
 
-    // Split and keep delimiters
-    const originalParts = original.split(splitter);
-    const suggestedParts = suggested.split(splitter);
+    const newPartsUnfiltered = newString.split(NEW_SPLIT_CAPTURE_REGEX);
+    const newParts = newPartsUnfiltered.filter(s => s && s.trim().length > 0);
 
-    // Filter out empty strings that result from splits, ensuring we maintain Number, Separator, Number, Separator... structure
-    // We only filter out empty strings resulting from the NUMBER segment (index i % 2 === 0) if they are empty after trimming.
-    // Separator segments (index i % 2 !== 0) are kept as-is, even if they are just spaces, to be correctly diffed later.
-    const oSegments = originalParts.filter((p, i) => (i % 2 === 0 && p.trim().length > 0) || i % 2 !== 0);
-    const sSegments = suggestedParts.filter((p, i) => (i % 2 === 0 && p.trim().length > 0) || i % 2 !== 0);
-
-    // Pad the shorter array with empty strings for alignment
-    const maxLength = Math.max(oSegments.length, sSegments.length);
-    while (oSegments.length < maxLength) oSegments.push('');
-    while (sSegments.length < maxLength) sSegments.push('');
+    // 2. CONSOLIDATION FIX: Apply consolidation to both old and new parts
+    const consolidatedOldParts = consolidatePlusSigns(oldParts);
+    const consolidatedNewParts = consolidatePlusSigns(newParts);
 
     let oldDiffHtml = '';
     let newDiffHtml = '';
 
-    for (let i = 0; i < maxLength; i++) {
-        const oSegRaw = oSegments[i];
-        const sSegRaw = sSegments[i];
+    // Iterate over the minimum length of the new, consolidated arrays
+    const numSegments = Math.min(consolidatedOldParts.length, consolidatedNewParts.length);
 
-        // Segments alternate between number (index 0, 2, 4...) and separator (index 1, 3, 5...)
-        const isSeparator = i % 2 !== 0;
+    for (let i = 0; i < numSegments; i++) {
+        const oldSegment = consolidatedOldParts[i];
+        const newSegment = consolidatedNewParts[i];
 
-        if (!isSeparator) {
-            // --- NUMBER DIFF ---
-            // Trim number segments before diffing
-            const oSeg = oSegRaw.trim();
-            const sSeg = sSegRaw.trim();
+        // Identify a phone number: MUST contain at least one digit.
+        const isPhoneNumber = /\d/.test(oldSegment);
 
-            if (oSeg.length > 0 || sSeg.length > 0) {
-                const diffResult = diffPhoneNumbers(oSeg, sSeg);
-                oldDiffHtml += convertToHtml(diffResult.originalDiff);
-                newDiffHtml += convertToHtml(diffResult.suggestedDiff);
-            }
+        if (isPhoneNumber) {
+            // --- This is a phone number segment ---
+            // Call diffPhoneNumbers without the diffChars argument
+            const { originalDiff, suggestedDiff } = diffPhoneNumbers(oldSegment, newSegment);
+
+            originalDiff.forEach((part) => {
+                const colorClass = part.removed ? 'diff-removed' : 'diff-unchanged';
+                oldDiffHtml += `<span class="${colorClass}">${part.value}</span>`;
+            });
+
+            suggestedDiff.forEach((part) => {
+                const colorClass = part.added ? 'diff-added' : 'diff-unchanged';
+                newDiffHtml += `<span class="${colorClass}">${part.value}</span>`;
+            });
         } else {
-            // --- SEPARATOR DIFF ---
-            // Use the raw (untrimmed) segment for separator diffing to preserve space differences (Fix for Failure 3)
-            if (oSegRaw.length > 0 || sSegRaw.length > 0) {
-                const separatorDiffResult = simpleLCSDiff(oSegRaw, sSegRaw);
-                oldDiffHtml += convertToHtml(separatorDiffResult.original);
-                newDiffHtml += convertToHtml(separatorDiffResult.suggested);
-            }
+            // --- This is a separator (e.g., ';', 'or', ',') ---
+            // Old segment (original separator) is marked removed
+            oldDiffHtml += `<span class="diff-removed">${oldSegment}</span>`;
+
+            // New segment (new standard separator like '; ' or just ';') is marked added
+            newDiffHtml += `<span class="diff-added">${newSegment}</span>`;
         }
     }
 
-    return {
-        oldDiff: oldDiffHtml,
-        newDiff: newDiffHtml
-    };
-};
+    // Append any trailing parts
+    oldDiffHtml += consolidatedOldParts.slice(numSegments).join('');
+    newDiffHtml += consolidatedNewParts.slice(numSegments).join('');
 
-module.exports = {
-    normalize,
-    diffPhoneNumbers,
-    getDiffHtml
-};
+    return { oldDiff: oldDiffHtml, newDiff: newDiffHtml };
+}
+
+module.exports = { normalize, consolidatePlusSigns, diffPhoneNumbers, getDiffHtml };
