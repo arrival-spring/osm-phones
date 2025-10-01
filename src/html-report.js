@@ -5,6 +5,31 @@ const { safeName, getFeatureTypeName, isDisused } = require('./data-processor');
 const { translate } = require('./i18n');
 const {favicon, themeButton, createFooter, createStatsBox} = require('./html-utils')
 
+function createDetailsGrid(item, locale) {
+    let detailsGrid = '';
+    for (const key in item.invalidNumbers) {
+        detailsGrid += `
+        <div class="list-item-details-grid">
+            <div class="grid-col-span-1">
+                <span class="list-item-phone-label">${key}</span>
+            </div>
+            <div class="list-item-phone-value-container">
+                <span>${item.invalidNumbers[key]}</span>
+            </div>
+            ${item.suggestedFixes[key] ? `
+            <div class="grid-col-span-1">
+                <span class="list-item-phone-label">${translate('suggestedFix', locale)}</span>
+            </div>
+            <div class="list-item-phone-value-container">
+                <span>${item.suggestedFixes[key]}</span>
+            </div>
+            ` : ''}
+        </div>
+        `
+    }
+    return detailsGrid;
+}
+
 /**
  * Creates the HTML content for a single invalid number item.
  * @param {Object} item - The invalid number data item.
@@ -16,9 +41,23 @@ function createListItem(item, locale) {
     const josmFixBaseUrl = 'http://127.0.0.1:8111/load_object';
     const fixedNumber = item.suggestedFixes.join('; ');
     const josmEditUrl = `${josmFixBaseUrl}?objects=${item.type[0]}${item.id}`;
+
+    // Construct JOSM fix URL including all fixable values, if the whole thing is fixable
+    // if it is not fixable, no link is made or shown
+    const fixes = Object.entries(item.suggestedFixes);
+
+    const encodedTags = fixes.map(([key, value]) => {
+        const encodedKey = encodeURIComponent(key);
+        const encodedValue = encodeURIComponent(value);
+        return `${encodedKey}=${encodedValue}`;
+    });
+
+    const addtagsValue = encodedTags.join('|'); 
+
     const josmFixUrl = item.autoFixable ?
-        `${josmEditUrl}&addtags=${item.tag}=${encodeURIComponent(fixedNumber)}` :
+        `${josmEditUrl}&addtags=${addtagsValue}` :
         null;
+
     // Generate buttons for ALL editors so client-side script can hide them
     const editorButtons = ALL_EDITOR_IDS.map(editorId => {
         const editor = OSM_EDITORS[editorId];
@@ -56,7 +95,6 @@ function createListItem(item, locale) {
         `<span data-editor-id="fix-label" class="label label-fixable">${translate('fixable', locale)}</span>` :
         '';
 
-    const phoneNumber = item.invalidNumbers;
     const websiteButton = item.website ?
         `<a href="${item.website}" class="btn btn-website" target="_blank">${translate('website', locale)}</a>` :
         '';
@@ -71,22 +109,7 @@ function createListItem(item, locale) {
                     </h3>
                     ${disusedLabel}
                 </div>
-                <div class="list-item-details-grid">
-                    <div class="grid-col-span-1">
-                        <span class="list-item-phone-label">${translate('phone', locale)}</span>
-                    </div>
-                    <div class="list-item-phone-value-container">
-                        <span>${phoneNumber}</span>
-                    </div>
-                    ${item.autoFixable ? `
-                    <div class="grid-col-span-1">
-                        <span class="list-item-phone-label">${translate('suggestedFix', locale)}</span>
-                    </div>
-                    <div class="list-item-phone-value-container">
-                        <span>${fixedNumber}</span>
-                    </div>
-                    ` : ''}
-                </div>
+                ${createDetailsGrid(item, locale)}
             </div>
             
             <div class="list-item-actions-container">
