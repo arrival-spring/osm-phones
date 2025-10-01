@@ -197,7 +197,6 @@ function getDiffHtml(oldString, newString) {
 
         if (isPhoneNumber) {
             // --- This is a phone number segment ---
-            // Call diffPhoneNumbers without the diffChars argument
             const { originalDiff, suggestedDiff } = diffPhoneNumbers(oldSegment, newSegment);
 
             originalDiff.forEach((part) => {
