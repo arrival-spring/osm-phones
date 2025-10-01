@@ -101,7 +101,7 @@ const NEW_SPLIT_CAPTURE_REGEX = /(; ?)/g;
  * @param {Array<string>} parts - Array of segments from a split operation.
  * @returns {Array<string>} Consolidated array.
  */
-export function consolidatePlusSigns(parts) {
+function consolidatePlusSigns(parts) {
     let consolidated = [];
     for (let i = 0; i < parts.length; i++) {
         const part = parts[i];
