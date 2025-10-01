@@ -4,6 +4,9 @@ const { translate } = require('./i18n');
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 const OVERPASS_API_URL = 'https://overpass-api.de/api/interpreter';
 
+const PHONE_TAGS = ['phone', 'contact:phone', 'mobile', 'contact:mobile'];
+const WEBSITE_TAGS = ['website', 'contact:website'];
+
 // To add a country, provide name, countryCode, locale
 // Then either divisions and subdivisionAdminLevel
 // divisions is a map of names to relation ids
@@ -278,6 +281,15 @@ const HISTORIC_AND_DISUSED_PREFIXES = [
 ]
 
 const OSM_EDITORS = {
+    "JOSM": {
+        getEditLink: (item) => {
+            const baseUrl = 'http://127.0.0.1:8111/load_object';
+            // Use item.type[0] for the single-letter type prefix (n/w/r)
+            return `${baseUrl}?objects=${item.type[0]}${item.id}`;
+        },
+        editInString: (locale) => translate('editIn', locale, ["JOSM"]),
+        onClick: (editorId) => `fixWithJosm(OSM_EDITORS['${editorId}'].getEditLink(item), event)`
+    },
     "iD": {
         getEditLink: (item) => {
             const baseUrl = 'https://www.openstreetmap.org/edit?editor=id';
@@ -292,15 +304,6 @@ const OSM_EDITORS = {
             return `${baseUrl}/${item.lat}/${item.lon}&id=${item.type[0]}${item.id}`;
         },
         editInString: (locale) => translate('editIn', locale, ["Rapid"]),
-    },
-    "JOSM": {
-        getEditLink: (item) => {
-            const baseUrl = 'http://127.0.0.1:8111/load_object';
-            // Use item.type[0] for the single-letter type prefix (n/w/r)
-            return `${baseUrl}?objects=${item.type[0]}${item.id}`;
-        },
-        editInString: (locale) => translate('editIn', locale, ["JOSM"]),
-        onClick: (editorId) => `fixWithJosm(OSM_EDITORS['${editorId}'].getEditLink(item), event)`
     },
     "Level0": {
         getEditLink: (item) => {
@@ -334,6 +337,8 @@ const EXCLUSIONS = {
 module.exports = {
     PUBLIC_DIR,
     OVERPASS_API_URL,
+    PHONE_TAGS,
+    WEBSITE_TAGS,
     COUNTRIES,
     FEATURE_TAGS,
     HISTORIC_AND_DISUSED_PREFIXES,
