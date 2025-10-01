@@ -46,6 +46,7 @@ async function main() {
     }
 
     fs.copyFileSync(path.join(__dirname, 'theme.js'), path.join(PUBLIC_DIR, 'theme.js'));
+    fs.copyFileSync(path.join(__dirname, 'backgroundColor.js'), path.join(PUBLIC_DIR, 'backgroundColor.js'));
 
     console.log('Starting full build process...');
 

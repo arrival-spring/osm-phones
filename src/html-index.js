@@ -3,7 +3,7 @@ const path = require('path');
 const { PUBLIC_DIR } = require('./constants');
 const { safeName } = require('./data-processor');
 const { translate } = require('./i18n');
-const {favicon, themeButton, createFooter, getBackgroundColourScript} = require('./html-utils')
+const {favicon, themeButton, createFooter} = require('./html-utils')
 
 /**
  * Generates the main index.html file listing all country reports.
@@ -79,7 +79,7 @@ async function generateMainIndexHtml(countryStats, locale, translations) {
                 ${createFooter(locale, translations)}
             </div>
         </div>
-        ${getBackgroundColourScript}
+        <script>./backgroundColor.js</script>
     </body>
     </html>
     `;
