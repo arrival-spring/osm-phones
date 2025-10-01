@@ -5,7 +5,8 @@
   "main": "src/main.js", 
   "dependencies": {
     "node-fetch": "^3.3.0",
-    "libphonenumber-js": "^1.10.0"
+    "libphonenumber-js": "^1.10.0",
+    "diff": "^5.2.0"
   },
   "scripts": {
     "start": "node src/main.js",

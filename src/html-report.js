@@ -3,19 +3,31 @@ const path = require('path');
 const { PUBLIC_DIR, OSM_EDITORS, ALL_EDITOR_IDS, DEFAULT_EDITORS_DESKTOP, DEFAULT_EDITORS_MOBILE } = require('./constants');
 const { safeName, getFeatureTypeName, isDisused } = require('./data-processor');
 const { translate } = require('./i18n');
+const { getDiffHtml } = require('./diff-renderer');
 const { favicon, themeButton, createFooter, createStatsBox } = require('./html-utils')
 
 function createDetailsGrid(item, locale) {
     const detailsGrid = Object.keys(item.invalidNumbers).map(key => {
-        // Check if a suggested fix exists for the current key
-        const suggestedFixHtml = item.suggestedFixes[key] ? `
-            <div class="grid-col-span-1">
-                <span class="list-item-phone-label">${translate('suggestedFix', locale)}</span>
-            </div>
-            <div class="list-item-phone-value-container">
-                <span>${item.suggestedFixes[key]}</span>
-            </div>
-        ` : '';
+        const originalNumber = item.invalidNumbers[key];
+        const suggestedFix = item.suggestedFixes[key];
+
+        let originalNumberHtml;
+        let suggestedFixHtml = '';
+
+        if (suggestedFix) {
+            const { oldDiff, newDiff } = getDiffHtml(originalNumber, suggestedFix);
+            originalNumberHtml = `<span>${oldDiff}</span>`;
+            suggestedFixHtml = `
+                <div class="grid-col-span-1">
+                    <span class="list-item-phone-label">${translate('suggestedFix', locale)}</span>
+                </div>
+                <div class="list-item-phone-value-container">
+                    <span>${newDiff}</span>
+                </div>
+            `;
+        } else {
+            originalNumberHtml = `<span>${originalNumber}</span>`;
+        }
 
         // Return the HTML for one set of phone number details
         return `
@@ -24,7 +36,7 @@ function createDetailsGrid(item, locale) {
                     <span class="list-item-phone-label">${key}</span>
                 </div>
                 <div class="list-item-phone-value-container">
-                    <span>${item.invalidNumbers[key]}</span>
+                    ${originalNumberHtml}
                 </div>
                 ${suggestedFixHtml}
             </div>
