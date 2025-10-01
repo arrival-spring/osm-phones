@@ -172,7 +172,6 @@ function processSingleNumber(numberStr, countryCode, osmTags = {}) {
             // Re-parse the core number to get the spaced INTERNATIONAL format without the extension
             // Note: This is required because format('INTERNATIONAL') on the original number might include the extension.
             const coreFormatted = parsePhoneNumber(coreNumberE164).format('INTERNATIONAL');
-            console.log(`coreFormatted: ${coreFormatted}`)
 
             // Manually append the extension in the standard format (' x{ext}').
             const extension = phoneNumber.ext ? ` x${phoneNumber.ext}` : '';
@@ -187,12 +186,6 @@ function processSingleNumber(numberStr, countryCode, osmTags = {}) {
                     nationalNumberFormatted = nationalNumberFormatted.replace(/\s/g, '-');
 
                     return `${countryCodePrefix} ${nationalNumberFormatted}${extension}`;
-
-                    // const parts = coreFormatted.split(' ', 2);
-                    // console.log(`parts: ${parts}`)
-                    // const nationalNumberWithDashes = parts[1].replace(/\s/g, '-');
-                    // console.log(`nationalNumberWithDashes: ${nationalNumberWithDashes}`)
-                    // return `${parts[0]} ${nationalNumberWithDashes}`;
                 } else {
                     return coreFormatted + extension;
                 }
