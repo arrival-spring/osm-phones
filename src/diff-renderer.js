@@ -89,9 +89,10 @@ function diffPhoneNumbers(original, suggested) {
                 // Digit was part of the normalized original string, but NOT in the common sequence. REMOVED.
                 originalDiff.push({ value: char, removed: true });
             }
+        } else if (char === ' ' && suggested[i] === ' ') {
+            originalDiff.push({ value: char, removed: false, added: false });
         } else {
-            // Non-digit (formatting like spaces, +, ( ), etc.). Mark all original formatting as REMOVED.
-            // This ensures a clean slate for the suggested formatting.
+            // Non-digit (formatting like ( ), etc.). Mark all original formatting as REMOVED.
             originalDiff.push({ value: char, removed: true });
         }
     }
@@ -106,7 +107,6 @@ function diffPhoneNumbers(original, suggested) {
         // + should only appear at the start
         if (i === 0 && char === '+' && original[i] === '+') {
             suggestedDiff.push({ value: char, removed: false, added: false });
-            commonPointerNew++;
         } else if (/\d/.test(char)) {
             // It's a digit. Check if it's the next digit in the common sequence.
             if (commonPointerNew < commonDigits.length && commonDigits[commonPointerNew] === char) {
@@ -119,9 +119,8 @@ function diffPhoneNumbers(original, suggested) {
             }
         } else if (char === ' ' && original[i] === ' ') {
             suggestedDiff.push({ value: char, removed: false, added: false });
-            commonPointerNew++;
         } else {
-            // Non-digit ('+' or space/separator). ADDED formatting.
+            // Non-digit, non-space. I don't know why we'd get here. ADDED formatting.
             suggestedDiff.push({ value: char, added: true });
         }
     }
