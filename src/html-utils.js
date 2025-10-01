@@ -898,6 +898,7 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
                 listContainer.appendChild(li);
             }
             updateButtonStyles();
+            applyColors(); // update circle styling
         }
 
         sortButtons.forEach(button => {
