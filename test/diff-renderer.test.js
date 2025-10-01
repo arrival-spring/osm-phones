@@ -58,7 +58,6 @@ describe('diffPhoneNumbers (Single Number Diff Logic)', () => {
         {value: '1', removed: false, added: false},
         {value: '2', removed: false, added: false},
     ]
-    const suggestedExtraZero = originalGood
     const suggestedExtraZeroDiff = [
         {value: '+', removed: false, added: false},
         {value: '4', removed: false, added: false},
@@ -66,29 +65,6 @@ describe('diffPhoneNumbers (Single Number Diff Logic)', () => {
         {value: '1', removed: false, added: false},
         {value: '2', removed: false, added: false},
     ]
-
-    const originalGood2 = '+4 13'
-    const originalGood2Diff = [
-        {value: '+', removed: false, added: false},
-        {value: '4', removed: false, added: false},
-        {value: ' ', removed: false, added: false},
-        {value: '1', removed: false, added: false},
-        {value: '3', removed: false, added: false},
-    ]
-    const goodSeparator = '; '
-    const goodSeparatorDiff = [
-        {value: ';', removed: false, added: false},
-        {value: ' ', removed: false, added: false}
-    ];
-    const badSeparator = ', '
-    const badSeparatorDiff = [
-        {value: ',', removed: true},
-        {value: ' ', removed: false, added: false}
-    ];
-    const badToGoodSeparatorDiff = [
-        {value: ';', added: true},
-        {value: ' ', removed: false, added: false}
-    ];
 
     test('basic phone number diff test', () => {
         const result = diffPhoneNumbers(originalLeadingZero, suggestedLeadingZero);
@@ -103,20 +79,6 @@ describe('diffPhoneNumbers (Single Number Diff Logic)', () => {
         expect(result.originalDiff).toEqual(originalExtraZeroDiff)
         expect(result.suggestedDiff).toEqual(suggestedExtraZeroDiff)
     });
-
-    // test('two numbers, semicolon separator, changes to one number', () => {
-    //     const result = diffPhoneNumbers(originalExtraZero + goodSeparator + originalGood2, suggestedExtraZero + goodSeparator + originalGood2);
-
-    //     expect(result.originalDiff).toEqual([...originalExtraZeroDiff, ...goodSeparatorDiff, ...originalGood2Diff]);
-    //     expect(result.suggestedDiff).toEqual([...suggestedExtraZeroDiff, ...goodSeparatorDiff, ...originalGood2Diff]);
-    // });
-
-    // test('notice change to bad separator', () => {
-    //     const result = diffPhoneNumbers(originalExtraZero + badSeparator + originalGood2, suggestedExtraZero + goodSeparator + originalGood2);
-
-    //     expect(result.originalDiff).toEqual([...originalExtraZeroDiff, ...goodSeparatorDiff, ...originalGood2Diff]);
-    //     expect(result.suggestedDiff).toEqual([...suggestedExtraZeroDiff, ...badToGoodSeparatorDiff, ...originalGood2Diff]);
-    // });
 
     test('should correctly identify prefix addition/removal and formatting changes (0 removal, 32 addition)', () => {
         const original = '0471 124 380';

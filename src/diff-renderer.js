@@ -18,8 +18,6 @@ const normalize = (str) => str.replace(/[^\d]/g, '');
 /**
  * Helper function to consolidate lone '+' signs with the following segment, 
  * ensuring the full international number is treated as one segment.
- * * FIX: We must avoid trimming the separators (like ' / ' or '; ') 
- * that are correctly captured by the regex split.
  * * @param {Array<string>} parts - Array of segments from a split operation.
  * @returns {Array<string>} Consolidated array.
  */
@@ -28,17 +26,17 @@ function consolidatePlusSigns(parts) {
     for (let i = 0; i < parts.length; i++) {
         const part = parts[i];
 
-        // 1. Check if the part is a lone '+' (must trim for this check)
+        // Check if the part is a lone '+' (must trim for this check)
         if (part.trim() === '+' && i + 1 < parts.length) {
             // If it is, merge '+' with the next segment (we trim the next segment as it should be a number)
             consolidated.push('+' + parts[i + 1].trim());
             i++; // Skip the next segment, as it was consumed
         } else {
-            // 2. Otherwise, keep the segment as is, preserving separator spaces.
+            // Otherwise, keep the segment as is, preserving separator spaces.
             consolidated.push(part);
         }
     }
-    // 3. Filter out any remaining pure whitespace or empty strings.
+    // Filter out any remaining pure whitespace or empty strings.
     return consolidated.filter(s => s && s.trim().length > 0);
 }
 
@@ -46,8 +44,7 @@ function consolidatePlusSigns(parts) {
 // --- Core Diff Logic ---
 
 /**
- * Performs a two-way diff on phone numbers, separating semantic (digit)
- * changes from visual (formatting) changes.
+ * Performs a two-way diff on phone numbers
  * @param {string} original - The phone number to be fixed.
  * @param {string} suggested - The fixed phone number.
  * @returns {{
@@ -77,8 +74,6 @@ function diffPhoneNumbers(original, suggested) {
     let suggestedRemainder = suggested;
 
     for (let i = 0; i < original.length; i++) {
-        console.log(`Original loop: original: >${originalRemainder}<, suggested: >${suggestedRemainder}<`)
-
         const char = original[i];
 
         // + should only appear at the start
@@ -90,8 +85,8 @@ function diffPhoneNumbers(original, suggested) {
             if (commonPointer < commonDigits.length && char === commonDigits[commonPointer]) {
                 // Digit is part of the common sequence. UNCHANGED.
                 originalDiff.push({ value: char, added: false, removed: false });
-                
-                // Cut down until we get to the matching digit
+
+                // Cut down until we get to a matching character
                 while (originalRemainder[0] != suggestedRemainder[0] && suggestedRemainder[0] != commonDigits[commonPointer]) {
                     suggestedRemainder = suggestedRemainder.slice(1);
                 }
@@ -104,8 +99,8 @@ function diffPhoneNumbers(original, suggested) {
                 // Digit was part of the normalized original string, but NOT in the common sequence. REMOVED.
                 originalDiff.push({ value: char, removed: true });
             }
-        } else if (char === ' ' && suggestedRemainder[0] === ' ') {
-            // Both have a space at this position, UNCHANGED
+        } else if (char === suggestedRemainder[0]) {
+            // Both have a space (or formatting symbol) at this position, UNCHANGED
             originalDiff.push({ value: char, removed: false, added: false });
             suggestedRemainder = suggestedRemainder.slice(1)
         } else {
@@ -124,8 +119,6 @@ function diffPhoneNumbers(original, suggested) {
     let suggestedRemainderNew = suggested;
 
     for (let i = 0; i < suggested.length; i++) {
-        console.log(`Suggested loop: original: >${originalRemainderNew}<, suggested: >${suggestedRemainderNew}<`)
-
         const char = suggested[i];
 
         // + should only appear at the start
@@ -138,7 +131,7 @@ function diffPhoneNumbers(original, suggested) {
                 // Digit is part of the common sequence. UNCHANGED.
                 suggestedDiff.push({ value: char, removed: false, added: false });
 
-                // Cut down until we get to the matching digit
+                // Cut down until we get to a matching character
                 while (originalRemainderNew[0] != suggestedRemainderNew[0] && originalRemainderNew[0] != commonDigits[commonPointer]) {
                     originalRemainderNew = originalRemainderNew.slice(1);
                 }
@@ -151,7 +144,8 @@ function diffPhoneNumbers(original, suggested) {
                 // Digit is NEW (e.g., prefix '32' or a replaced digit). ADDED.
                 suggestedDiff.push({ value: char, added: true });
             }
-        } else if (char === ' ' && originalRemainderNew[0] === ' ') {
+        } else if (char === originalRemainderNew[0]) {
+            // Both have a space (or formatting symbol) at this position, UNCHANGED
             suggestedDiff.push({ value: char, removed: false, added: false });
             originalRemainderNew = originalRemainderNew.slice(1);
         } else {
@@ -171,13 +165,12 @@ function diffPhoneNumbers(original, suggested) {
 /**
  * Creates an HTML string with diff highlighting for two phone number strings, 
  * handling multiple numbers separated by various delimiters.
- * Assumes 'diffChars' is available in the scope (e.g., imported via require('diff')).
  * @param {string} oldString - The original phone number string(s).
  * @param {string} newString - The suggested phone number string(s).
  * @returns {{oldDiff: string, newDiff: string}} - An object containing the HTML for both diffs.
  */
 function getDiffHtml(oldString, newString) {
-    // 1. Split and initial filter for both strings
+    // Split and initial filter for both strings
     const oldPartsUnfiltered = oldString.split(UNIVERSAL_SPLIT_CAPTURE_REGEX);
     // Filter out falsey values (undefined from capturing groups) and empty strings
     const oldParts = oldPartsUnfiltered.filter(s => s && s.trim().length > 0);
@@ -185,7 +178,7 @@ function getDiffHtml(oldString, newString) {
     const newPartsUnfiltered = newString.split(NEW_SPLIT_CAPTURE_REGEX);
     const newParts = newPartsUnfiltered.filter(s => s && s.trim().length > 0);
 
-    // 2. CONSOLIDATION FIX: Apply consolidation to both old and new parts
+    // Apply consolidation to both old and new parts
     const consolidatedOldParts = consolidatePlusSigns(oldParts);
     const consolidatedNewParts = consolidatePlusSigns(newParts);
 
