@@ -137,8 +137,6 @@ const diffPhoneNumbers = (original, suggested) => {
         const oIsDigit = oFmtIdx < original.length && isDigit(oChar);
         const sIsDigit = sFmtIdx < suggested.length && isDigit(sChar);
 
-        let consumed = false;
-
         // Determine if the current formatted digit is the next one expected in the LCS path
         const oIsNextCommonDigit = oIsDigit && commonPtr < commonDigits.length && oChar === commonDigits[commonPtr] && oChar === normOriginal[oNormIdx];
         const sIsNextCommonDigit = sIsDigit && commonPtr < commonDigits.length && sChar === commonDigits[commonPtr] && sChar === normSuggested[sNormIdx];
@@ -152,18 +150,17 @@ const diffPhoneNumbers = (original, suggested) => {
             sNormIdx++;
             oFmtIdx++;
             sFmtIdx++;
-            consumed = true;
         }
 
         // --- 2. Aligned Identical Formatting ---
-        // FIX: Only align formatting if the normalized indices are also aligned. 
-        // This ensures formatting is marked removed/added if the prefix/digit grouping changed.
-        else if (oFmtIdx < original.length && sFmtIdx < suggested.length && !oIsDigit && !sIsDigit && oChar === sChar && oNormIdx === sNormIdx) {
+        // FIX: Removed the strict normalized index check (oNormIdx === sNormIdx) for identical formatting characters. 
+        // This allows common spacing/symbols to be marked as 'unchanged' even if a preceding digit 
+        // was added or removed, preventing unnecessary 'removed'/'added' marking of formatting.
+        else if (oFmtIdx < original.length && sFmtIdx < suggested.length && !oIsDigit && !sIsDigit && oChar === sChar) {
             originalDiff.push({ value: oChar });
             suggestedDiff.push({ value: sChar });
             oFmtIdx++;
             sFmtIdx++;
-            consumed = true;
         }
 
         // --- 3. Independent Consumption (Removed/Added blocks) ---
@@ -189,34 +186,28 @@ const diffPhoneNumbers = (original, suggested) => {
                  originalDiff.push({ value: oChar, removed: true });
                  if (oIsDigit) oNormIdx++;
                  oFmtIdx++;
-                 consumed = true;
             } else if (sShouldConsume && !oShouldConsume) {
                  suggestedDiff.push({ value: sChar, added: true });
                  if (sIsDigit) sNormIdx++;
                  sFmtIdx++;
-                 consumed = true;
             } else if (oFmtIdx < original.length && sFmtIdx < suggested.length && !oIsNextCommonDigit && !sIsNextCommonDigit) {
-                 // Fallback for character mismatch (O: 'a', S: 'b') where neither is the next common digit.
-                 // This block also handles identical non-LCS characters that fail the oNormIdx check in Rule 2.
+                 // Fallback for character mismatch (O: 'a', S: 'b') or non-LCS digits.
                  originalDiff.push({ value: oChar, removed: true });
                  suggestedDiff.push({ value: sChar, added: true });
                  if (oIsDigit) oNormIdx++;
                  if (sIsDigit) sNormIdx++;
                  oFmtIdx++;
                  sFmtIdx++;
-                 consumed = true;
             } else {
                  // Final end-of-string consumption (catches remaining characters)
                  if (oFmtIdx < original.length) {
                      originalDiff.push({ value: original[oFmtIdx], removed: true });
                      if (isDigit(original[oFmtIdx])) oNormIdx++;
                      oFmtIdx++;
-                     consumed = true;
                  } else if (sFmtIdx < suggested.length) {
                      suggestedDiff.push({ value: suggested[sFmtIdx], added: true });
                      if (isDigit(suggested[sFmtIdx])) sNormIdx++;
                      sFmtIdx++;
-                     consumed = true;
                  }
             }
         }
@@ -238,9 +229,8 @@ const diffPhoneNumbers = (original, suggested) => {
  * @returns {{oldDiff: string, newDiff: string}} The HTML-diffed strings.
  */
 const getDiffHtml = (original, suggested) => {
-    // FIX: Update splitter to only target known multi-number separators (;, /, etc.) to avoid 
-    // incorrectly splitting internal number formatting like "+90 0123" (Test 3 failure).
-    // The regex captures the common multi-number separators: semicolon, comma, or slash.
+    // The regex captures the common multi-number separators: semicolon, comma, or slash, 
+    // including surrounding spaces which we want to keep for diffing.
     const splitter = /( *; *| *, *| *\/ *)/g;
 
     // Split and keep delimiters
@@ -248,8 +238,10 @@ const getDiffHtml = (original, suggested) => {
     const suggestedParts = suggested.split(splitter);
 
     // Filter out empty strings that result from splits, ensuring we maintain Number, Separator, Number, Separator... structure
-    const oSegments = originalParts.filter((_, i) => (i % 2 === 0 && originalParts[i].trim().length > 0) || i % 2 !== 0);
-    const sSegments = suggestedParts.filter((_, i) => (i % 2 === 0 && suggestedParts[i].trim().length > 0) || i % 2 !== 0);
+    // We only filter out empty strings resulting from the NUMBER segment (index i % 2 === 0) if they are empty after trimming.
+    // Separator segments (index i % 2 !== 0) are kept as-is, even if they are just spaces, to be correctly diffed later.
+    const oSegments = originalParts.filter((p, i) => (i % 2 === 0 && p.trim().length > 0) || i % 2 !== 0);
+    const sSegments = suggestedParts.filter((p, i) => (i % 2 === 0 && p.trim().length > 0) || i % 2 !== 0);
 
     // Pad the shorter array with empty strings for alignment
     const maxLength = Math.max(oSegments.length, sSegments.length);
@@ -260,14 +252,18 @@ const getDiffHtml = (original, suggested) => {
     let newDiffHtml = '';
 
     for (let i = 0; i < maxLength; i++) {
-        const oSeg = oSegments[i].trim();
-        const sSeg = sSegments[i].trim();
+        const oSegRaw = oSegments[i];
+        const sSegRaw = sSegments[i];
 
         // Segments alternate between number (index 0, 2, 4...) and separator (index 1, 3, 5...)
         const isSeparator = i % 2 !== 0;
 
         if (!isSeparator) {
             // --- NUMBER DIFF ---
+            // Trim number segments before diffing
+            const oSeg = oSegRaw.trim();
+            const sSeg = sSegRaw.trim();
+
             if (oSeg.length > 0 || sSeg.length > 0) {
                 const diffResult = diffPhoneNumbers(oSeg, sSeg);
                 oldDiffHtml += convertToHtml(diffResult.originalDiff);
@@ -275,8 +271,9 @@ const getDiffHtml = (original, suggested) => {
             }
         } else {
             // --- SEPARATOR DIFF ---
-            if (oSeg.length > 0 || sSeg.length > 0) {
-                const separatorDiffResult = simpleLCSDiff(oSeg, sSeg);
+            // Use the raw (untrimmed) segment for separator diffing to preserve space differences (Fix for Failure 3)
+            if (oSegRaw.length > 0 || sSegRaw.length > 0) {
+                const separatorDiffResult = simpleLCSDiff(oSegRaw, sSegRaw);
                 oldDiffHtml += convertToHtml(separatorDiffResult.original);
                 newDiffHtml += convertToHtml(separatorDiffResult.suggested);
             }
