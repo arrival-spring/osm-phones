@@ -151,7 +151,7 @@ function diffPhoneNumbers(original, suggested) {
                 // Digit is NEW (e.g., prefix '32' or a replaced digit). ADDED.
                 suggestedDiff.push({ value: char, added: true });
             }
-        } else if (char === ' ' && originalRemainderNew[i] === ' ') {
+        } else if (char === ' ' && originalRemainderNew[0] === ' ') {
             suggestedDiff.push({ value: char, removed: false, added: false });
             originalRemainderNew = originalRemainderNew.slice(1);
         } else {
