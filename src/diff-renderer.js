@@ -182,4 +182,4 @@ function getDiffHtml(oldString, newString) {
     return { oldDiff: oldDiffHtml, newDiff: newDiffHtml };
 }
 
-module.exports = { getDiffHtml };
+module.exports = { normalize, consolidatePlusSigns, diffPhoneNumbers, getDiffHtml };
