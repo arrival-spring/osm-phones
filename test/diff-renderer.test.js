@@ -45,13 +45,14 @@ describe('diffPhoneNumbers (Single Number Diff Logic)', () => {
         ])
         expect(result.suggestedDiff).toEqual([
             {value: '+', added: true},
+            {value: '4', added: true},
             {value: ' ', added: true},
             {value: '1', removed: false, added: false},
             {value: '2', removed: false, added: false},
         ])
     });
 
-    test('basic phone number diff test', () => {
+    test('basic phone number diff test with leading plus', () => {
         const original = '+4 012'
         const suggested = '+4 12'
         
