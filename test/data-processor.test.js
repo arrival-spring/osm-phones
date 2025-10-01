@@ -223,7 +223,7 @@ describe('processSingleNumber', () => {
     });
 
     test('US: dashes is not invalid', () => {
-        const result = processSingleNumber('+1-213-373=4253', SAMPLE_COUNTRY_CODE_US);
+        const result = processSingleNumber('+1-213-373-4253', SAMPLE_COUNTRY_CODE_US);
         expect(result.isInvalid).toBe(false);
     });
 });
