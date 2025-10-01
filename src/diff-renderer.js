@@ -77,14 +77,25 @@ function getPhoneDiffArray(oldNumber, newNumber) {
     // 1. Initial character diff
     let diff = dmp.diff_main(oldNumber, newNumber); 
 
-    // 2. Apply semantic cleanup to improve digit alignment.
-    // This heuristic prioritizes matching the largest common blocks of text 
-    // (i.e., the digits), ensuring digits that "moved" due to formatting are marked as unchanged.
+    // 2. Apply aggressive semantic cleanup. This prioritizes aligning digits.
     dmp.diff_cleanupSemantic(diff);
-    // Add another, more aggressive cleanup to ensure full digit alignment across small formatting differences
-    dmp.diff_cleanupSemanticLossless(diff);
 
-    // 3. Force Character-by-Character Breakdown of ALL segments
+    // 3. Custom Post-Processing: Force alignment for moved digits.
+    // This targets instances where a common digit is incorrectly marked as a 
+    // removed/added pair due to surrounding formatting changes.
+    // We iterate backwards to safely modify the array.
+    for (let i = diff.length - 2; i >= 0; i--) {
+        const p1 = diff[i];
+        const p2 = diff[i + 1];
+
+        // Check for adjacent removed digit and added digit of the same value (and it must be a digit)
+        if (p1[0] === -1 && p2[0] === 1 && p1[1] === p2[1] && p1[1].match(/\d/)) {
+            // Revert them to a single UNCHANGED segment
+            diff.splice(i, 2, [0, p1[1]]);
+        }
+    }
+    
+    // 4. Force Character-by-Character Breakdown of ALL segments
     const finalDiff = [];
 
     diff.forEach(([type, text]) => {
