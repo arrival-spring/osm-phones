@@ -106,6 +106,7 @@ function diffPhoneNumbers(original, suggested) {
         // + should only appear at the start
         if (i === 0 && char === '+' && original[i] === '+') {
             suggestedDiff.push({ value: char, removed: false, added: false });
+            commonPointerNew++;
         } else if (/\d/.test(char)) {
             // It's a digit. Check if it's the next digit in the common sequence.
             if (commonPointerNew < commonDigits.length && commonDigits[commonPointerNew] === char) {
@@ -116,6 +117,9 @@ function diffPhoneNumbers(original, suggested) {
                 // Digit is NEW (e.g., prefix '32' or a replaced digit). ADDED.
                 suggestedDiff.push({ value: char, added: true });
             }
+        } else if (char === ' ' && original[i] === ' ') {
+            suggestedDiff.push({ value: char, removed: false, added: false });
+            commonPointerNew++;
         } else {
             // Non-digit ('+' or space/separator). ADDED formatting.
             suggestedDiff.push({ value: char, added: true });
@@ -179,7 +183,7 @@ function getDiffHtml(oldString, newString) {
         } else {
             // --- This is a separator (e.g., ';', 'or', ',') ---
             // Just do a regular diffChars on the separators
-            separatorDiffResult = diffChars(normalizedOriginal, normalizedSuggested);
+            separatorDiffResult = diffChars(oldSegment, newSegment);
 
             for (const part of separatorDiffResult) {
                 if (part.removed) {
