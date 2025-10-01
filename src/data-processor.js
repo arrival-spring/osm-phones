@@ -202,6 +202,7 @@ function processSingleNumber(numberStr, countryCode, osmTags = {}) {
             autoFixable = false;
         }
     } catch (e) {
+        console.log(`Error when processing ${numberStr}: ${e}`)
         // Parsing failed due to an exception (unfixable invalid number)
         isInvalid = true;
         autoFixable = false;
