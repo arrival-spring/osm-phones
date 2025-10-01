@@ -892,12 +892,13 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
             if (listContainer.querySelectorAll('li').length === 0) {
                 listContainer.innerHTML = '';
                 const li = document.createElement('li');
-                li.className = 'list-item-empty';
+                li.className = 'report-list-item-empty';
                 // Use the translated fallback message
                 li.textContent = T_CLIENT.noSubdivisionsFound;
                 listContainer.appendChild(li);
             }
             updateButtonStyles();
+            applyColors(); // update circle styling
         }
 
         sortButtons.forEach(button => {
