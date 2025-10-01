@@ -15,49 +15,49 @@ const OVERPASS_API_URL = 'https://overpass-api.de/api/interpreter';
 // not fetched automatically but are hardcoded here
 // each division has a map of subdivision names to relation ids
 const COUNTRIES = {
-    'Belgium': {
-        name: 'België / Belgique / Belgien',
-        divisions: { // Only one level of divisions, we still need to provide a map here
-            'Belgium': 937244,
-        },
-        countryCode: 'BE',
-        locale: 'en', // I had to pick something. It would be possible to do a code refactor to allow the user to switch languages dynamically
-        subdivisionAdminLevel: 4
-    },
-    'France': {
-        name: 'France',
-        divisions: {
-            'Auvergne-Rhône-Alpes': 3792877,
-            'Bourgogne – Franche-Comté': 3792878,
-            'Brittany': 102740,
-            'Centre-Val de Loire': 8640,
-            'Corsica': 76910,
-            'Grand Est': 3792876,
-            'Hauts-de-France': 4217435,
-            'Ile-de-France': 8649,
-            'Normandy': 3793170,
-            'Nouvelle-Aquitaine': 3792880,
-            'Occitania': 3792883,
-            'Pays de la Loire': 8650,
-            "Provence-Alpes-Côte d'Azur": 8654,
-        },
-        countryCode: 'FR',
-        locale: 'fr-FR',
-        subdivisionAdminLevel: 6
-    },
-    'Italy': {
-        name: 'Italia',
-        divisions: {
-            "Centro": 17518200,
-            "Isole": 17514223,
-            "Nord-Est": 17518337,
-            "Nord-Ovest": 17518295,
-            "Sud": 17514288
-        },
-        countryCode: 'IT',
-        locale: 'it-IT',
-        subdivisionAdminLevel: 4
-    },
+    // 'Belgium': {
+    //     name: 'België / Belgique / Belgien',
+    //     divisions: { // Only one level of divisions, we still need to provide a map here
+    //         'Belgium': 937244,
+    //     },
+    //     countryCode: 'BE',
+    //     locale: 'en', // I had to pick something. It would be possible to do a code refactor to allow the user to switch languages dynamically
+    //     subdivisionAdminLevel: 4
+    // },
+    // 'France': {
+    //     name: 'France',
+    //     divisions: {
+    //         'Auvergne-Rhône-Alpes': 3792877,
+    //         'Bourgogne – Franche-Comté': 3792878,
+    //         'Brittany': 102740,
+    //         'Centre-Val de Loire': 8640,
+    //         'Corsica': 76910,
+    //         'Grand Est': 3792876,
+    //         'Hauts-de-France': 4217435,
+    //         'Ile-de-France': 8649,
+    //         'Normandy': 3793170,
+    //         'Nouvelle-Aquitaine': 3792880,
+    //         'Occitania': 3792883,
+    //         'Pays de la Loire': 8650,
+    //         "Provence-Alpes-Côte d'Azur": 8654,
+    //     },
+    //     countryCode: 'FR',
+    //     locale: 'fr-FR',
+    //     subdivisionAdminLevel: 6
+    // },
+    // 'Italy': {
+    //     name: 'Italia',
+    //     divisions: {
+    //         "Centro": 17518200,
+    //         "Isole": 17514223,
+    //         "Nord-Est": 17518337,
+    //         "Nord-Ovest": 17518295,
+    //         "Sud": 17514288
+    //     },
+    //     countryCode: 'IT',
+    //     locale: 'it-IT',
+    //     subdivisionAdminLevel: 4
+    // },
     // 'Lesotho': {
     //     name: 'Lesotho',
     //     divisions: {
@@ -67,43 +67,43 @@ const COUNTRIES = {
     //     locale: 'en-ZA',
     //     subdivisionAdminLevel: 5
     // },
-    'Netherlands': {
-        name: 'Nederland',
-        divisions: {
-            "Drenthe": 47540,
-            "Flevoland": 47407,
-            "Frisia": 47381,
-            "Gelderland": 47554,
-            "Groningen": 47826,
-            "Limburg": 47793,
-            "North Brabant": 47696,
-            "North Holland": 47654,
-            "Overijssel": 47608,
-            "South Holland": 47772,
-            "Utrecht": 47667,
-            "Zeeland": 47806
-        },
-        countryCode: 'NL',
-        locale: 'nl-NL',
-        subdivisionAdminLevel: 8
-    },
-    'South Africa': {
-        name: 'South Africa',
-        divisions: {
-            'Eastern Cape': 4782250,
-            'Free State': 92417,
-            'Gauteng': 349344,
-            'KwaZulu-Natal': 349390,
-            'Limpopo': 349547,
-            'Mpumalanga': 349556,
-            'North West': 349519,
-            'Northern Cape': 86720,
-            'Western Cape': 80501,
-        },
-        countryCode: 'ZA',
-        locale: 'en-ZA',
-        subdivisionAdminLevel: 6
-    },
+    // 'Netherlands': {
+    //     name: 'Nederland',
+    //     divisions: {
+    //         "Drenthe": 47540,
+    //         "Flevoland": 47407,
+    //         "Frisia": 47381,
+    //         "Gelderland": 47554,
+    //         "Groningen": 47826,
+    //         "Limburg": 47793,
+    //         "North Brabant": 47696,
+    //         "North Holland": 47654,
+    //         "Overijssel": 47608,
+    //         "South Holland": 47772,
+    //         "Utrecht": 47667,
+    //         "Zeeland": 47806
+    //     },
+    //     countryCode: 'NL',
+    //     locale: 'nl-NL',
+    //     subdivisionAdminLevel: 8
+    // },
+    // 'South Africa': {
+    //     name: 'South Africa',
+    //     divisions: {
+    //         'Eastern Cape': 4782250,
+    //         'Free State': 92417,
+    //         'Gauteng': 349344,
+    //         'KwaZulu-Natal': 349390,
+    //         'Limpopo': 349547,
+    //         'Mpumalanga': 349556,
+    //         'North West': 349519,
+    //         'Northern Cape': 86720,
+    //         'Western Cape': 80501,
+    //     },
+    //     countryCode: 'ZA',
+    //     locale: 'en-ZA',
+    //     subdivisionAdminLevel: 6
+    // },
     'United Kingdom': {
         name: 'United Kingdom',
         divisionMap: {
