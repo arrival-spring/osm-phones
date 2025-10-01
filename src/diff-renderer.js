@@ -90,12 +90,15 @@ function diffPhoneNumbers(original, suggested) {
             if (commonPointer < commonDigits.length && char === commonDigits[commonPointer]) {
                 // Digit is part of the common sequence. UNCHANGED.
                 originalDiff.push({ value: char, added: false, removed: false });
-                commonPointer++;
                 
                 // Cut down until we get to the matching digit
-                while (suggestedRemainder[0] != commonDigits[commonPointer]) {
+                while (originalRemainder[0] != suggestedRemainder[0] && suggestedRemainder[0] != commonDigits[commonPointer]) {
                     suggestedRemainder = suggestedRemainder.slice(1);
                 }
+                // Remove the current digit
+                suggestedRemainder = suggestedRemainder.slice(1);
+
+                commonPointer++;
 
             } else {
                 // Digit was part of the normalized original string, but NOT in the common sequence. REMOVED.
@@ -134,12 +137,15 @@ function diffPhoneNumbers(original, suggested) {
             if (commonPointerNew < commonDigits.length && commonDigits[commonPointerNew] === char) {
                 // Digit is part of the common sequence. UNCHANGED.
                 suggestedDiff.push({ value: char, removed: false, added: false });
-                commonPointerNew++;
 
                 // Cut down until we get to the matching digit
-                while (originalRemainderNew[0] != commonDigits[commonPointer]) {
+                while (originalRemainderNew[0] != suggestedRemainderNew[0] && originalRemainderNew[0] != commonDigits[commonPointer]) {
                     originalRemainderNew = originalRemainderNew.slice(1);
                 }
+                // Remove the current digit
+                originalRemainderNew = originalRemainderNew.slice(1);
+
+                commonPointerNew++;
 
             } else {
                 // Digit is NEW (e.g., prefix '32' or a replaced digit). ADDED.
