@@ -45,7 +45,7 @@
       @apply list-none bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col sm:flex-row justify-between sm:items-center space-y-4 sm:space-y-0 sm:space-x-4;
     }
     .report-list-item-empty {
-        @apply bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 text-center text-gray-500 dark:text-gray-400;
+        @apply bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 text-center text-gray-500 dark:text-gray-400 list-none;
     }
     .list-item-link {
         @apply hover:text-gray-950 dark:hover:text-gray-200 underline transition-colors;
