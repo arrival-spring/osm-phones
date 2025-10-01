@@ -335,7 +335,7 @@ function validateNumbers(elements, countryCode) {
                 const isInvalid = validationResult.isInvalid;
                 const autoFixable = validationResult.isAutoFixable;
                 // Only give a suggested fix if it is fixable
-                const suggestedFix = (!isInvalid && autoFixable)
+                const suggestedFix = (isInvalid && autoFixable)
                     ? validationResult.suggestedNumbersList.join('; ')
                     : null;
                 totalNumbers += validationResult.numberOfValues;

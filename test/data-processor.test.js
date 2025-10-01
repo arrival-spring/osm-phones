@@ -256,7 +256,7 @@ describe('validateSingleTag', () => {
         );
         expect(result.isInvalid).toBe(true);
         expect(result.isAutoFixable).toBe(false);
-        expect(result.suggestedNumbersList).toBe([]);
+        expect(result.suggestedNumbersList).toEqual([]);
     });
 
     test('single number in national format is fixable', () => {
