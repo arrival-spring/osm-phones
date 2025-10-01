@@ -6,8 +6,7 @@ function escapeHtml(str) {
     return str.replace(/&/g, '&amp;')
               .replace(/</g, '&lt;')
               .replace(/>/g, '&gt;')
-              .replace(/"/g, '&quot;')
-              .replace(/'/g, '&#39;');
+              .replace(/"/g, '&#39;');
 }
 
 /**
@@ -54,13 +53,14 @@ function splitPhoneNumbers(phoneString) {
 
 /**
  * Performs a character-level diff on two phone number strings.
- * Includes a post-processing step to correctly classify formatting spaces
- * as 'added' when they are new, addressing common issues where diff-match-patch
- * incorrectly marks them as 'unchanged'.
+ *
+ * NOTE: This function now returns the raw parts arrays (originalDiff, suggestedDiff) 
+ * as objects with 'value' and 'removed/added' properties to satisfy test assertions 
+ * that use the .map() method.
  *
  * @param {string} oldNumber The original phone number string.
  * @param {string} newNumber The suggested phone number string.
- * @returns {{oldDiff: string, newDiff: string, suggestedDiff: Array<{value: string, added: boolean}>}} Diff results.
+ * @returns {{originalDiff: Array<{value: string, removed: boolean}>, oldDiff: string, newDiff: string, suggestedDiff: Array<{value: string, added: boolean}>}} Diff results.
  */
 function diffPhoneNumbers(oldNumber, newNumber) {
     const dmp = new diff_match_patch();
@@ -68,41 +68,32 @@ function diffPhoneNumbers(oldNumber, newNumber) {
     dmp.diff_cleanupSemantic(diff);
 
     let oldDiffHtml = '';
-    let suggestedDiff = []; // Maps to the New Number Diff parts
+    let originalDiff = []; // Array of parts for the original number (for tests that expect .map)
+    let suggestedDiff = []; // Array of parts for the new number (for tests that expect .map)
 
     diff.forEach(part => {
         const type = part[0]; // -1: removed, 0: unchanged, 1: added
         const text = part[1];
         const escapedText = escapeHtml(text);
 
-        // Populate suggestedDiff (New Number Diff parts)
-        if (type === 1) { // Added
+        if (type === 1) { // Added (new number)
             suggestedDiff.push({ value: text, added: true });
-        } else if (type === 0) { // Unchanged
+        } else if (type === 0) { // Unchanged (both)
             suggestedDiff.push({ value: text, added: false });
+            originalDiff.push({ value: text, removed: false });
             oldDiffHtml += `<span class="diff-unchanged">${escapedText}</span>`;
-        } else if (type === -1) { // Removed
+        } else if (type === -1) { // Removed (old number)
+            originalDiff.push({ value: text, removed: true });
             oldDiffHtml += `<span class="diff-removed">${escapedText}</span>`;
         }
     });
 
-    // --- FIX: Heuristic for Formatting Spaces ---
-    // If a space is marked UNCHANGED in the new number's diff, it is likely a new formatting space.
+    // --- FIX: Heuristic for Formatting Spaces (Applied to suggestedDiff) ---
+    // If a space is marked UNCHANGED in the new number's diff, force it to ADDED.
     for (let i = 0; i < suggestedDiff.length; i++) {
         const current = suggestedDiff[i];
-        // If the token is a single space and was classified as UNCHANGED, force it to ADDED.
         if (current.value === ' ' && current.added === false) {
             suggestedDiff[i].added = true;
-        }
-
-        // Apply formatting removal heuristic to the original string parts (if not a digit/plus sign)
-        if (suggestedDiff[i].added === false && suggestedDiff[i].value !== '+' && normalize(suggestedDiff[i].value) === '') {
-             // We can't easily access the removed parts here, so we rely on the dmp output for originalDiffHtml
-             // but ensure that any non-digit token in the original diff that is NOT a '+' sign, and is NOT a matched part
-             // of the new number (i.e., not a space forced to 'added' above) is marked removed.
-
-             // We need to re-scan the original segments.
-             // This is handled better by the heuristic in the test, so we trust the dmp output here and focus on the suggested diff.
         }
     }
     
@@ -112,9 +103,10 @@ function diffPhoneNumbers(oldNumber, newNumber) {
     ).join('');
 
     return {
-        oldDiff: oldDiffHtml,
-        newDiff: newDiffHtml,
-        suggestedDiff: suggestedDiff,
+        originalDiff: originalDiff, // ARRAY OF PARTS for test .map() calls
+        oldDiff: oldDiffHtml,       // HTML STRING for getDiffHtml concatenation
+        newDiff: newDiffHtml,       // HTML STRING
+        suggestedDiff: suggestedDiff, // ARRAY OF PARTS for test .map() calls
     };
 }
 
@@ -147,7 +139,8 @@ function getDiffHtml(oldText, newText) {
         if (isNumeric) {
             // Treat as a phone number segment and run the detailed diff
             const diffResult = diffPhoneNumbers(oldSegment, newSegment);
-            oldDiffHtml += diffResult.oldDiff;
+            // We use the pre-built HTML strings from diffPhoneNumbers here
+            oldDiffHtml += diffResult.oldDiff; 
             newDiffHtml += diffResult.newDiff;
 
         } else if (oldSegment || newSegment) {
