@@ -354,15 +354,15 @@ async function generateCountryIndexHtml(countryName, groupedDivisionStats, total
                 <div class="card-header">
                     <h2 class="card-title">${translate('divisionalReports', locale)}</h2>
                     <div class="card-actions">
-                        <div class="checkbox-container">
-                            <input type="checkbox" id="hide-empty" checked class="checkbox-input">
-                            <label for="hide-empty" class="checkbox-label">${translate('hideEmptyDivisions', locale)}</label>
-                        </div>
                         <div class="sort-controls">
                             <span class="sort-label">${translate('sortBy', locale)}</span>
                             <button id="sort-percentage" data-sort="percentage" class="sort-btn sort-btn-style">${translate('invalidPercentage', locale)}</button>
                             <button id="sort-invalid" data-sort="invalidCount" class="sort-btn sort-btn-style">${translate('invalidCount', locale)}</button>
                             <button id="sort-name" data-sort="name" class="sort-btn sort-btn-style">${translate('name', locale)}</button>
+                        </div>
+                        <div class="checkbox-container">
+                            <input type="checkbox" id="hide-empty" checked class="checkbox-input">
+                            <label for="hide-empty" class="checkbox-label">${translate('hideEmptyDivisions', locale)}</label>
                         </div>
                     </div>
                 </div>
