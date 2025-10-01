@@ -108,6 +108,6 @@ async function fetchOsmDataForDivision(division, retries = 3) {
 }
 
 module.exports = {
-    fetchAdminLevels: fetchAdminLevels,
+    fetchAdminLevels,
     fetchOsmDataForDivision,
 };

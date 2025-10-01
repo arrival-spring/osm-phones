@@ -85,14 +85,27 @@ async function main() {
                     const divisionId = countryData.divisions[divisionName];
                     return await fetchAdminLevels(divisionId, divisionName, countryData.subdivisionAdminLevel);
                 } else if (countryData.divisionMap) {
-                    return countryData.divisionMap[divisionName]
+                    console.log(`Using hardcoded subdivisions for ${divisionName}...`);
+                    const divisionMap = countryData.divisionMap[divisionName];
+                    if (divisionMap) {
+                        return Object.entries(divisionMap).map(([name, id]) => ({
+                            name: name,
+                            id: id
+                        }));
+                    }
+                    return [];
                 } else {
                     console.error(`Data for ${countryName} set up incorreectly, no divisions or divisionMap found`)
-                    return null
+                    return [];
                 }
             })();
 
             groupedDivisionStats[divisionName] = [];
+
+            if (!subdivisions || subdivisions.length === 0) {
+                console.error(`No subdivisions to process for ${divisionName}.`);
+                continue
+            }
 
             console.log(`Processing phone numbers for ${subdivisions.length} subdivisions in ${divisionName}.`);
 
