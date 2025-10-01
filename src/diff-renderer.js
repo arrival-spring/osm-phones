@@ -64,9 +64,8 @@ function splitPhoneNumbers(phoneString) {
 }
 
 /**
- * Performs a character-level diff on two phone number strings, applying a heuristic
- * to ensure all formatting changes are explicitly tracked by returning a standardized 
- * diff array.
+ * Performs a character-level diff on two phone number strings, ensuring the longest common
+ * digit sequence is aligned, even if formatting changes occur.
  *
  * @param {string} oldNumber The original phone number string.
  * @param {string} newNumber The suggested phone number string.
@@ -74,10 +73,16 @@ function splitPhoneNumbers(phoneString) {
  */
 function getPhoneDiffArray(oldNumber, newNumber) {
     const dmp = new diff_match_patch();
-    // Disable semantic cleanup to prevent merging that breaks character-level formatting checks.
+    
+    // 1. Initial character diff
     let diff = dmp.diff_main(oldNumber, newNumber); 
 
-    // --- Force Character-by-Character Breakdown of ALL segments ---
+    // 2. Apply semantic cleanup to improve digit alignment.
+    // This heuristic prioritizes matching the largest common blocks of text 
+    // (i.e., the digits), ensuring digits that "moved" due to formatting are marked as unchanged.
+    dmp.diff_cleanupSemantic(diff);
+
+    // 3. Force Character-by-Character Breakdown of ALL segments
     const finalDiff = [];
 
     diff.forEach(([type, text]) => {
@@ -195,7 +200,7 @@ module.exports = {
     normalize,
     consolidatePlusSigns,
     splitPhoneNumbers,
-    getPhoneDiffArray, // Renamed and refactored function
-    renderDiffToHtml,    // New function
+    getPhoneDiffArray, // Returns the diff array [type, value]
+    renderDiffToHtml,    // Converts the diff array to HTML
     getDiffHtml 
 };
