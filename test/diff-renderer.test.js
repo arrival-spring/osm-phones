@@ -15,23 +15,64 @@ describe('Phone Diff Helper Functions', () => {
         expect(normalize('32 471 12 43 80')).toBe('32471124380');
     });
 
-    // test('consolidatePlusSigns should merge lone "+" with the following segment', () => {
-    //     const input1 = ['+', '32 58 515 592', '; ', '+', '32 473 792 951'];
-    //     const expected1 = ['+32 58 515 592', '; ', '+32 473 792 951'];
-    //     expect(consolidatePlusSigns(input1)).toEqual(expected1);
+    test('consolidatePlusSigns should merge lone "+" with the following segment', () => {
+        const input1 = ['+', '32 58 515 592', '; ', '+', '32 473 792 951'];
+        const expected1 = ['+32 58 515 592', '; ', '+32 473 792 951'];
+        expect(consolidatePlusSigns(input1)).toEqual(expected1);
 
-    //     // Case 2: Standard number, no issue
-    //     const input2 = ['0471 124 380', ' / ', '+32 471 12 43 80'];
-    //     expect(consolidatePlusSigns(input2)).toEqual(input2);
+        // Case 2: Standard number, no issue
+        const input2 = ['0471 124 380', ' / ', '+32 471 12 43 80'];
+        expect(consolidatePlusSigns(input2)).toEqual(input2);
 
-    //     // Case 3: Leading '+' at the start (should not be treated as lone separator)
-    //     const input3 = ['+32 123 456'];
-    //     expect(consolidatePlusSigns(input3)).toEqual(['+32 123 456']);
-    // });
+        // Case 3: Leading '+' at the start (should not be treated as lone separator)
+        const input3 = ['+32 123 456'];
+        expect(consolidatePlusSigns(input3)).toEqual(['+32 123 456']);
+    });
 });
 
 
 describe('diffPhoneNumbers (Single Number Diff Logic)', () => {
+    test('basic phone number diff test', () => {
+        const original = '012'
+        const suggested = '+4 12'
+        
+        const result = diffPhoneNumbers(original, suggested);
+
+        expect(result.originalDiff).toEqual([
+            {value: '0', removed: true},
+            {value: '1', removed: false, added: false},
+            {value: '2', removed: false, added: false},
+        ])
+        expect(result.suggestedDiff).toEqual([
+            {value: '+', added: true},
+            {value: ' ', added: true},
+            {value: '1', removed: false, added: false},
+            {value: '2', removed: false, added: false},
+        ])
+    });
+
+    test('basic phone number diff test', () => {
+        const original = '+4 012'
+        const suggested = '+4 12'
+        
+        const result = diffPhoneNumbers(original, suggested);
+
+        expect(result.originalDiff).toEqual([
+            {value: '+', removed: false, added: false},
+            {value: '4', removed: false, added: false},
+            {value: ' ', removed: false, added: false},
+            {value: '0', removed: true},
+            {value: '1', removed: false, added: false},
+            {value: '2', removed: false, added: false},
+        ])
+        expect(result.suggestedDiff).toEqual([
+            {value: '+', removed: false, added: false},
+            {value: '4', removed: false, added: false},
+            {value: ' ', removed: false, added: false},
+            {value: '1', removed: false, added: false},
+            {value: '2', removed: false, added: false},
+        ])
+    });
 
     test('should correctly identify prefix addition/removal and formatting changes (0 removal, 32 addition)', () => {
         const original = '0471 124 380';

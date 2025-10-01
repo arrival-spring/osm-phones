@@ -48,7 +48,6 @@ function consolidatePlusSigns(parts) {
 /**
  * Performs a two-way diff on phone numbers, separating semantic (digit)
  * changes from visual (formatting) changes.
- * Assumes 'diffChars' is available in the scope (e.g., imported via require('diff')).
  * @param {string} original - The phone number to be fixed.
  * @param {string} suggested - The fixed phone number.
  * @returns {{
@@ -57,13 +56,10 @@ function consolidatePlusSigns(parts) {
  * }} The diff objects for rendering two separate lines.
  */
 function diffPhoneNumbers(original, suggested) {
-    // The previous diffChars function validation has been removed.
-    // We rely on 'diffChars' being available in the current scope.
-
     // --- 1. Semantic Diff (Digits only) ---
     const normalizedOriginal = normalize(original);
     const normalizedSuggested = normalize(suggested);
-    const semanticParts = diffChars(normalizedOriginal, normalizedSuggested); // Using global/imported diffChars
+    const semanticParts = diffChars(normalizedOriginal, normalizedSuggested);
 
     // Create a sequential map of digits for the common sequence
     let commonDigits = [];
@@ -80,7 +76,10 @@ function diffPhoneNumbers(original, suggested) {
     for (let i = 0; i < original.length; i++) {
         const char = original[i];
 
-        if (/\d/.test(char)) {
+        // + should only appear at the start
+        if (i === 0 && char === '+' && suggested[i] === '+') {
+            suggestedDiff.push({ value: char, removed: false, added: false});
+        } else if (/\d/.test(char)) {
             // It's a digit. Determine if it was removed in the semantic diff.
             if (commonPointer < commonDigits.length && char === commonDigits[commonPointer]) {
                 // Digit is part of the common sequence. UNCHANGED.
@@ -104,7 +103,10 @@ function diffPhoneNumbers(original, suggested) {
     for (let i = 0; i < suggested.length; i++) {
         const char = suggested[i];
 
-        if (/\d/.test(char)) {
+        // + should only appear at the start
+        if (i === 0 && char === '+' && original[i] === '+') {
+            suggestedDiff.push({ value: char, removed: false, added: false});
+        } else if (/\d/.test(char)) {
             // It's a digit. Check if it's the next digit in the common sequence.
             if (commonPointerNew < commonDigits.length && commonDigits[commonPointerNew] === char) {
                 // Digit is part of the common sequence. UNCHANGED.
