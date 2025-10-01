@@ -73,33 +73,52 @@ function diffPhoneNumbers(original, suggested) {
     let originalDiff = [];
     let commonPointer = 0; // Tracks position in the commonDigits array
 
+    let originalRemainder = original; // We will cut these down to keep track of added/removed spaces
+    let suggestedRemainder = suggested;
+
     for (let i = 0; i < original.length; i++) {
         const char = original[i];
 
         // + should only appear at the start
         if (i === 0 && char === '+' && suggested[i] === '+') {
             originalDiff.push({ value: char, removed: false, added: false });
+            suggestedRemainder = suggestedRemainder.slice(1);
         } else if (/\d/.test(char)) {
             // It's a digit. Determine if it was removed in the semantic diff.
             if (commonPointer < commonDigits.length && char === commonDigits[commonPointer]) {
                 // Digit is part of the common sequence. UNCHANGED.
                 originalDiff.push({ value: char, added: false, removed: false });
                 commonPointer++;
+                
+                // Cut down until we get to the matching digit
+                while (suggestedRemainder[0] != commonDigits[commonPointer]) {
+                    suggestedRemainder = suggestedRemainder.slice(1);
+                }
+                // Remove the matching digit
+                suggestedRemainder = suggestedRemainder.slice(1);
+
             } else {
                 // Digit was part of the normalized original string, but NOT in the common sequence. REMOVED.
                 originalDiff.push({ value: char, removed: true });
             }
-        } else if (char === ' ' && suggested[i] === ' ') {
+        } else if (char === ' ' && suggestedRemainder[0] === ' ') {
+            // Both have a space at this position, UNCHANGED
             originalDiff.push({ value: char, removed: false, added: false });
+            suggestedRemainder = suggestedRemainder.slice(1)
         } else {
-            // Non-digit (formatting like ( ), etc.). Mark all original formatting as REMOVED.
+            // Non-digit (formatting like ( ), etc.). Mark as removed.
             originalDiff.push({ value: char, removed: true });
         }
+        // Remove the current checked char
+        originalRemainder = originalRemainder.slice(1);
     }
 
     // --- 3. Visual Diff for Suggested String (Additions) ---
     let suggestedDiff = [];
     let commonPointerNew = 0; // Separate pointer for suggested string traversal
+
+    let originalRemainderNew = original; // We will cut these down to keep track of added/removed spaces
+    let suggestedRemainderNew = suggested;
 
     for (let i = 0; i < suggested.length; i++) {
         const char = suggested[i];
@@ -107,22 +126,34 @@ function diffPhoneNumbers(original, suggested) {
         // + should only appear at the start
         if (i === 0 && char === '+' && original[i] === '+') {
             suggestedDiff.push({ value: char, removed: false, added: false });
+            originalRemainderNew = originalRemainderNew.slice(1);
         } else if (/\d/.test(char)) {
             // It's a digit. Check if it's the next digit in the common sequence.
             if (commonPointerNew < commonDigits.length && commonDigits[commonPointerNew] === char) {
                 // Digit is part of the common sequence. UNCHANGED.
                 suggestedDiff.push({ value: char, removed: false, added: false });
                 commonPointerNew++;
+
+                // Cut down until we get to the matching digit
+                while (originalRemainderNew[0] != commonDigits[commonPointer]) {
+                    originalRemainderNew = originalRemainderNew.slice(1);
+                }
+                // Remove the matching digit
+                suggestedRemainder = suggestedRemainder.slice(1);
+
             } else {
                 // Digit is NEW (e.g., prefix '32' or a replaced digit). ADDED.
                 suggestedDiff.push({ value: char, added: true });
             }
         } else if (char === ' ' && original[i] === ' ') {
             suggestedDiff.push({ value: char, removed: false, added: false });
+            originalRemainderNew = originalRemainderNew.slice(1);
         } else {
             // Non-digit, non-space. I don't know why we'd get here. ADDED formatting.
             suggestedDiff.push({ value: char, added: true });
         }
+        // Remove the current checked char
+        suggestedRemainderNew = suggestedRemainderNew.slice(1)
     }
 
     return { originalDiff, suggestedDiff };
