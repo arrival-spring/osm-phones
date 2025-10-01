@@ -172,6 +172,7 @@ function processSingleNumber(numberStr, countryCode, osmTags = {}) {
             // Re-parse the core number to get the spaced INTERNATIONAL format without the extension
             // Note: This is required because format('INTERNATIONAL') on the original number might include the extension.
             const coreFormatted = parsePhoneNumber(coreNumberE164).format('INTERNATIONAL');
+            console.log(`coreFormatted: ${coreFormatted}`)
 
             // Manually append the extension in the standard format (' x{ext}').
             const extension = phoneNumber.ext ? ` x${phoneNumber.ext}` : '';
@@ -180,7 +181,9 @@ function processSingleNumber(numberStr, countryCode, osmTags = {}) {
                 if (countryCode === 'US') {
                     // Use dashes as separator, but space after country code
                     const parts = coreFormatted.split(' ', 2);
+                    console.log(`parts: ${parts}`)
                     const nationalNumberWithDashes = parts[1].replace(/\s/g, '-');
+                    console.log(`nationalNumberWithDashes: ${nationalNumberWithDashes}`)
                     return `${parts[0]} ${nationalNumberWithDashes}`;
                 } else {
                     return coreFormatted + extension;
@@ -202,7 +205,6 @@ function processSingleNumber(numberStr, countryCode, osmTags = {}) {
             autoFixable = false;
         }
     } catch (e) {
-        console.log(`Error when processing ${numberStr}: ${e}`)
         // Parsing failed due to an exception (unfixable invalid number)
         isInvalid = true;
         autoFixable = false;
