@@ -96,8 +96,6 @@ function diffPhoneNumbers(original, suggested) {
                 while (suggestedRemainder[0] != commonDigits[commonPointer]) {
                     suggestedRemainder = suggestedRemainder.slice(1);
                 }
-                // Remove the matching digit
-                suggestedRemainder = suggestedRemainder.slice(1);
 
             } else {
                 // Digit was part of the normalized original string, but NOT in the common sequence. REMOVED.
@@ -124,7 +122,7 @@ function diffPhoneNumbers(original, suggested) {
 
     for (let i = 0; i < suggested.length; i++) {
         console.log(`Suggested loop: original: >${originalRemainderNew}<, suggested: >${suggestedRemainderNew}<`)
-        
+
         const char = suggested[i];
 
         // + should only appear at the start
@@ -142,8 +140,6 @@ function diffPhoneNumbers(original, suggested) {
                 while (originalRemainderNew[0] != commonDigits[commonPointer]) {
                     originalRemainderNew = originalRemainderNew.slice(1);
                 }
-                // Remove the matching digit
-                suggestedRemainder = suggestedRemainder.slice(1);
 
             } else {
                 // Digit is NEW (e.g., prefix '32' or a replaced digit). ADDED.
