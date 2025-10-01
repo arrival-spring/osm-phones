@@ -15,19 +15,19 @@ describe('Phone Diff Helper Functions', () => {
         expect(normalize('32 471 12 43 80')).toBe('32471124380');
     });
 
-    test('consolidatePlusSigns should merge lone "+" with the following segment', () => {
-        const input1 = ['+', '32 58 515 592', '; ', '+', '32 473 792 951'];
-        const expected1 = ['+32 58 515 592', '; ', '+32 473 792 951'];
-        expect(consolidatePlusSigns(input1)).toEqual(expected1);
+    // test('consolidatePlusSigns should merge lone "+" with the following segment', () => {
+    //     const input1 = ['+', '32 58 515 592', '; ', '+', '32 473 792 951'];
+    //     const expected1 = ['+32 58 515 592', '; ', '+32 473 792 951'];
+    //     expect(consolidatePlusSigns(input1)).toEqual(expected1);
 
-        // Case 2: Standard number, no issue
-        const input2 = ['0471 124 380', ' / ', '+32 471 12 43 80'];
-        expect(consolidatePlusSigns(input2)).toEqual(input2);
+    //     // Case 2: Standard number, no issue
+    //     const input2 = ['0471 124 380', ' / ', '+32 471 12 43 80'];
+    //     expect(consolidatePlusSigns(input2)).toEqual(input2);
 
-        // Case 3: Leading '+' at the start (should not be treated as lone separator)
-        const input3 = ['+32 123 456'];
-        expect(consolidatePlusSigns(input3)).toEqual(['+32 123 456']);
-    });
+    //     // Case 3: Leading '+' at the start (should not be treated as lone separator)
+    //     const input3 = ['+32 123 456'];
+    //     expect(consolidatePlusSigns(input3)).toEqual(['+32 123 456']);
+    // });
 });
 
 
