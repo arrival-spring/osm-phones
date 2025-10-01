@@ -1,5 +1,5 @@
 const { parsePhoneNumber } = require('libphonenumber-js');
-const { FEATURE_TAGS, HISTORIC_AND_DISUSED_PREFIXES, EXCLUSIONS, PHONE_TAGS, WEBSITE_TAGS } = require('./constants');
+const { FEATURE_TAGS, HISTORIC_AND_DISUSED_PREFIXES, EXCLUSIONS, PHONE_TAGS, WEBSITE_TAGS, BAD_SEPARATOR_REGEX, UNIVERSAL_SPLIT_REGEX } = require('./constants');
 
 /**
  * Creates a safe, slug-like name for filenames.
@@ -229,13 +229,6 @@ function processSingleNumber(numberStr, countryCode, osmTags = {}) {
  * @property {number} numberOfValues - The number of phone values checked.
  */
 function validateSingleTag(tagValue, countryCode, osmTags) {
-    // Define the regex for separators that are definitively "bad" and should trigger a fix report.
-    const BAD_SEPARATOR_REGEX = /(\s*,\s*)|(\s*\/\s*)|(\s+or\s+)|(\s+and\s+)/gi;
-
-    // This regex is used for splitting. It catches ALL valid and invalid separators:
-    // Raw semicolon (';'), semicolon with optional space ('; ?'), comma, slash, 'or' or 'and'.
-    const UNIVERSAL_SPLIT_REGEX = /(?:; ?)|(?:\s*,\s*)|(?:\s*\/\s*)|(?:\s+or\s+)|(?:\s+and\s+)/gi;
-
     const originalTagValue = tagValue.trim();
 
     // Check if a bad separator was used

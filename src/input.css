@@ -269,4 +269,13 @@
     .no-subdivisions-item {
         @apply p-6 text-center text-gray-500 rounded-xl;
     }
+    .diff-added {
+        @apply bg-green-200 dark:bg-green-900 rounded-md;
+    }
+    .diff-removed {
+        @apply bg-red-200 dark:bg-red-900 rounded-md;
+    }
+    .diff-unchanged {
+        @apply text-gray-900 dark:text-gray-100;
+    }
 }
