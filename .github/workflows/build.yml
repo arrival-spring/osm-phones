@@ -65,6 +65,10 @@ jobs:
         run: find public -name "*.html" | xargs -I {} sh -c 'npx html-minifier-terser "$0" --output "$0" --collapse-whitespace --remove-comments --minify-css true --minify-js true' {}
         shell: bash
 
+      - name: Run JS Minifier (terser)
+        run: find public -name "*.js" | xargs -I {} npx terser "{}" --output "{}" --compress --mangle
+        shell: bash
+
       - name: Check Build Type
         run: echo "The build type is $BUILD_TYPE"
 

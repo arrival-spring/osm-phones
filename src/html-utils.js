@@ -1,40 +1,16 @@
 const { translate } = require('./i18n');
 
 const githubLink = "https://github.com/arrival-spring/osm-phones/";
+
+/**
+ * Phone number emoji as the favicon
+ */
 const favicon = '<link rel="icon" href="data:image/svg+xml,&lt;svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22&gt;&lt;text y=%22.9em%22 font-size=%2290%22&gt;📞&lt;/text&gt;&lt;/svg&gt;">';
 
 const themeButton = `<button id="theme-toggle" type="button" class="theme-toggle-button">
                         <svg id="theme-toggle-dark-icon" class="hidden w-7 h-7" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
                         <svg id="theme-toggle-light-icon" class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="5"/><line x1="12" y1="3" x2="12" y2="5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="19" x2="12" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="3" y1="12" x2="5" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="19" y1="12" x2="21" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="5.64" y1="5.64" x2="6.8" y2="6.8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="17.2" y1="17.2" x2="18.36" y2="18.36" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="5.64" y1="18.36" x2="6.8" y2="17.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="17.2" y1="6.8" x2="18.36" y2="5.64" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                     </button>`;
-
-const getBackgroundColourScript = `
-    <script>
-        function getBackgroundColor(percent, isDark) {
-            if (isDark) {
-                // Dark mode: less saturated, darker colors
-                if (percent > 2) return 'hsl(0, 40%, 30%)'; // Dark red
-                const hue = ((2 - percent) / 2) * 120;
-                return \`hsl(\${hue}, 40%, 30%)\`; // Dark green to dark yellow
-            } else {
-                // Light mode: vibrant colors
-                if (percent > 2) return 'hsl(0, 70%, 50%)'; // Bright red
-                const hue = ((2 - percent) / 2) * 120;
-                return \`hsl(\${hue}, 70%, 50%)\`; // Bright green to bright yellow
-            }
-        }
-
-        function applyColors() {
-            const isDark = document.documentElement.classList.contains('dark');
-            document.querySelectorAll('.color-indicator').forEach(el => {
-                const percentage = parseFloat(el.dataset.percentage);
-                el.style.backgroundColor = getBackgroundColor(percentage, isDark);
-            });
-        }
-
-        document.addEventListener('DOMContentLoaded', applyColors);
-        window.addEventListener('themeChanged', applyColors);
-    </script>`;
 
 /**
  * Creates the HTML box displaying statistics.
@@ -187,5 +163,4 @@ module.exports = {
     favicon,
     createStatsBox,
     createFooter,
-    getBackgroundColourScript,
 };

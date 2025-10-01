@@ -3,7 +3,7 @@ const path = require('path');
 const { PUBLIC_DIR } = require('./constants');
 const { safeName } = require('./data-processor');
 const { translate } = require('./i18n');
-const {favicon, themeButton, createFooter, createStatsBox, getBackgroundColourScript} = require('./html-utils')
+const {favicon, themeButton, createFooter, createStatsBox} = require('./html-utils')
 
 /**
  * Creates the renderListScript for the country index page.
@@ -374,7 +374,7 @@ async function generateCountryIndexHtml(countryName, groupedDivisionStats, total
             </div>
         </div>
         ${createRenderListScript(countryName, groupedDivisionStats, locale)}
-        ${getBackgroundColourScript}
+        <script src="./backgroundColor.js"></script>
     </body>
     </html>
     `;
