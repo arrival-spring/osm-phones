@@ -64,8 +64,25 @@ function splitPhoneNumbers(phoneString) {
  */
 function diffPhoneNumbers(oldNumber, newNumber) {
     const dmp = new diff_match_patch();
-    const diff = dmp.diff_main(oldNumber, newNumber);
+    let diff = dmp.diff_main(oldNumber, newNumber);
     dmp.diff_cleanupSemantic(diff);
+
+    // --- FIX: Force Character-by-Character Breakdown ---
+    // The tests expect a character-level diff, which diff_match_patch doesn't guarantee.
+    // We break down any segment with length > 1 into individual character segments.
+    const granularDiff = [];
+    diff.forEach(([type, text]) => {
+        if (text.length > 1) {
+            // Break multi-character segments into single-character segments
+            text.split('').forEach(char => {
+                granularDiff.push([type, char]);
+            });
+        } else {
+            granularDiff.push([type, text]);
+        }
+    });
+    diff = granularDiff;
+    // ---------------------------------------------------
 
     let oldDiffHtml = '';
     let originalDiff = []; // Array of parts for the original number (for tests that expect .map)
@@ -90,6 +107,7 @@ function diffPhoneNumbers(oldNumber, newNumber) {
 
     // --- FIX: Heuristic for Formatting Spaces (Applied to suggestedDiff) ---
     // If a space is marked UNCHANGED in the new number's diff, force it to ADDED.
+    // This is because formatting changes are always considered additions in the new string.
     for (let i = 0; i < suggestedDiff.length; i++) {
         const current = suggestedDiff[i];
         if (current.value === ' ' && current.added === false) {

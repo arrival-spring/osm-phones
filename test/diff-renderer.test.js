@@ -142,6 +142,23 @@ describe('diffPhoneNumbers (Single Number Diff Logic)', () => {
             '<span class="diff-unchanged">+</span><span class="diff-unchanged">4</span><span class="diff-unchanged">4</span><span class="diff-added"> </span><span class="diff-unchanged">1</span><span class="diff-unchanged">2</span><span class="diff-unchanged">3</span><span class="diff-unchanged">4</span><span class="diff-added"> </span><span class="diff-unchanged">5</span><span class="diff-unchanged">6</span><span class="diff-unchanged">7</span><span class="diff-unchanged">8</span>';
         expect(result.suggestedDiff.map(p => `<span class="diff-${p.added ? 'added' : 'unchanged'}">${p.value}</span>`).join('')).toBe(expectedSuggestedHtml);
     });
+
+    test('should correctly handle a non-digit character removal and formatting change (0 removal, brackets removed, space added)', () => {
+        const original = '+44 (0) 1234 5678';
+        const suggested = '+44 1234 5678';
+        
+        const result = diffPhoneNumbers(original, suggested);
+
+        // Original: '+' unchanged, '44' digits unchanged, ' (0) ' removed (space + brackets + digit), ' ' removed, digits unchanged.
+        const expectedOriginalHtml = 
+            '<span class="diff-unchanged">+</span><span class="diff-unchanged">4</span><span class="diff-unchanged">4</span><span class="diff-removed"> </span><span class="diff-removed">(</span><span class="diff-removed">0</span><span class="diff-removed">)</span><span class="diff-removed"> </span><span class="diff-unchanged">1</span><span class="diff-unchanged">2</span><span class="diff-unchanged">3</span><span class="diff-unchanged">4</span><span class="diff-removed"> </span><span class="diff-unchanged">5</span><span class="diff-unchanged">6</span><span class="diff-unchanged">7</span><span class="diff-unchanged">8</span>';
+        expect(result.originalDiff.map(p => `<span class="diff-${p.removed ? 'removed' : 'unchanged'}">${p.value}</span>`).join('')).toBe(expectedOriginalHtml);
+
+        // Suggested: '+' unchanged, '44' digits unchanged, space added, digits unchanged.
+        const expectedSuggestedHtml = 
+            '<span class="diff-unchanged">+</span><span class="diff-unchanged">4</span><span class="diff-unchanged">4</span><span class="diff-added"> </span><span class="diff-unchanged">1</span><span class="diff-unchanged">2</span><span class="diff-unchanged">3</span><span class="diff-unchanged">4</span><span class="diff-added"> </span><span class="diff-unchanged">5</span><span class="diff-unchanged">6</span><span class="diff-unchanged">7</span><span class="diff-unchanged">8</span>';
+        expect(result.suggestedDiff.map(p => `<span class="diff-${p.added ? 'added' : 'unchanged'}">${p.value}</span>`).join('')).toBe(expectedSuggestedHtml);
+    });
 });
 
 
