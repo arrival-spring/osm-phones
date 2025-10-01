@@ -180,11 +180,19 @@ function processSingleNumber(numberStr, countryCode, osmTags = {}) {
             suggestedFix = (() => {
                 if (countryCode === 'US') {
                     // Use dashes as separator, but space after country code
-                    const parts = coreFormatted.split(' ', 2);
-                    console.log(`parts: ${parts}`)
-                    const nationalNumberWithDashes = parts[1].replace(/\s/g, '-');
-                    console.log(`nationalNumberWithDashes: ${nationalNumberWithDashes}`)
-                    return `${parts[0]} ${nationalNumberWithDashes}`;
+                    const countryCodePrefix = `+${phoneNumber.countryCallingCode}`;
+
+                    let nationalNumberFormatted = phoneNumber.format('NATIONAL');
+                    nationalNumberFormatted = nationalNumberFormatted.replace(/[\(\)]/g, '').trim();
+                    nationalNumberFormatted = nationalNumberFormatted.replace(/\s/g, '-');
+
+                    return `${countryCodePrefix} ${nationalNumberFormatted}${extension}`;
+
+                    // const parts = coreFormatted.split(' ', 2);
+                    // console.log(`parts: ${parts}`)
+                    // const nationalNumberWithDashes = parts[1].replace(/\s/g, '-');
+                    // console.log(`nationalNumberWithDashes: ${nationalNumberWithDashes}`)
+                    // return `${parts[0]} ${nationalNumberWithDashes}`;
                 } else {
                     return coreFormatted + extension;
                 }
