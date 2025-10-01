@@ -48,14 +48,57 @@ const convertToHtml = (diffSegments) => {
 };
 
 /**
+ * Simple LCS diff for two strings (used for separators).
+ * @param {string} original
+ * @param {string} suggested
+ * @returns {{original: {value: string, removed?: boolean, added?: boolean}[], suggested: {value: string, removed?: boolean, added?: boolean}[]}}
+ */
+const simpleLCSDiff = (original, suggested) => {
+    // A simplified LCS calculation (only for characters, no need for common digits tracking)
+    const dp = Array(original.length + 1).fill(0).map(() => Array(suggested.length + 1).fill(0));
+    for (let i = 1; i <= original.length; i++) {
+        for (let j = 1; j <= suggested.length; j++) {
+            if (original[i - 1] === suggested[j - 1]) {
+                dp[i][j] = dp[i - 1][j - 1] + 1;
+            } else {
+                dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+            }
+        }
+    }
+
+    const originalDiff = [];
+    const suggestedDiff = [];
+    let i = original.length;
+    let j = suggested.length;
+
+    // Backtrack to build the diff
+    while (i > 0 || j > 0) {
+        if (i > 0 && j > 0 && original[i - 1] === suggested[j - 1]) {
+            // Unchanged
+            originalDiff.unshift({ value: original[i - 1] });
+            suggestedDiff.unshift({ value: suggested[j - 1] });
+            i--;
+            j--;
+        } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
+            // Added to suggested (S)
+            suggestedDiff.unshift({ value: suggested[j - 1], added: true });
+            j--;
+        } else if (i > 0 && (j === 0 || dp[i - 1][j] > dp[i][j - 1])) {
+            // Removed from original (O)
+            originalDiff.unshift({ value: original[i - 1], removed: true });
+            i--;
+        }
+    }
+    
+    return { original: originalDiff, suggested: suggestedDiff };
+};
+
+/**
  * Compares two single phone numbers (original and suggested) and produces two arrays
  * of diff segments, preserving the original formatting while highlighting changes.
  *
- * The logic is based on digit alignment:
- * 1. Determine which digits were added/removed/unchanged based on normalized strings.
- * 2. Map this status back to the formatted strings, handling formatting characters:
- * - Formatting near added/removed digits is also marked added/removed.
- * - Formatting near unchanged digits is marked added/removed only if it's new/missing.
+ * The logic uses Longest Common Subsequence (LCS) on the normalized (digit-only) strings
+ * to guide the alignment of the formatted strings.
  *
  * @param {string} original - The original formatted phone number.
  * @param {string} suggested - The suggested formatted phone number.
@@ -68,13 +111,8 @@ const diffPhoneNumbers = (original, suggested) => {
     let originalDiff = [];
     let suggestedDiff = [];
 
-    // Pointers for normalized strings
-    let oNormIdx = 0;
-    let sNormIdx = 0;
-
-    // Pointers for formatted strings
-    let oFmtIdx = 0;
-    let sFmtIdx = 0;
+    // Helper to check if a char is a digit
+    const isDigit = (char) => /\d/.test(char);
 
     // A simple digit-based LCS to determine the common *digits*
     const getCommonDigits = (oNorm, sNorm) => {
@@ -108,72 +146,100 @@ const diffPhoneNumbers = (original, suggested) => {
 
     const commonDigits = getCommonDigits(normOriginal, normSuggested);
     
-    // Pointers for the common digit sequence
-    let commonPtr = 0;
+    let oFmtIdx = 0;
+    let sFmtIdx = 0;
+    let oNormIdx = 0; // Tracks position in normOriginal
+    let sNormIdx = 0; // Tracks position in normSuggested
+    let commonPtr = 0; // Tracks position in commonDigits
 
     while (oFmtIdx < original.length || sFmtIdx < suggested.length) {
         const oChar = original[oFmtIdx];
         const sChar = suggested[sFmtIdx];
-        const oIsDigit = oFmtIdx < original.length && /\d/.test(oChar);
-        const sIsDigit = sFmtIdx < suggested.length && /\d/.test(sChar);
+        const oIsDigit = oFmtIdx < original.length && isDigit(oChar);
+        const sIsDigit = sFmtIdx < suggested.length && isDigit(sChar);
+
+        let consumed = false;
+        
+        // Determine if the current formatted digit is the next one expected in the LCS path
+        const oIsNextCommonDigit = oIsDigit && commonPtr < commonDigits.length && oChar === commonDigits[commonPtr] && oChar === normOriginal[oNormIdx];
+        const sIsNextCommonDigit = sIsDigit && commonPtr < commonDigits.length && sChar === commonDigits[commonPtr] && sChar === normSuggested[sNormIdx];
 
         // --- 1. Aligned Common Digits ---
-        if (oIsDigit && sIsDigit && commonPtr < commonDigits.length && oChar === commonDigits[commonPtr] && sChar === commonDigits[commonPtr]) {
-            // Unchanged digit
+        if (oIsNextCommonDigit && sIsNextCommonDigit) {
             originalDiff.push({ value: oChar });
             suggestedDiff.push({ value: sChar });
-            oNormIdx++;
-            sNormIdx++;
+            commonPtr++;
+            oNormIdx++; 
+            sNormIdx++; 
             oFmtIdx++;
             sFmtIdx++;
-            commonPtr++;
-            continue;
+            consumed = true;
         }
 
-        // --- 2. Consume Original Side (Removed/Formatting changes) ---
-        if (oFmtIdx < original.length) {
-            if (oIsDigit) {
-                // Digit is not part of the common sequence (must be a removed prefix/suffix digit)
-                originalDiff.push({ value: oChar, removed: true });
-                oNormIdx++;
-                oFmtIdx++;
-                continue;
-            } else {
-                // Formatting in O
-                // Check if it is aligned/unchanged formatting (e.g., spaces in Test 2)
-                if (sFmtIdx < suggested.length && sChar === oChar && !sIsDigit && commonPtr === commonDigits.length) {
-                    // Aligned formatting in the tail end (or prefix if commonPtr is 0 and sFmtIdx < suggested.length)
-                    originalDiff.push({ value: oChar });
-                    suggestedDiff.push({ value: sChar });
-                    oFmtIdx++;
-                    sFmtIdx++;
-                    continue;
-                } else {
-                    // Non-aligned or mismatch formatting (Test 1 spaces, Test 2 '(', ')')
-                    originalDiff.push({ value: oChar, removed: true });
-                    oFmtIdx++;
-                    continue;
-                }
-            }
+        // --- 2. Aligned Identical Formatting ---
+        else if (oFmtIdx < original.length && sFmtIdx < suggested.length && !oIsDigit && !sIsDigit && oChar === sChar) {
+            originalDiff.push({ value: oChar });
+            suggestedDiff.push({ value: sChar });
+            oFmtIdx++;
+            sFmtIdx++;
+            consumed = true;
         }
-
-        // --- 3. Consume Suggested Side (Added changes) ---
-        if (sFmtIdx < suggested.length) {
-            if (sIsDigit) {
-                // Digit is not part of the common sequence (must be an added prefix/suffix digit)
-                suggestedDiff.push({ value: sChar, added: true });
-                sNormIdx++;
-                sFmtIdx++;
-                continue;
+        
+        // --- 3. Independent Consumption (Removed/Added blocks) ---
+        else {
+            
+            // Priority O: Consume O if it has content that is NOT common, OR S is waiting on its common digit.
+            const oShouldConsume = oFmtIdx < original.length && (
+                sFmtIdx >= suggested.length || // S exhausted
+                (oIsDigit && !oIsNextCommonDigit) || // O is a digit that must be removed
+                (oIsDigit && commonPtr >= commonDigits.length) || // O is digit after LCS is exhausted
+                (!oIsDigit && sIsNextCommonDigit) // O is formatting preceding S's common digit
+            );
+            
+            // Priority S: Consume S if it has content that is NOT common, OR O is waiting on its common digit.
+            const sShouldConsume = sFmtIdx < suggested.length && (
+                oFmtIdx >= original.length || // O exhausted
+                (sIsDigit && !sIsNextCommonDigit) || // S is a digit that must be added
+                (sIsDigit && commonPtr >= commonDigits.length) || // S is digit after LCS is exhausted
+                (!sIsDigit && oIsNextCommonDigit) // S is formatting preceding O's common digit
+            );
+            
+            if (oShouldConsume && !sShouldConsume) {
+                 originalDiff.push({ value: oChar, removed: true });
+                 if (oIsDigit) oNormIdx++;
+                 oFmtIdx++;
+                 consumed = true;
+            } else if (sShouldConsume && !oShouldConsume) {
+                 suggestedDiff.push({ value: sChar, added: true });
+                 if (sIsDigit) sNormIdx++;
+                 sFmtIdx++;
+                 consumed = true;
+            } else if (oFmtIdx < original.length && sFmtIdx < suggested.length && !oIsNextCommonDigit && !sIsNextCommonDigit) {
+                 // Fallback for character mismatch (O: 'a', S: 'b') where neither is the next common digit.
+                 originalDiff.push({ value: oChar, removed: true });
+                 suggestedDiff.push({ value: sChar, added: true });
+                 if (oIsDigit) oNormIdx++;
+                 if (sIsDigit) sNormIdx++;
+                 oFmtIdx++;
+                 sFmtIdx++;
+                 consumed = true;
             } else {
-                // Formatting in S (must be added formatting)
-                suggestedDiff.push({ value: sChar, added: true });
-                sFmtIdx++;
-                continue;
+                 // Final end-of-string consumption (catches remaining characters)
+                 if (oFmtIdx < original.length) {
+                     originalDiff.push({ value: original[oFmtIdx], removed: true });
+                     if (isDigit(original[oFmtIdx])) oNormIdx++;
+                     oFmtIdx++;
+                     consumed = true;
+                 } else if (sFmtIdx < suggested.length) {
+                     suggestedDiff.push({ value: suggested[sFmtIdx], added: true });
+                     if (isDigit(suggested[sFmtIdx])) sNormIdx++;
+                     sFmtIdx++;
+                     consumed = true;
+                 }
             }
         }
     }
-
+    
     return {
         originalDiff: originalDiff,
         suggestedDiff: suggestedDiff,
@@ -224,36 +290,19 @@ const getDiffHtml = (original, suggested) => {
             } else if (oSeg.length > 0) {
                 // Number removed
                 oldDiffHtml += convertToHtml(oSeg.split('').map(char => ({ value: char, removed: true })));
+                newDiffHtml += convertToHtml(sSeg.split('').map(char => ({ value: char, added: true }))); // sSeg must be empty string in this branch but added for safety
             } else if (sSeg.length > 0) {
                 // Number added
+                oldDiffHtml += convertToHtml(oSeg.split('').map(char => ({ value: char, removed: true }))); // oSeg must be empty string in this branch but added for safety
                 newDiffHtml += convertToHtml(sSeg.split('').map(char => ({ value: char, added: true })));
             }
         } else {
             // --- SEPARATOR DIFF ---
-            // Perform a simple character-by-character diff (LCS approximation) for the separator
-            let oTempHtml = '';
-            let sTempHtml = '';
-            let ptr = 0;
-            const minLen = Math.min(oSeg.length, sSeg.length);
-
-            // Aligned characters are unchanged
-            while (ptr < minLen && oSeg[ptr] === sSeg[ptr]) {
-                oTempHtml += convertToHtml([{ value: oSeg[ptr] }]);
-                sTempHtml += convertToHtml([{ value: sSeg[ptr] }]);
-                ptr++;
+            if (oSeg.length > 0 || sSeg.length > 0) {
+                const separatorDiffResult = simpleLCSDiff(oSeg, sSeg);
+                oldDiffHtml += convertToHtml(separatorDiffResult.original);
+                newDiffHtml += convertToHtml(separatorDiffResult.suggested);
             }
-
-            // Remaining O is removed
-            for (let j = ptr; j < oSeg.length; j++) {
-                oTempHtml += convertToHtml([{ value: oSeg[j], removed: true }]);
-            }
-            // Remaining S is added
-            for (let j = ptr; j < sSeg.length; j++) {
-                sTempHtml += convertToHtml([{ value: sSeg[j], added: true }]);
-            }
-
-            oldDiffHtml += oTempHtml;
-            newDiffHtml += sTempHtml;
         }
     }
 
