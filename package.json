@@ -20,7 +20,7 @@
     "autoprefixer": "^10.4.19",
     "html-minifier-terser": "^7.0.0",
     "terser": "^5.0.0",
-    "diff-match-patch": "^2.0.2"
+    "diff-match-patch": "^1.0.5"
   },
   "author": "Your Name",
   "license": "GNU GPL v3.0"
