@@ -127,7 +127,7 @@ function diffPhoneNumbers(oldNumber, newNumber) {
  * @param {string} newText The suggested full string.
  * @returns {{oldDiff: string, newDiff: string}}
  */
-export function getDiffHtml(oldText, newText) {
+function getDiffHtml(oldText, newText) {
     const oldParts = splitPhoneNumbers(oldText);
     const newParts = splitPhoneNumbers(newText);
 
