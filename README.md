@@ -54,6 +54,10 @@ To add a new country to the report, you need to modify the `COUNTRIES` object in
 
 2.  **Add translations** (optional): If the country uses a language not already present, add a new JSON file in the `locales/` directory (e.g., `de-DE.json` for German).
 
+## Contributing
+
+Contributions are welcome! If you have suggestions for improvements or find any issues, please feel free to open an issue or submit a pull request.
+
 ## License
 
 This project is licensed under the GNU GPL v3.0. See the [LICENSE](LICENSE) file for details.
