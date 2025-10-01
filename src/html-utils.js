@@ -873,7 +873,7 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
                         li.innerHTML = \`
                             <a href="\${safeCountryName}/\${safeDivisionName}.html" class="list-item-main-link">
                                 <div class="color-indicator" data-percentage="\${invalidPercentage}"></div>
-                                <div class="list-item-content">
+                                <div class="list-item-content-wrapper">
                                     <h3 class="list-item-sub-title">\${division.name}</h3>
                                     <p class="country-description">\${itemStatsLine}</p>
                                 </div>
