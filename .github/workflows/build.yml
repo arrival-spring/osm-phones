@@ -61,14 +61,8 @@ jobs:
           node src/main.js
           npm run build:css
 
-      - name: Install and Run HTML Minifier
-        run: |
-          # 1. Install html-minifier-terser for HTML, inline CSS, and inline JS minification
-          npm install html-minifier-terser
-          
-          # 2. Run the minifier on all HTML files in the public directory
-          npx html-minifier-terser public/**/*.html --output public/ --collapse-whitespace --remove-comments --minify-css true --minify-js true
-        shell: bash
+      - name: Minify HTML, CSS, and JS in public folder
+        uses: dra1ex/minify-action@v1.0.3
 
       - name: Check Build Type
         run: echo "The build type is $BUILD_TYPE"
