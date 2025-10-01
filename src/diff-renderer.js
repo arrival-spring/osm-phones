@@ -1,5 +1,16 @@
 const { diff_match_patch } = require('diff-match-patch');
 
+// Define the regex for separators that are definitively "bad" and should trigger a fix report.
+const BAD_SEPARATOR_REGEX = /(\s*,\s*)|(\s*\/\s*)|(\s+or\s+)|(\s+and\s+)/gi;
+
+// This regex is used for splitting by data-processor.js. It catches ALL valid and invalid separators:
+// Raw semicolon (';'), semicolon with optional space ('; ?'), comma, slash, 'or' or 'and'.
+const UNIVERSAL_SPLIT_REGEX = /(?:; ?)|(?:\s*,\s*)|(?:\s*\/\s*)|(?:\s+or\s+)|(?:\s+and\s+)/gi;
+
+// When used in diff, the groups need to be capturing
+const UNIVERSAL_SPLIT_CAPTURE_REGEX = /(; ?)|(\s*,\s*)|(\s*\/\s*)|(\s+or\s+)|(\s+and\s+)/gi;
+
+
 // Helper function to escape HTML special characters
 function escapeHtml(str) {
     if (!str) return '';
@@ -41,22 +52,20 @@ function consolidatePlusSigns(parts) {
 
 /**
  * Splits a phone number string into segments (numbers and separators).
+ * Uses UNIVERSAL_SPLIT_CAPTURE_REGEX to keep the delimiters.
  * @param {string} phoneString The full string (e.g., 'num1; num2').
  * @returns {Array<string>} Segments including numbers and separators.
  */
 function splitPhoneNumbers(phoneString) {
     if (!phoneString) return [];
-    // Regex splits by semicolon or slash surrounded by optional spaces, and keeps the delimiter
-    const tokens = phoneString.split(/([;]|\s\/\s)/g).filter(t => t !== '');
+    // Use the provided capturing regex for splitting to keep delimiters
+    const tokens = phoneString.split(UNIVERSAL_SPLIT_CAPTURE_REGEX).filter(t => t !== undefined && t !== '');
     return consolidatePlusSigns(tokens);
 }
 
 /**
- * Performs a character-level diff on two phone number strings.
- *
- * NOTE: This function now returns the raw parts arrays (originalDiff, suggestedDiff) 
- * as objects with 'value' and 'removed/added' properties to satisfy test assertions 
- * that use the .map() method.
+ * Performs a character-level diff on two phone number strings, applying a heuristic
+ * to correctly classify formatting changes (spaces/non-digits) as removed/added.
  *
  * @param {string} oldNumber The original phone number string.
  * @param {string} newNumber The suggested phone number string.
@@ -67,13 +76,12 @@ function diffPhoneNumbers(oldNumber, newNumber) {
     let diff = dmp.diff_main(oldNumber, newNumber);
     dmp.diff_cleanupSemantic(diff);
 
-    // --- FIX: Force Character-by-Character Breakdown ---
-    // The tests expect a character-level diff, which diff_match_patch doesn't guarantee.
-    // We break down any segment with length > 1 into individual character segments.
+    // --- FIX: Force Character-by-Character Breakdown of UNCHANGED segments ---
+    // This allows the heuristic to correctly isolate single formatting characters.
     const granularDiff = [];
     diff.forEach(([type, text]) => {
-        if (text.length > 1) {
-            // Break multi-character segments into single-character segments
+        // Only break down type 0 (unchanged) segments with length > 1
+        if (type === 0 && text.length > 1) { 
             text.split('').forEach(char => {
                 granularDiff.push([type, char]);
             });
@@ -82,49 +90,51 @@ function diffPhoneNumbers(oldNumber, newNumber) {
         }
     });
     diff = granularDiff;
-    // ---------------------------------------------------
+    // -----------------------------------------------------------------------
 
-    let oldDiffHtml = '';
-    let originalDiff = []; // Array of parts for the original number (for tests that expect .map)
-    let suggestedDiff = []; // Array of parts for the new number (for tests that expect .map)
+    let originalDiff = []; 
+    let suggestedDiff = []; 
 
     diff.forEach(part => {
         const type = part[0]; // -1: removed, 0: unchanged, 1: added
         const text = part[1];
-        const escapedText = escapeHtml(text);
+        
+        // Check for non-digit/non-plus character. Digits and '+' are considered part of the number.
+        const isFormattingChar = !text.match(/[\d+]/) && text.length === 1; 
 
         if (type === 1) { // Added (new number)
             suggestedDiff.push({ value: text, added: true });
+
         } else if (type === 0) { // Unchanged (both)
-            suggestedDiff.push({ value: text, added: false });
-            originalDiff.push({ value: text, removed: false });
-            oldDiffHtml += `<span class="diff-unchanged">${escapedText}</span>`;
+            if (isFormattingChar) {
+                // HEURISTIC: Formatting characters (like spaces, brackets) that align should be treated as
+                // removed in the old number and added in the new number to ensure full highlighting.
+                originalDiff.push({ value: text, removed: true }); // Original: REMOVED
+                suggestedDiff.push({ value: text, added: true });   // Suggested: ADDED
+            } else {
+                // Digits or '+' are truly unchanged
+                originalDiff.push({ value: text, removed: false });
+                suggestedDiff.push({ value: text, added: false });
+            }
         } else if (type === -1) { // Removed (old number)
             originalDiff.push({ value: text, removed: true });
-            oldDiffHtml += `<span class="diff-removed">${escapedText}</span>`;
         }
     });
 
-    // --- FIX: Heuristic for Formatting Spaces (Applied to suggestedDiff) ---
-    // If a space is marked UNCHANGED in the new number's diff, force it to ADDED.
-    // This is because formatting changes are always considered additions in the new string.
-    for (let i = 0; i < suggestedDiff.length; i++) {
-        const current = suggestedDiff[i];
-        if (current.value === ' ' && current.added === false) {
-            suggestedDiff[i].added = true;
-        }
-    }
+    // Final HTML generation from the corrected parts arrays
+    const oldDiffHtml = originalDiff.map(p => 
+        `<span class="diff-${p.removed ? 'removed' : 'unchanged'}">${escapeHtml(p.value)}</span>`
+    ).join('');
     
-    // Rebuild the final newDiffHtml from the corrected suggestedDiff array
     const newDiffHtml = suggestedDiff.map(p => 
         `<span class="diff-${p.added ? 'added' : 'unchanged'}">${escapeHtml(p.value)}</span>`
     ).join('');
 
     return {
-        originalDiff: originalDiff, // ARRAY OF PARTS for test .map() calls
-        oldDiff: oldDiffHtml,       // HTML STRING for getDiffHtml concatenation
-        newDiff: newDiffHtml,       // HTML STRING
-        suggestedDiff: suggestedDiff, // ARRAY OF PARTS for test .map() calls
+        originalDiff: originalDiff, 
+        oldDiff: oldDiffHtml,       
+        newDiff: newDiffHtml,       
+        suggestedDiff: suggestedDiff, 
     };
 }
 
