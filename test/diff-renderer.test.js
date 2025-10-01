@@ -58,6 +58,28 @@ const mockDiffChars = (a, b) => {
     }
     
     // Fallback: If any other case is encountered, fail cleanly
+    // If the input strings for diffChars are the same, or if they are just separators,
+    // we need a sensible mock result.
+    if (a === ';' && b === '; ') {
+        return [{ value: ';'}, { added: true, value: ' ' }];
+    }
+    if (a === '+32 058 515 592' && b === '+32 58 51 55 92') {
+        // Mock result for visual diff that shows '+' is unchanged
+        return [
+            { value: '+'}, // Unchanged formatting
+            { value: '32 058 515 592', removed: true }, // Placeholder, semantic diff will fix digits
+            { value: '32 58 51 55 92', added: true } // Placeholder, semantic diff will fix digits
+        ];
+    }
+    if (a === '+32 0473 792 951' && b === '+32 473 79 29 51') {
+        // Mock result for visual diff that shows '+' is unchanged
+        return [
+            { value: '+'}, // Unchanged formatting
+            { value: '32 0473 792 951', removed: true }, // Placeholder, semantic diff will fix digits
+            { value: '32 473 79 29 51', added: true } // Placeholder, semantic diff will fix digits
+        ];
+    }
+
     throw new Error(`MockDiffChars not implemented for A: ${a} and B: ${b}`);
 };
 
@@ -95,6 +117,7 @@ describe('diffPhoneNumbers (Single Number Diff Logic)', () => {
         const original = '0471 124 380';
         const suggested = '+32 471 12 43 80';
         
+        // We pass the mock since diffPhoneNumbers is now using an imported diffChars
         const result = diffPhoneNumbers(original, suggested, mockDiffChars);
 
         // 1. Check Original Diff: '0' and all spaces removed. Digits unchanged.
@@ -120,19 +143,30 @@ describe('diffPhoneNumbers (Single Number Diff Logic)', () => {
                     { value: '12345678' }
                 ];
             }
+            // For the visual diff of original vs suggested, '+' should be unchanged.
+            if (a === '+44 (0) 1234 5678' && b === '+44 1234 5678') {
+                 return [
+                    { value: '+' }, // Common non-digit
+                    { value: '44' }, 
+                    { removed: ' (0)' }, // Removed non-digits and digit
+                    { added: ' ' }, // Added non-digit
+                    { value: '1234 5678' }
+                 ];
+            }
             return mockDiffChars(a, b);
         };
         
+        // We pass the mock since diffPhoneNumbers is now using an imported diffChars
         const result = diffPhoneNumbers(original, suggested, mockComplexDiff);
 
-        // The leading '+' is a non-digit character in the original string, so it must be marked REMOVED.
+        // The leading '+' is now UNCHANGED, because the new diffPhoneNumbers detects common formatting.
         const expectedOriginalHtml = 
-            '<span class="diff-removed">+</span><span class="diff-unchanged">4</span><span class="diff-unchanged">4</span><span class="diff-removed"> </span><span class="diff-removed">(</span><span class="diff-removed">0</span><span class="diff-removed">)</span><span class="diff-removed"> </span><span class="diff-unchanged">1</span><span class="diff-unchanged">2</span><span class="diff-unchanged">3</span><span class="diff-unchanged">4</span><span class="diff-removed"> </span><span class="diff-unchanged">5</span><span class="diff-unchanged">6</span><span class="diff-unchanged">7</span><span class="diff-unchanged">8</span>';
+            '<span class="diff-unchanged">+</span><span class="diff-unchanged">4</span><span class="diff-unchanged">4</span><span class="diff-removed"> </span><span class="diff-removed">(</span><span class="diff-removed">0</span><span class="diff-removed">)</span><span class="diff-removed"> </span><span class="diff-unchanged">1</span><span class="diff-unchanged">2</span><span class="diff-unchanged">3</span><span class="diff-unchanged">4</span><span class="diff-removed"> </span><span class="diff-unchanged">5</span><span class="diff-unchanged">6</span><span class="diff-unchanged">7</span><span class="diff-unchanged">8</span>';
         expect(result.originalDiff.map(p => `<span class="diff-${p.removed ? 'removed' : 'unchanged'}">${p.value}</span>`).join('')).toBe(expectedOriginalHtml);
 
-        // Suggested: '+' is non-digit formatting and should be marked ADDED.
+        // Suggested: '+' is UNCHANGED, and the space is ADDED.
         const expectedSuggestedHtml = 
-            '<span class="diff-added">+</span><span class="diff-unchanged">4</span><span class="diff-unchanged">4</span><span class="diff-added"> </span><span class="diff-unchanged">1</span><span class="diff-unchanged">2</span><span class="diff-unchanged">3</span><span class="diff-unchanged">4</span><span class="diff-added"> </span><span class="diff-unchanged">5</span><span class="diff-unchanged">6</span><span class="diff-unchanged">7</span><span class="diff-unchanged">8</span>';
+            '<span class="diff-unchanged">+</span><span class="diff-unchanged">4</span><span class="diff-unchanged">4</span><span class="diff-added"> </span><span class="diff-unchanged">1</span><span class="diff-unchanged">2</span><span class="diff-unchanged">3</span><span class="diff-unchanged">4</span><span class="diff-added"> </span><span class="diff-unchanged">5</span><span class="diff-unchanged">6</span><span class="diff-unchanged">7</span><span class="diff-unchanged">8</span>';
         expect(result.suggestedDiff.map(p => `<span class="diff-${p.added ? 'added' : 'unchanged'}">${p.value}</span>`).join('')).toBe(expectedSuggestedHtml);
     });
 });
@@ -148,17 +182,25 @@ describe('getDiffHtml (Multi-Number Diff Logic)', () => {
         const result = getDiffHtml(original, suggested, mockDiffChars);
         
         // --- Original HTML (Removals) ---
-        // Original '+' and '0' marked removed. Separator ';' marked removed.
-        const expectedOriginalN1 = '<span class="diff-removed">+</span><span class="diff-unchanged">3</span><span class="diff-unchanged">2</span><span class="diff-removed"> </span><span class="diff-removed">0</span><span class="diff-unchanged">5</span><span class="diff-unchanged">8</span><span class="diff-removed"> </span><span class="diff-unchanged">5</span><span class="diff-unchanged">1</span><span class="diff-unchanged">5</span><span class="diff-removed"> </span><span class="diff-unchanged">5</span><span class="diff-unchanged">9</span><span class="diff-unchanged">2</span>';
+        // Original N1 '+' is UNCHANGED due to the new diffPhoneNumbers logic.
+        const expectedOriginalN1 = '<span class="diff-unchanged">+</span><span class="diff-unchanged">3</span><span class="diff-unchanged">2</span><span class="diff-removed"> </span><span class="diff-removed">0</span><span class="diff-unchanged">5</span><span class="diff-unchanged">8</span><span class="diff-removed"> </span><span class="diff-unchanged">5</span><span class="diff-unchanged">1</span><span class="diff-unchanged">5</span><span class="diff-removed"> </span><span class="diff-unchanged">5</span><span class="diff-unchanged">9</span><span class="diff-unchanged">2</span>';
+        
+        // Separator is now UNCHANGED, matching the user's requested logic.
         const expectedOriginalSeparator = '<span class="diff-unchanged">;</span>';
+        
+        // Original N2 '+' is UNCHANGED.
         const expectedOriginalN2 = '<span class="diff-unchanged">+</span><span class="diff-unchanged">3</span><span class="diff-unchanged">2</span><span class="diff-removed"> </span><span class="diff-removed">0</span><span class="diff-unchanged">4</span><span class="diff-unchanged">7</span><span class="diff-unchanged">3</span><span class="diff-removed"> </span><span class="diff-unchanged">7</span><span class="diff-unchanged">9</span><span class="diff-unchanged">2</span><span class="diff-removed"> </span><span class="diff-unchanged">9</span><span class="diff-unchanged">5</span><span class="diff-unchanged">1</span>';
         expect(result.oldDiff).toBe(expectedOriginalN1 + expectedOriginalSeparator + expectedOriginalN2);
 
 
         // --- Suggested HTML (Additions) ---
-        // Suggested '+' is non-digit formatting and should be marked ADDED.
-        const expectedSuggestedN1 = '<span class="diff-added">+</span><span class="diff-unchanged">3</span><span class="diff-unchanged">2</span><span class="diff-added"> </span><span class="diff-unchanged">5</span><span class="diff-unchanged">8</span><span class="diff-added"> </span><span class="diff-unchanged">5</span><span class="diff-unchanged">1</span><span class="diff-added"> </span><span class="diff-unchanged">5</span><span class="diff-unchanged">5</span><span class="diff-added"> </span><span class="diff-unchanged">9</span><span class="diff-unchanged">2</span>';
+        // Suggested N1 '+' is UNCHANGED.
+        const expectedSuggestedN1 = '<span class="diff-unchanged">+</span><span class="diff-unchanged">3</span><span class="diff-unchanged">2</span><span class="diff-added"> </span><span class="diff-unchanged">5</span><span class="diff-unchanged">8</span><span class="diff-added"> </span><span class="diff-unchanged">5</span><span class="diff-unchanged">1</span><span class="diff-added"> </span><span class="diff-unchanged">5</span><span class="diff-unchanged">5</span><span class="diff-added"> </span><span class="diff-unchanged">9</span><span class="diff-unchanged">2</span>';
+        
+        // Separator is UNCHANGED ';' and ADDED ' '.
         const expectedSuggestedSeparator = '<span class="diff-unchanged">;</span><span class="diff-added"> </span>';
+        
+        // Suggested N2 '+' is UNCHANGED.
         const expectedSuggestedN2 = '<span class="diff-unchanged">+</span><span class="diff-unchanged">3</span><span class="diff-unchanged">2</span><span class="diff-added"> </span><span class="diff-unchanged">4</span><span class="diff-unchanged">7</span><span class="diff-unchanged">3</span><span class="diff-added"> </span><span class="diff-unchanged">7</span><span class="diff-unchanged">9</span><span class="diff-added"> </span><span class="diff-unchanged">2</span><span class="diff-unchanged">9</span><span class="diff-added"> </span><span class="diff-unchanged">5</span><span class="diff-unchanged">1</span>';
         expect(result.newDiff).toBe(expectedSuggestedN1 + expectedSuggestedSeparator + expectedSuggestedN2);
     });
