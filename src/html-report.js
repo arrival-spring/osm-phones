@@ -3,30 +3,34 @@ const path = require('path');
 const { PUBLIC_DIR, OSM_EDITORS, ALL_EDITOR_IDS, DEFAULT_EDITORS_DESKTOP, DEFAULT_EDITORS_MOBILE } = require('./constants');
 const { safeName, getFeatureTypeName, isDisused } = require('./data-processor');
 const { translate } = require('./i18n');
-const {favicon, themeButton, createFooter, createStatsBox} = require('./html-utils')
+const { favicon, themeButton, createFooter, createStatsBox } = require('./html-utils')
 
 function createDetailsGrid(item, locale) {
-    let detailsGrid = '';
-    for (const key in item.invalidNumbers) {
-        detailsGrid += `
-        <div class="list-item-details-grid">
-            <div class="grid-col-span-1">
-                <span class="list-item-phone-label">${key}</span>
-            </div>
-            <div class="list-item-phone-value-container">
-                <span>${item.invalidNumbers[key]}</span>
-            </div>
-            ${item.suggestedFixes[key] ? `
+    const detailsGrid = Object.keys(item.invalidNumbers).map(key => {
+        // Check if a suggested fix exists for the current key
+        const suggestedFixHtml = item.suggestedFixes[key] ? `
             <div class="grid-col-span-1">
                 <span class="list-item-phone-label">${translate('suggestedFix', locale)}</span>
             </div>
             <div class="list-item-phone-value-container">
                 <span>${item.suggestedFixes[key]}</span>
             </div>
-            ` : ''}
-        </div>
-        `
-    }
+        ` : '';
+
+        // Return the HTML for one set of phone number details
+        return `
+            <div class="list-item-details-grid">
+                <div class="grid-col-span-1">
+                    <span class="list-item-phone-label">${key}</span>
+                </div>
+                <div class="list-item-phone-value-container">
+                    <span>${item.invalidNumbers[key]}</span>
+                </div>
+                ${suggestedFixHtml}
+            </div>
+        `;
+    }).join('<hr class="phone-separator-line">');
+
     return detailsGrid;
 }
 
@@ -51,7 +55,7 @@ function createListItem(item, locale) {
         return `${encodedKey}=${encodedValue}`;
     });
 
-    const addtagsValue = encodedTags.join('|'); 
+    const addtagsValue = encodedTags.join('|');
 
     const josmFixUrl = item.autoFixable ?
         `${josmEditUrl}&addtags=${addtagsValue}` :
@@ -166,9 +170,9 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
 
     const fixableAndInvalidSectionContent =
         (anyFixable && anyInvalid) ? fixableSectionAndHeader + invalidSectionAndHeader :
-        anyFixable ? fixableSectionAndHeader :
-        anyInvalid ? invalidSectionAndHeader :
-        noInvalidContent
+            anyFixable ? fixableSectionAndHeader :
+                anyInvalid ? invalidSectionAndHeader :
+                    noInvalidContent
 
     // Dynamically create the list of all editor IDs for the client-side script
     const allEditorIdsClient = JSON.stringify(ALL_EDITOR_IDS);
