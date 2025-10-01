@@ -106,6 +106,8 @@ function diffPhoneNumbers(original, suggested) {
             originalDiff.push({ value: char, removed: false, added: false });
             suggestedRemainder = suggestedRemainder.slice(1)
         } else {
+            console.log(`Original remainder: ${originalRemainder}`)
+            console.log(`Suggested remainder: ${suggestedRemainder}`)
             // Non-digit (formatting like ( ), etc.). Mark as removed.
             originalDiff.push({ value: char, removed: true });
         }
@@ -145,10 +147,12 @@ function diffPhoneNumbers(original, suggested) {
                 // Digit is NEW (e.g., prefix '32' or a replaced digit). ADDED.
                 suggestedDiff.push({ value: char, added: true });
             }
-        } else if (char === ' ' && original[i] === ' ') {
+        } else if (char === ' ' && originalRemainderNew[i] === ' ') {
             suggestedDiff.push({ value: char, removed: false, added: false });
             originalRemainderNew = originalRemainderNew.slice(1);
         } else {
+            console.log(`Original remainder: ${originalRemainderNew}`)
+            console.log(`Suggested remainder: ${suggestedRemainderNew}`)
             // Non-digit, non-space. I don't know why we'd get here. ADDED formatting.
             suggestedDiff.push({ value: char, added: true });
         }
