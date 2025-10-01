@@ -140,10 +140,10 @@ function checkExclusions(phoneNumber, countryCode, osmTags) {
  * @param {string} numberStr - The phone number string to validate.
  * @param {string} countryCode - The country code for validation.
  * @param {map} osmTags - All the OSM tags of the object, to check against exclusions
- * @returns {{isInvalid: boolean, suggestedFix: string, autoFixable: boolean}}
+ * @returns {{isInvalid: boolean, suggestedFix: string|null, autoFixable: boolean}}
  */
 function processSingleNumber(numberStr, countryCode, osmTags = {}) {
-    let suggestedFix = 'Initial: No fix available';
+    let suggestedFix = null;
     let autoFixable = true;
     let isInvalid = false;
 
@@ -204,13 +204,14 @@ function processSingleNumber(numberStr, countryCode, osmTags = {}) {
         } else {
             // The number is fundamentally invalid (e.g., too few digits)
             isInvalid = true;
+            suggestedFix = null;
             autoFixable = false;
         }
     } catch (e) {
         // Parsing failed due to an exception (unfixable invalid number)
         isInvalid = true;
         autoFixable = false;
-        suggestedFix = 'Error: No fix available';
+        suggestedFix = null;
     }
 
     return { isInvalid, suggestedFix, autoFixable };
@@ -332,8 +333,11 @@ function validateNumbers(elements, countryCode) {
                 const validationResult = validateSingleTag(phoneTagValue, countryCode, tags);
                 
                 const isInvalid = validationResult.isInvalid;
-                const suggestedFix = validationResult.suggestedNumbersList.join('; ')
                 const autoFixable = validationResult.isAutoFixable;
+                // Only give a suggested fix if it is fixable
+                const suggestedFix = (!isInvalid && autoFixable)
+                    ? validationResult.suggestedNumbersList.join('; ')
+                    : null;
                 totalNumbers += validationResult.numberOfValues;
 
                 if (isInvalid) {        

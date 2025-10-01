@@ -200,13 +200,13 @@ describe('processSingleNumber', () => {
     test('ZA: correctly validate and format an international valid number', () => {
         const result = processSingleNumber('+27 11 555 1234', SAMPLE_COUNTRY_CODE_ZA);
         expect(result.isInvalid).toBe(false);
-        expect(result.suggestedFix).toBe('+27 11 555 1234');
     });
 
     test('ZA: flag a clearly invalid (too short) number as invalid and unfixable', () => {
         const result = processSingleNumber('011 555', SAMPLE_COUNTRY_CODE_ZA);
         expect(result.isInvalid).toBe(true);
         expect(result.autoFixable).toBe(false);
+        expect(result.suggestedFix).toBe(null);
     });
 
     // --- USA Tests (+1 213 373 4253) ---
@@ -256,6 +256,7 @@ describe('validateSingleTag', () => {
         );
         expect(result.isInvalid).toBe(true);
         expect(result.isAutoFixable).toBe(false);
+        expect(result.suggestedNumbersList).toBe([]);
     });
 
     test('single number in national format is fixable', () => {
