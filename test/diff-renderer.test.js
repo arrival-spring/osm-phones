@@ -1,66 +1,10 @@
+const { diffChars } = require('diff');
 const { 
     normalize, 
     consolidatePlusSigns, 
     diffPhoneNumbers, 
     getDiffHtml 
 } = require('../src/diff-renderer');
-
-// --- Mocking the external 'diffChars' library ---
-// Since the real jsdiff is complex, we mock it for the critical test cases
-// based on what we *expect* it to return after normalization.
-const mockDiffChars = (a, b) => {
-    // Case: Complex change (e.g., '0471124380' -> '32471124380')
-    if (a === '0471124380' && b === '32471124380') {
-        return [
-            { removed: true, value: '0' },
-            { added: true, value: '32' },
-            { value: '471124380' }
-        ];
-    }
-    
-    // Case 2 N1: '0123' -> '90123' (0 removed, 90 added)
-    if (a === '0123' && b === '90123') {
-        return [
-            { removed: true, value: '0' },
-            { added: true, value: '90' }, // This means '9' and '0' are added
-            { value: '123' } // This means '123' is unchanged/common
-        ];
-    }
-
-    // Case 2 N2: '4567' -> '904567' (90 added)
-    if (a === '4567' && b === '904567') {
-        return [
-            { added: true, value: '90' },
-            { value: '4567' }
-        ];
-    }
-    
-    // Case: Prefix removal/addition (simple)
-    if (a.length < b.length && b.endsWith(a)) {
-        const addedValue = b.substring(0, b.length - a.length);
-        return [
-            { added: true, value: addedValue },
-            { value: a }
-        ];
-    }
-    
-    if (a.length > b.length && a.endsWith(b)) {
-        const removedValue = a.substring(0, a.length - b.length);
-        return [
-            { removed: true, value: removedValue },
-            { value: b }
-        ];
-    }
-
-    // Default: Assume diffChars finds the common part correctly (e.g., if strings are equal)
-    if (a === b) {
-        return [{ value: a }];
-    }
-    
-    // Fallback: If any other case is encountered, fail cleanly
-    throw new Error(`MockDiffChars not implemented for A: ${a} and B: ${b}`);
-};
-
 
 // --- Test Suites ---
 
@@ -95,7 +39,7 @@ describe('diffPhoneNumbers (Single Number Diff Logic)', () => {
         const original = '0471 124 380';
         const suggested = '+32 471 12 43 80';
         
-        const result = diffPhoneNumbers(original, suggested, mockDiffChars);
+        const result = diffPhoneNumbers(original, suggested);
 
         // 1. Check Original Diff: '0' and all spaces removed. Digits unchanged.
         const expectedOriginalHtml = 
@@ -112,18 +56,7 @@ describe('diffPhoneNumbers (Single Number Diff Logic)', () => {
         const original = '+44 (0) 1234 5678';
         const suggested = '+44 1234 5678';
         
-        const mockComplexDiff = (a, b) => {
-            if (a === '44012345678' && b === '4412345678') {
-                return [
-                    { value: '44' }, 
-                    { removed: '0' }, 
-                    { value: '12345678' }
-                ];
-            }
-            return mockDiffChars(a, b);
-        };
-        
-        const result = diffPhoneNumbers(original, suggested, mockComplexDiff);
+        const result = diffPhoneNumbers(original, suggested);
 
         // The leading '+' is a non-digit character in the original string, so it must be marked REMOVED.
         const expectedOriginalHtml = 
@@ -145,7 +78,7 @@ describe('getDiffHtml (Multi-Number Diff Logic)', () => {
         const original = '+32 058 515 592;+32 0473 792 951';
         const suggested = '+32 58 51 55 92; +32 473 79 29 51';
         
-        const result = getDiffHtml(original, suggested, mockDiffChars);
+        const result = getDiffHtml(original, suggested);
         
         // --- Original HTML (Removals) ---
         // Original '+' and '0' marked removed. Separator ';' marked removed.
@@ -168,7 +101,7 @@ describe('getDiffHtml (Multi-Number Diff Logic)', () => {
         const original = '0123 / 4567';
         const suggested = '+90 123; +90 4567';
         
-        const result = getDiffHtml(original, suggested, mockDiffChars);
+        const result = getDiffHtml(original, suggested);
         
         // --- Original HTML (Removals) ---
         // The leading '0' is marked diff-unchanged in the received output, so we match that here.
