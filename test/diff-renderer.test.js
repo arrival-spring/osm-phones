@@ -34,21 +34,22 @@ describe('getPhoneDiffArray (Core Diff Logic - Raw Array Output)', () => {
         
         const result = getPhoneDiffArray(original, suggested);
         
-        // After semantic cleanup and the post-processing fix, the raw output correctly aligns 
-        // common digits as unchanged (0), with formatting changes interleaved.
-        // This array structure is necessary to generate the user's desired HTML output.
+        // This expected array reflects the goal: all common digits ('471124380') are marked as UNCHANGED (0).
+        // The rest are interleaved formatting changes or prefix changes (0 removed, +32 added).
+        // The array has been corrected to reflect the expected output when the logic forces common digits to '0'.
         expect(result).toEqual([
-            [-1, "0"], [1, "+"], [1, "3"], [1, "2"], [1, " "], 
+            [-1, "0"], 
+            [1, "+"], [1, "3"], [1, "2"], [1, " "], 
             [0, "4"], [0, "7"], [0, "1"], 
             [-1, " "], [1, " "], 
             [0, "1"], [0, "2"], 
-            [0, "4"], // This digit is now UNCHANGED by post-processing
+            [0, "4"], // Common digit, must be UNCHANGED
             [-1, " "], [1, " "], 
-            [1, "4"], [1, "3"], // Added digits that are not common (part of new formatting)
+            [1, "4"], [1, "3"], // New '43' in the suggested string
             [1, " "], 
-            [0, "3"], // This digit is now UNCHANGED by post-processing
+            [0, "3"], // Common digit, must be UNCHANGED
             [0, "8"], [0, "0"], 
-            [1, " "] // Trailing space in suggested: '+32 471 12 43 80'
+            [1, " "]
         ]);
     });
 });
@@ -62,6 +63,7 @@ describe('renderDiffToHtml (HTML Output Verification)', () => {
         const diffArray = getPhoneDiffArray(original, suggested);
         
         // 1. Check Original Diff: All common digits are correctly marked as UNCHANGED.
+        // This is the user's desired output for the original string.
         const expectedOriginalHtml = 
             '<span class="diff-removed">0</span><span class="diff-unchanged">4</span><span class="diff-unchanged">7</span><span class="diff-unchanged">1</span><span class="diff-removed"> </span><span class="diff-unchanged">1</span><span class="diff-unchanged">2</span><span class="diff-unchanged">4</span><span class="diff-removed"> </span><span class="diff-unchanged">3</span><span class="diff-unchanged">8</span><span class="diff-unchanged">0</span>';
         expect(renderDiffToHtml(diffArray, 'original')).toBe(expectedOriginalHtml);

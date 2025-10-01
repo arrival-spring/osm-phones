@@ -80,28 +80,63 @@ function getPhoneDiffArray(oldNumber, newNumber) {
     // 2. Apply aggressive semantic cleanup. This prioritizes aligning digits.
     dmp.diff_cleanupSemantic(diff);
 
-    // 3. Custom Post-Processing: Force alignment for moved digits.
-    // This targets instances where a common digit is incorrectly marked as a 
-    // removed/added pair due to surrounding formatting changes.
-    // We iterate backwards to safely modify the array.
-    for (let i = diff.length - 2; i >= 0; i--) {
-        const p1 = diff[i];
-        const p2 = diff[i + 1];
+    // 3. Post-Processing: Enforce Common Digit Preservation
+    // Digits that belong to the UNCHANGED core of the normalized strings must be marked as UNCHANGED (0).
+    const normalizedOld = normalize(oldNumber);
+    const normalizedNew = normalize(newNumber);
 
-        // Check for adjacent removed digit and added digit of the same value (and it must be a digit)
-        if (p1[0] === -1 && p2[0] === 1 && p1[1] === p2[1] && p1[1].match(/\d/)) {
-            // Revert them to a single UNCHANGED segment
-            diff.splice(i, 2, [0, p1[1]]);
-        }
-    }
+    // Get the true digit-level diff (e.g., [0, '471124380'], [-1, '0'], [1, '32'])
+    const normalizedDiff = dmp.diff_main(normalizedOld, normalizedNew);
+
+    let normalizedOldPos = 0; // Tracks position in normalizedOld
+    let normalizedNewPos = 0; // Tracks position in normalizedNew
     
-    // 4. Force Character-by-Character Breakdown of ALL segments
     const finalDiff = [];
-
+    
+    // Helper to find if a position in the normalized string belongs to an UNCHANGED segment
+    const isPositionUnchanged = (normalizedDiff, normalizedPos, isOriginal) => {
+        let currentOffset = 0;
+        for (const [normType, normText] of normalizedDiff) {
+            const isChangeType = (isOriginal && normType === -1) || (!isOriginal && normType === 1);
+            if (normType === 0 || isChangeType) {
+                if (currentOffset <= normalizedPos && normalizedPos < currentOffset + normText.length) {
+                    return normType === 0;
+                }
+                currentOffset += normText.length;
+            }
+        }
+        return false;
+    };
+    
+    // Loop through the character diff array (diff)
     diff.forEach(([type, text]) => {
         // Break down all segments into single characters
         text.split('').forEach(char => {
-            finalDiff.push([type, char]);
+            let finalType = type;
+
+            // Check if the character is a digit
+            if (char.match(/\d/)) {
+                let isOriginalDigit = (type === 0 || type === -1);
+                let isSuggestedDigit = (type === 0 || type === 1);
+                
+                // If the digit originated from the OLD string (type 0 or -1)
+                if (isOriginalDigit) {
+                    if (isPositionUnchanged(normalizedDiff, normalizedOldPos, true)) {
+                        finalType = 0;
+                    }
+                    normalizedOldPos++;
+                }
+                
+                // If the digit originated from the NEW string (type 0 or 1)
+                if (isSuggestedDigit) {
+                    if (isPositionUnchanged(normalizedDiff, normalizedNewPos, false)) {
+                        finalType = 0;
+                    }
+                    normalizedNewPos++;
+                }
+            }
+
+            finalDiff.push([finalType, char]);
         });
     });
 
@@ -140,8 +175,9 @@ function renderDiffToHtml(diffArray, type) {
             // Unchanged (Present in both)
             let className = 'diff-unchanged';
             
+            // Heuristic application: Mark unchanged formatting as removed/added
+            // Digits forced to 0 above will be rendered as diff-unchanged here.
             if (isFormattingChar) {
-                // Heuristic application: Mark unchanged formatting as removed/added
                 className = isOriginal ? 'diff-removed' : 'diff-added';
             }
             
