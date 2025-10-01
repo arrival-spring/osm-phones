@@ -8,6 +8,7 @@ const {
 } = require('../src/data-processor');
 
 const SAMPLE_COUNTRY_CODE_GB = 'GB';
+const SAMPLE_COUNTRY_CODE_US = 'US';
 const SAMPLE_COUNTRY_CODE_ZA = 'ZA';
 
 // =====================================================================
@@ -205,6 +206,25 @@ describe('processSingleNumber', () => {
         const result = processSingleNumber('011 555', SAMPLE_COUNTRY_CODE_ZA);
         expect(result.isInvalid).toBe(true);
         expect(result.autoFixable).toBe(false);
+    });
+
+    // --- USA Tests (+1 213 373 4253) ---
+
+    test('US: correctly validate and format a simple valid local number', () => {
+        const result = processSingleNumber('213 373 4253', SAMPLE_COUNTRY_CODE_US);
+        expect(result.isInvalid).toBe(true);
+        expect(result.suggestedFix).toBe('+1 213-373-4253');
+        expect(result.autoFixable).toBe(true);
+    });
+
+    test('US: bad spacing is not invalid', () => {
+        const result = processSingleNumber('+121 337 34253', SAMPLE_COUNTRY_CODE_US);
+        expect(result.isInvalid).toBe(false);
+    });
+
+    test('US: dashes is not invalid', () => {
+        const result = processSingleNumber('+1-213-373-4253', SAMPLE_COUNTRY_CODE_US);
+        expect(result.isInvalid).toBe(false);
     });
 });
 
