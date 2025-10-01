@@ -81,6 +81,8 @@ function getPhoneDiffArray(oldNumber, newNumber) {
     // This heuristic prioritizes matching the largest common blocks of text 
     // (i.e., the digits), ensuring digits that "moved" due to formatting are marked as unchanged.
     dmp.diff_cleanupSemantic(diff);
+    // Add another, more aggressive cleanup to ensure full digit alignment across small formatting differences
+    dmp.diff_cleanupSemanticLossless(diff);
 
     // 3. Force Character-by-Character Breakdown of ALL segments
     const finalDiff = [];
