@@ -101,23 +101,23 @@ const NEW_SPLIT_CAPTURE_REGEX = /(; ?)/g;
  * @param {Array<string>} parts - Array of segments from a split operation.
  * @returns {Array<string>} Consolidated array.
  */
-function consolidatePlusSigns(parts) {
+export function consolidatePlusSigns(parts) {
     let consolidated = [];
     for (let i = 0; i < parts.length; i++) {
         const part = parts[i];
-        const trimmedPart = part.trim();
         
-        // If the segment is ONLY '+', AND the next segment exists, merge them
-        if (trimmedPart === '+' && i + 1 < parts.length) {
-            // Merge '+' with the trimmed version of the next segment
-            consolidated.push(trimmedPart + parts[i + 1].trim());
+        // 1. Check if the part is a lone '+' (must trim for this check)
+        if (part.trim() === '+' && i + 1 < parts.length) {
+            // If it is, merge '+' with the next segment (we trim the next segment as it should be a number)
+            consolidated.push('+' + parts[i + 1].trim());
             i++; // Skip the next segment, as it was consumed
         } else {
-            // Otherwise, keep the segment as is (trimmed)
-            consolidated.push(trimmedPart);
+            // 2. Otherwise, keep the segment as is, preserving separator spaces.
+            consolidated.push(part);
         }
     }
-    return consolidated;
+    // 3. Filter out any remaining pure whitespace or empty strings.
+    return consolidated.filter(s => s && s.trim().length > 0);
 }
 
 /**
