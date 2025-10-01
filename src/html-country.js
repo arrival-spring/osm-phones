@@ -78,15 +78,8 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
             const isDark = document.documentElement.classList.contains('dark');
             sortButtons.forEach(button => {
                 const isActive = button.dataset.sort === currentSort;
-                button.classList.toggle('bg-blue-500', isActive);
-                button.classList.toggle('text-white', isActive);
-                button.classList.toggle('shadow', isActive);
-                button.classList.toggle('bg-gray-200', !isActive);
-                button.classList.toggle('dark:bg-gray-700', !isActive);
-                button.classList.toggle('text-gray-800', !isActive);
-                button.classList.toggle('dark:text-gray-200', !isActive);
-                button.classList.toggle('hover:bg-gray-300', !isActive);
-                button.classList.toggle('dark:hover:bg-gray-600', !isActive);
+                button.classList.toggle('sort-btn-style-active', isActive);
+                button.classList.toggle('sort-btn-style-inactive', !isActive);
             });
         }
 
