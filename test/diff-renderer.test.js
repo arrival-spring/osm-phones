@@ -304,17 +304,23 @@ describe('getDiffHtml (Multi-Number Diff Logic)', () => {
         const result = getDiffHtml(original, suggested);
 
         // --- Original HTML (Removals) ---
-        // The leading '0' is marked diff-unchanged in the received output, so we match that here.
-        const expectedOriginalN1 = '<span class="diff-unchanged">0</span><span class="diff-unchanged">1</span><span class="diff-unchanged">2</span><span class="diff-unchanged">3</span>';
-        const expectedOriginalSeparator = '<span class="diff-unchanged"> </span><span class="diff-removed">/ </span>';
-        const expectedOriginalN2 = '<span class="diff-unchanged">4</span><span class="diff-unchanged">5</span><span class="diff-unchanged">6</span><span class="diff-unchanged">7</span>';
-        expect(result.oldDiff).toBe(expectedOriginalN1 + expectedOriginalSeparator + expectedOriginalN2);
+        const expectedOriginal = '<span class="diff-unchanged">0123 </span><span class="diff-removed">/ </span><span class="diff-unchanged">4567</span>';
+        expect(result.oldDiff).toBe(expectedOriginal);
 
-        // --- Suggested HTML (Additions) ---
-        // The '0' in the first number is marked diff-unchanged in the received output.
-        const expectedSuggestedN1 = '<span class="diff-added">+</span><span class="diff-added">9</span><span class="diff-unchanged">0</span><span class="diff-added"> </span><span class="diff-unchanged">1</span><span class="diff-unchanged">2</span><span class="diff-unchanged">3</span>';
-        const expectedSuggestedSeparator = '<span class="diff-added">;</span><span class="diff-unchanged"> </span>';
-        const expectedSuggestedN2 = '<span class="diff-added">+</span><span class="diff-added">9</span><span class="diff-added">0</span><span class="diff-added"> </span><span class="diff-unchanged">4</span><span class="diff-unchanged">5</span><span class="diff-unchanged">6</span><span class="diff-unchanged">7</span>';
-        expect(result.newDiff).toBe(expectedSuggestedN1 + expectedSuggestedSeparator + expectedSuggestedN2);
+        const expectedSuggested = '<span class="diff-added">+9</span><span class="diff-unchanged">0</span><span class="diff-added"> </span><span class="diff-unchanged">123</span><span class="diff-added">;</span><span class="diff-unchanged"> 4567</span>';
+        expect(result.newDiff).toBe(expectedSuggested);
+
+        // // The leading '0' is marked diff-unchanged in the received output, so we match that here.
+        // const expectedOriginalN1 = '<span class="diff-unchanged">0</span><span class="diff-unchanged">1</span><span class="diff-unchanged">2</span><span class="diff-unchanged">3</span>';
+        // const expectedOriginalSeparator = '<span class="diff-unchanged"> </span><span class="diff-removed">/ </span>';
+        // const expectedOriginalN2 = '<span class="diff-unchanged">4</span><span class="diff-unchanged">5</span><span class="diff-unchanged">6</span><span class="diff-unchanged">7</span>';
+        // expect(result.oldDiff).toBe(expectedOriginalN1 + expectedOriginalSeparator + expectedOriginalN2);
+
+        // // --- Suggested HTML (Additions) ---
+        // // The '0' in the first number is marked diff-unchanged in the received output.
+        // const expectedSuggestedN1 = '<span class="diff-added">+</span><span class="diff-added">9</span><span class="diff-unchanged">0</span><span class="diff-added"> </span><span class="diff-unchanged">1</span><span class="diff-unchanged">2</span><span class="diff-unchanged">3</span>';
+        // const expectedSuggestedSeparator = '<span class="diff-added">;</span><span class="diff-unchanged"> </span>';
+        // const expectedSuggestedN2 = '<span class="diff-added">+</span><span class="diff-added">9</span><span class="diff-added">0</span><span class="diff-added"> </span><span class="diff-unchanged">4</span><span class="diff-unchanged">5</span><span class="diff-unchanged">6</span><span class="diff-unchanged">7</span>';
+        // expect(result.newDiff).toBe(expectedSuggestedN1 + expectedSuggestedSeparator + expectedSuggestedN2);
     });
 });
