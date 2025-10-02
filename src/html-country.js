@@ -100,7 +100,23 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
         function renderList() {
             const TARGET_LI_CLASS = 'list-item';
 
-            const divisionNames = Object.keys(groupedDivisionStats);
+            let divisionNames = Object.keys(groupedDivisionStats);
+
+            // Sort the division groups themselves based on the current sort order
+            divisionNames.sort((a, b) => {
+                if (currentSort === 'percentage') {
+                    const statsA = calculatedDivisionTotals[a];
+                    const statsB = calculatedDivisionTotals[b];
+                    const percentageA = statsA.total > 0 ? (statsA.invalid / statsA.total) : 0;
+                    const percentageB = statsB.total > 0 ? (statsB.invalid / statsB.total) : 0;
+                    return percentageB - percentageA;
+                } else if (currentSort === 'invalidCount') {
+                    return calculatedDivisionTotals[b].invalid - calculatedDivisionTotals[a].invalid;
+                } else if (currentSort === 'name') {
+                    return a.localeCompare(b);
+                }
+                return 0;
+            });
             const isGrouped = divisionNames.length > 1;
 
             const percentageOptions = {
