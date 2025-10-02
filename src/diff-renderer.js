@@ -181,7 +181,7 @@ function mergeDiffs(diffResult) {
  */
 function getDiffHtml(oldString, newString) {
     // Do I need the other stuff?
-    const { originalDiff, suggestedDiff } = diffPhoneNumbers(oldSegment, newSegment);
+    const { originalDiff, suggestedDiff } = diffPhoneNumbers(oldString, newString);
 
     const mergedOriginalDiff = mergeDiffs(originalDiff);
     const mergedSuggestedDiff = mergeDiffs(suggestedDiff)
