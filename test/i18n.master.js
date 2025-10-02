@@ -10,7 +10,6 @@ const MASTER_KEYS = {
     'fixInJOSM': [],
     'website': [],
     'suggestedFix': [],
-    'phone': [],
     'backToCountryPage': [],
     'phoneNumberReport': [],
     'fixableNumbersHeader': [],
