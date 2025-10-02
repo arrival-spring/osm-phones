@@ -1,14 +1,36 @@
 const { parsePhoneNumber } = require('libphonenumber-js');
 const { FEATURE_TAGS, HISTORIC_AND_DISUSED_PREFIXES, EXCLUSIONS, PHONE_TAGS, WEBSITE_TAGS, BAD_SEPARATOR_REGEX, UNIVERSAL_SPLIT_REGEX } = require('./constants');
+const {slugify} = require('slugify');
 
 /**
- * Creates a safe, slug-like name for filenames.
- * @param {string} name
- * @returns {string}
+ * Converts a country or region name into a 'safe' string (slug)
+ * using the slugify package.
+ *
+ * @param {string} name - The country or region name to convert.
+ * @returns {string} The safe, slugified string.
  */
 function safeName(name) {
-    return name.replace(/\s+|\//g, '-').toLowerCase();
+    if (!name) {
+        return '';
+    }
+
+    // Options:
+    // lower: true -> Convert to lower case
+    // strict: true -> Remove all replacement characters (like apostrophes)
+    //                and any other non-alphanumeric characters.
+    // locale: 'und' -> Ensures all non-Latin characters (like '中华人民共和国')
+    //                 are preserved without transcription
+
+    const slugifyName = slugify(name, {
+        replacement: '-',    // Replace non-alphanumeric characters with a hyphen
+        lower: true,         // Convert to lower case
+        strict: true,        // Remove characters that aren't allowed
+        locale: 'und'        // Use 'undetermined' locale to preserve Unicode characters
+    });
+
+    return slugifyName;
 }
+
 
 /**
  * Determines if an OSM feature should be considered disused.
