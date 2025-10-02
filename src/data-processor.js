@@ -1,4 +1,5 @@
 const { parsePhoneNumber } = require('libphonenumber-js');
+const { getBestPreset } = require('./preset-matcher');
 const { FEATURE_TAGS, HISTORIC_AND_DISUSED_PREFIXES, EXCLUSIONS, PHONE_TAGS, WEBSITE_TAGS, BAD_SEPARATOR_REGEX, UNIVERSAL_SPLIT_REGEX } = require('./constants');
 
 /**
@@ -100,6 +101,11 @@ function getFeatureTypeName(item) {
         return `${item.name}`;
     }
 
+    const preset = getBestPreset(item);
+    if (preset && preset.name) {
+        return preset.name;
+    }
+
     const featureType = getFeatureType(item);
 
     if (featureType) {
@@ -109,6 +115,16 @@ function getFeatureTypeName(item) {
         const formattedType = item.type.replace(/\b\w/g, c => c.toUpperCase());
         return `OSM ${formattedType}`;
     }
+}
+
+/**
+ * Gets the icon for a feature based on its tags.
+ * @param {Object} item - The OSM data item.
+ * @returns {string|null} The icon name or null if not found.
+ */
+function getFeatureIcon(item) {
+    const preset = getBestPreset(item);
+    return preset ? preset.icon : null;
 }
 
 /**
@@ -398,6 +414,7 @@ module.exports = {
     validateNumbers,
     isDisused,
     getFeatureTypeName,
+    getFeatureIcon,
     stripExtension,
     processSingleNumber,
     validateSingleTag,

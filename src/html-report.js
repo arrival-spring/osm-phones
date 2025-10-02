@@ -1,7 +1,7 @@
 const { promises: fsPromises } = require('fs');
 const path = require('path');
 const { PUBLIC_DIR, OSM_EDITORS, ALL_EDITOR_IDS, DEFAULT_EDITORS_DESKTOP, DEFAULT_EDITORS_MOBILE } = require('./constants');
-const { safeName, getFeatureTypeName, isDisused } = require('./data-processor');
+const { safeName, getFeatureTypeName, getFeatureIcon, isDisused } = require('./data-processor');
 const { translate } = require('./i18n');
 const { getDiffHtml } = require('./diff-renderer');
 const { favicon, themeButton, createFooter, createStatsBox } = require('./html-utils')
@@ -115,10 +115,27 @@ function createListItem(item, locale) {
         '';
     const disusedLabel = isDisused(item) ? `<span class="label label-disused">${translate('disused', locale)}</span>` : '';
 
+    const iconName = getFeatureIcon(item);
+    let iconHtml = '';
+    if (iconName) {
+        const parts = iconName.split('-');
+        const library = parts[0];
+        const icon = parts.slice(1).join('-');
+
+        let className = '';
+        if (library === 'fas' || library === 'far' || library === 'fab' || library === 'fa') {
+            className = `${library} fa-${icon}`;
+        } else {
+            className = `${library} ${library}-${icon}`;
+        }
+        iconHtml = `<span class="list-item-icon-container"><i class="icon ${className}"></i></span>`;
+    }
+
     return `
         <li class="report-list-item">
             <div class="list-item-content-wrapper">
                 <div class="list-item-header">
+                    ${iconHtml}
                     <h3 class="list-item-title">
                         <a href="${item.osmUrl}" target="_blank" rel="noopener noreferrer" class="list-item-link">${getFeatureTypeName(item)}</a>
                     </h3>
@@ -198,6 +215,10 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
         <title>${translate('countryReportTitle', locale, [countryName])}</title>
         ${favicon}
         <link href="../styles.css" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+        <link rel="stylesheet" href="https://unpkg.com/@openstreetmap/iD/dist/iD.css">
+        <link rel="stylesheet" href="https://unpkg.com/temaki/dist/temaki.css">
+        <link href='https://api.mapbox.com/mapbox.js/v3.3.1/mapbox.css' rel='stylesheet' />
         <script src="../theme.js"></script>
     </head>
     <body class="body-styles">
