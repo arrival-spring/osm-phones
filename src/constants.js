@@ -334,6 +334,17 @@ const EXCLUSIONS = {
     },
 };
 
+// Define the regex for separators that are definitively "bad" and should trigger a fix report.
+const BAD_SEPARATOR_REGEX = /(\s*,\s*)|(\s*\/\s*)|(\s+or\s+)|(\s+and\s+)/gi;
+
+// This regex is used for splitting by data-processor.js. It catches ALL valid and invalid separators:
+// Raw semicolon (';'), semicolon with optional space ('; ?'), comma, slash, 'or' or 'and'.
+const UNIVERSAL_SPLIT_REGEX = /(?:; ?)|(?:\s*,\s*)|(?:\s*\/\s*)|(?:\s+or\s+)|(?:\s+and\s+)/gi;
+
+// When used in diff, the groups need to be capturing
+const UNIVERSAL_SPLIT_CAPTURE_REGEX = /(; ?)|(\s*,\s*)|(\s*\/\s*)|(\s+or\s+)|(\s+and\s+)/gi;
+
+
 module.exports = {
     PUBLIC_DIR,
     OVERPASS_API_URL,
@@ -346,5 +357,8 @@ module.exports = {
     ALL_EDITOR_IDS,
     DEFAULT_EDITORS_DESKTOP,
     DEFAULT_EDITORS_MOBILE,
-    EXCLUSIONS
+    EXCLUSIONS,
+    BAD_SEPARATOR_REGEX,
+    UNIVERSAL_SPLIT_REGEX,
+    UNIVERSAL_SPLIT_CAPTURE_REGEX
 };
