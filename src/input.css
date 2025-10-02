@@ -189,7 +189,7 @@
         @apply flex flex-col items-end space-y-4 sm:space-y-0 sm:space-x-4 mt-4 sm:mt-0;
     }
     .checkbox-container {
-        @apply flex items-end mt-4;
+        @apply flex items-end;
     }
     .checkbox-input {
         @apply h-4 w-4 rounded text-blue-600 focus:ring-blue-500 border-gray-300;
@@ -198,7 +198,7 @@
         @apply mr-2 text-sm font-medium text-gray-700 dark:text-gray-300;
     }
     .sort-controls {
-        @apply flex flex-wrap items-center justify-end space-x-2 space-y-2;
+        @apply flex flex-wrap items-center justify-end space-x-2 space-y-2 mb-0 sm:mb-4;
     }
     .sort-label {
         @apply mr-2 text-sm font-medium text-gray-700 dark:text-gray-300;
