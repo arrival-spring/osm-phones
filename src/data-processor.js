@@ -1,10 +1,13 @@
 const { parsePhoneNumber } = require('libphonenumber-js');
 const { FEATURE_TAGS, HISTORIC_AND_DISUSED_PREFIXES, EXCLUSIONS, PHONE_TAGS, WEBSITE_TAGS, BAD_SEPARATOR_REGEX, UNIVERSAL_SPLIT_REGEX } = require('./constants');
-const slugify = require('slugify');
 
 /**
- * Converts a country or region name into a 'safe' string (slug)
- * using the slugify package.
+ * Converts a country or region name into a 'safe' string (slug) suitable for
+ * use as filenames, URLs, or command-line identifiers.
+ *
+ * This function uses Unicode property escapes (\p{L} and \p{N}) to robustly
+ * preserve all letters and numbers across all world scripts (including accented
+ * Latin and non-Latin scripts like Japanese/Cyrillic).
  *
  * @param {string} name - The country or region name to convert.
  * @returns {string} The safe, slugified string.
@@ -14,23 +17,34 @@ function safeName(name) {
         return '';
     }
 
-    // Options:
-    // lower: true -> Convert to lower case
-    // strict: true -> Remove all replacement characters (like apostrophes)
-    //                and any other non-alphanumeric characters.
-    // locale: 'und' -> Ensures all non-Latin characters (like '中华人民共和国')
-    //                 are preserved without transcription
+    let processedName = name;
 
-    const slugifyName = slugify(name, {
-        replacement: '-',    // Replace non-alphanumeric characters with a hyphen
-        lower: true,         // Convert to lower case
-        strict: true,        // Remove characters that aren't allowed
-        locale: 'und'        // Use 'undetermined' locale to preserve Unicode characters
-    });
+    // 1. Convert to lowercase
+    processedName = processedName.toLowerCase();
 
-    return slugifyName;
+    // 2. Substitute non-letter (\p{L}), non-number (\p{N}), and non-space (\s) characters with a hyphen.
+    // The 'gu' flags enable global replacement and robust Unicode handling.
+    // This step preserves all letters/numbers across all scripts and substitutes all symbols.
+    // Note: If running in a very old JS environment that doesn't support \p{L}, this may fail.
+    try {
+        processedName = processedName.replace(/[^\p{L}\p{N}\s]+/gu, '-');
+    } catch (e) {
+        // Fallback for environments lacking full Unicode property support
+        // This regex is less precise but covers most common use cases
+        processedName = processedName.replace(/[^a-z0-9\s\u00C0-\uFFFF]+/g, '-');
+    }
+
+    // 3. Replace one or more spaces with a hyphen.
+    processedName = processedName.replace(/\s+/g, '-');
+
+    // 4. Remove repeated substitutes (e.g., '--' becomes '-')
+    processedName = processedName.replace(/-+/g, '-');
+
+    // 5. Remove substitutes appearing at the start or end of the string.
+    processedName = processedName.replace(/^-|-$/g, '');
+
+    return processedName;
 }
-
 
 /**
  * Determines if an OSM feature should be considered disused.
