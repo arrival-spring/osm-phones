@@ -181,7 +181,7 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
                         leftSide.className = 'summary-left-side';
 
                         const iconCircle = document.createElement('div'); 
-                        iconCircle.className = 'summary-icon';
+                        iconCircle.className = 'summary-icon color-indicator';
                         iconCircle.setAttribute('data-percentage', groupPercentageNumber);
 
                         const collapseIcon = createCollapseIcon();
