@@ -240,8 +240,8 @@ function getDiffHtml(oldString, newString) {
                     allSuggestedDiff.push({value: part.value, added: true});
                     // newDiffHtml += `<span class="diff-added">${part.value}</span>`;;
                 } else {
-                    allOriginalDiff.push({value: part, removed: false, added: false});
-                    allSuggestedDiff.push({value: part, removed: false, added: false});
+                    allOriginalDiff.push({value: part.value, removed: false, added: false});
+                    allSuggestedDiff.push({value: part.value, removed: false, added: false});
                     // oldDiffHtml += `<span class="diff-unchanged">${part.value}</span>`;
                     // newDiffHtml += `<span class="diff-unchanged">${part.value}</span>`;
                 }
