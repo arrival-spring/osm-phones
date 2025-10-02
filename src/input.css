@@ -53,6 +53,9 @@
     .list-item-phone-label {
         @apply font-semibold text-xs text-gray-700 dark:text-gray-400;
     }
+    .list-item-phone-label {
+      @apply grid-col-span-1;
+    }
     .list-item-phone-number {
         @apply text-gray-900 dark:text-gray-100;
     }

@@ -9,7 +9,7 @@ function createDetailsGrid(item, locale) {
     const detailsGrid = Object.keys(item.invalidNumbers).map(key => {
         // Check if a suggested fix exists for the current key
         const suggestedFixHtml = item.suggestedFixes[key] ? `
-            <div class="grid-col-span-1">
+            <div class="list-item-phone-label-container">
                 <span class="list-item-phone-label">${translate('suggestedFix', locale)}</span>
             </div>
             <div class="list-item-phone-value-container">
@@ -20,7 +20,7 @@ function createDetailsGrid(item, locale) {
         // Return the HTML for one set of phone number details
         return `
             <div class="list-item-details-grid">
-                <div class="grid-col-span-1">
+                <div class="list-item-phone-label-container">
                     <span class="list-item-phone-label">${key}</span>
                 </div>
                 <div class="list-item-phone-value-container">
