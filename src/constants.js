@@ -18,15 +18,15 @@ const WEBSITE_TAGS = ['website', 'contact:website'];
 // not fetched automatically but are hardcoded here
 // each division has a map of subdivision names to relation ids
 const COUNTRIES = {
-    'Belgium': {
-        name: 'België / Belgique / Belgien',
-        divisions: { // Only one level of divisions, we still need to provide a map here
-            'Belgium': 937244,
-        },
-        countryCode: 'BE',
-        locale: 'en', // I had to pick something. It would be possible to do a code refactor to allow the user to switch languages dynamically
-        subdivisionAdminLevel: 4
-    },
+    // 'Belgium': {
+    //     name: 'België / Belgique / Belgien',
+    //     divisions: { // Only one level of divisions, we still need to provide a map here
+    //         'Belgium': 937244,
+    //     },
+    //     countryCode: 'BE',
+    //     locale: 'en', // I had to pick something. It would be possible to do a code refactor to allow the user to switch languages dynamically
+    //     subdivisionAdminLevel: 4
+    // },
     'France': {
         name: 'France',
         divisions: {

@@ -137,12 +137,12 @@ async function main() {
                 // Do one subdivision for one division in one country in test mode
                 // count is here in case of needing to change it to test something
                 subdivisionCount++;
-                if (testMode && subdivisionCount >= 1) {
+                if (testMode && subdivisionCount >= 2) {
                     break;
                 }
             }
             divisionCount++;
-            if (testMode && divisionCount >= 1) {
+            if (testMode && divisionCount >= 2) {
                 break;
             }
         }
