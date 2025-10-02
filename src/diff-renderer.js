@@ -76,7 +76,6 @@ function diffPhoneNumbers(original, suggested) {
     for (let i = 0; i < original.length; i++) {
         const char = original[i];
 
-        // + should only appear at the start
         if (/\d/.test(char)) {
             // It's a digit. Determine if it was removed in the semantic diff.
             if (commonPointer < commonDigits.length && char === commonDigits[commonPointer]) {
@@ -212,8 +211,9 @@ function getDiffHtml(oldString, newString) {
             // --- This is a phone number segment ---
             const { originalDiff, suggestedDiff } = diffPhoneNumbers(oldSegment, newSegment);
 
-            allOriginalDiff += originalDiff;
-            allSuggestedDiff += suggestedDiff;
+            allOriginalDiff = [...allOriginalDiff, ...originalDiff];
+            allSuggestedDiff = [...allSuggestedDiff, ...suggestedDiff]
+
             // const mergedOriginalDiff = mergeDiffs(originalDiff);
             // const mergedSuggestedDiff = mergeDiffs(suggestedDiff);
 
@@ -230,9 +230,9 @@ function getDiffHtml(oldString, newString) {
             // --- This is a separator (e.g., ';', 'or', ',') ---
             // Just do a regular diffChars on the separators
             separatorDiff = diffChars(oldSegment, newSegment);
-            mergedSeparatorDiff = mergeDiffs(separatorDiff)
+            // mergedSeparatorDiff = mergeDiffs(separatorDiff)
 
-            for (const part of mergedSeparatorDiff) {
+            for (const part of separatorDiff) {
                 if (part.removed) {
                     // oldDiffHtml += `<span class="diff-removed">${part.value}</span>`;
                     allOriginalDiff.push({value: part, removed: true});
