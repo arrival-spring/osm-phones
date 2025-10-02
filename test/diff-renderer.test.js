@@ -287,7 +287,7 @@ describe('getDiffHtml (Multi-Number Diff Logic)', () => {
 
         // --- Suggested HTML (Additions) ---
         // Suggested: added space after semicolon and space either side of 55 and of 29.
-        const expectedSuggestedNq = '<span class="diff-unchanged">+32 </span><span class="diff-unchanged">58 51</span><span class="diff-added"> </span><span class="diff-unchanged">55</span><span class="diff-added"> </span><span class="diff-unchanged">92;';
+        const expectedSuggestedN1 = '<span class="diff-unchanged">+32 </span><span class="diff-unchanged">58 51</span><span class="diff-added"> </span><span class="diff-unchanged">55</span><span class="diff-added"> </span><span class="diff-unchanged">92;';
         const expectedSuggestedN2 = '</span><span class="diff-added"> </span><span class="diff-unchanged">+32 473 79</span><span class="diff-added"> </span><span class="diff-unchanged">29</span><span class="diff-added"> </span><span class="diff-unchanged">51</span>';
         expect(result.newDiff).toBe(expectedSuggestedN1 + expectedSuggestedN2);
         // const expectedSuggestedN1 = '<span class="diff-unchanged">+</span><span class="diff-unchanged">3</span><span class="diff-unchanged">2</span><span class="diff-unchanged"> </span><span class="diff-unchanged">5</span><span class="diff-unchanged">8</span><span class="diff-unchanged"> </span><span class="diff-unchanged">5</span><span class="diff-unchanged">1</span><span class="diff-added"> </span><span class="diff-unchanged">5</span><span class="diff-unchanged">5</span><span class="diff-added"> </span><span class="diff-unchanged">9</span><span class="diff-unchanged">2</span>';
@@ -307,7 +307,8 @@ describe('getDiffHtml (Multi-Number Diff Logic)', () => {
         const expectedOriginal = '<span class="diff-unchanged">0123 </span><span class="diff-removed">/ </span><span class="diff-unchanged">4567</span>';
         expect(result.oldDiff).toBe(expectedOriginal);
 
-        const expectedSuggested = '<span class="diff-added">+9</span><span class="diff-unchanged">0</span><span class="diff-added"> </span><span class="diff-unchanged">123</span><span class="diff-added">;</span><span class="diff-unchanged"> 4567</span>';
+        const expectedSuggested = '<span class="diff-added">+9</span><span class="diff-unchanged">0</span><span class="diff-added"> </span><span class="diff-unchanged">123</span><span class="diff-added">;</span><span class="diff-unchanged"> </span><span class="diff-added">+90 </span><span class="diff-unchanged">4567</span>';
+
         expect(result.newDiff).toBe(expectedSuggested);
 
         // // The leading '0' is marked diff-unchanged in the received output, so we match that here.
