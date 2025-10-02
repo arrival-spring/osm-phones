@@ -180,6 +180,24 @@ function mergeDiffs(diffResult) {
  * @returns {{oldDiff: string, newDiff: string}} - An object containing the HTML for both diffs.
  */
 function getDiffHtml(oldString, newString) {
+    // Do I need the other stuff?
+    const { originalDiff, suggestedDiff } = diffPhoneNumbers(oldSegment, newSegment);
+
+    const mergedOriginalDiff = mergeDiffs(originalDiff);
+    const mergedSuggestedDiff = mergeDiffs(suggestedDiff)
+
+    mergedOriginalDiff.forEach((part) => {
+        const colorClass = part.removed ? 'diff-removed' : 'diff-unchanged';
+        oldDiffHtml += `<span class="${colorClass}">${part.value}</span>`;
+    });
+
+    mergedSuggestedDiff.forEach((part) => {
+        const colorClass = part.added ? 'diff-added' : 'diff-unchanged';
+        newDiffHtml += `<span class="${colorClass}">${part.value}</span>`;
+    });
+
+    return { oldDiff: oldDiffHtml, newDiff: newDiffHtml };
+
     // Split and initial filter for both strings
     const oldPartsUnfiltered = oldString.split(UNIVERSAL_SPLIT_CAPTURE_REGEX);
     // Filter out falsey values (undefined from capturing groups) and empty strings
@@ -209,21 +227,25 @@ function getDiffHtml(oldString, newString) {
             // --- This is a phone number segment ---
             const { originalDiff, suggestedDiff } = diffPhoneNumbers(oldSegment, newSegment);
 
-            originalDiff.forEach((part) => {
+            const mergedOriginalDiff = mergeDiffs(originalDiff);
+            const mergedSuggestedDiff = mergeDiffs(suggestedDiff)
+
+            mergedOriginalDiff.forEach((part) => {
                 const colorClass = part.removed ? 'diff-removed' : 'diff-unchanged';
                 oldDiffHtml += `<span class="${colorClass}">${part.value}</span>`;
             });
 
-            suggestedDiff.forEach((part) => {
+            mergedSuggestedDiff.forEach((part) => {
                 const colorClass = part.added ? 'diff-added' : 'diff-unchanged';
                 newDiffHtml += `<span class="${colorClass}">${part.value}</span>`;
             });
         } else {
             // --- This is a separator (e.g., ';', 'or', ',') ---
             // Just do a regular diffChars on the separators
-            separatorDiffResult = diffChars(oldSegment, newSegment);
+            separatorDiff = diffChars(oldSegment, newSegment);
+            mergedSeparatorDiff = mergeDiffs(separatorDiff)
 
-            for (const part of separatorDiffResult) {
+            for (const part of mergedSeparatorDiff) {
                 if (part.removed) {
                     oldDiffHtml += `<span class="diff-removed">${part.value}</span>`;
                 } else if (part.added) {
