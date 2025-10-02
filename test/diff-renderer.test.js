@@ -124,15 +124,8 @@ describe('diffPhoneNumbers (Single Number Diff Logic)', () => {
             {value: '0', removed: false, added: false},
         ]
         expect(result.suggestedDiff).toEqual(expectedSuggested)
-        // const expectedOriginalHtml =
-        //     '<span class="diff-removed">0</span><span class="diff-unchanged">4</span><span class="diff-unchanged">7</span><span class="diff-unchanged">1</span><span class="diff-unchanged"> </span><span class="diff-unchanged">1</span><span class="diff-unchanged">2</span><span class="diff-unchanged">4</span><span class="diff-removed"> </span><span class="diff-unchanged">3</span><span class="diff-unchanged">8</span><span class="diff-unchanged">0</span>';
-        // expect(result.originalDiff.map(p => `<span class="diff-${p.removed ? 'removed' : 'unchanged'}">${p.value}</span>`).join('')).toBe(expectedOriginalHtml);
-
-        // // 2. Check Suggested Diff: '+32' and all spaces added. Digits unchanged.
-        // const expectedSuggestedHtml =
-        //     '<span class="diff-added">+</span><span class="diff-added">3</span><span class="diff-added">2</span><span class="diff-added"> </span><span class="diff-unchanged">4</span><span class="diff-unchanged">7</span><span class="diff-unchanged">1</span><span class="diff-unchanged"> </span><span class="diff-unchanged">1</span><span class="diff-unchanged">2</span><span class="diff-added"> </span><span class="diff-unchanged">4</span><span class="diff-unchanged">3</span><span class="diff-added"> </span><span class="diff-unchanged">8</span><span class="diff-unchanged">0</span>';
-        // expect(result.suggestedDiff.map(p => `<span class="diff-${p.added ? 'added' : 'unchanged'}">${p.value}</span>`).join('')).toBe(expectedSuggestedHtml);
     });
+
 
     test('should correctly handle complex formatting changes (+44 example)', () => {
         const original = '+44 (0) 1234 5678';
@@ -179,16 +172,6 @@ describe('diffPhoneNumbers (Single Number Diff Logic)', () => {
             {value: '8', removed: false, added: false},
         ]
         expect(result.suggestedDiff).toEqual(expectedSuggested)
-
-        // // Only change is removing brackets, 0 and a space
-        // const expectedOriginalHtml =
-        //     '<span class="diff-unchanged">+</span><span class="diff-unchanged">4</span><span class="diff-unchanged">4</span><span class="diff-unchanged"> </span><span class="diff-removed">(</span><span class="diff-removed">0</span><span class="diff-removed">)</span><span class="diff-removed"> </span><span class="diff-unchanged">1</span><span class="diff-unchanged">2</span><span class="diff-unchanged">3</span><span class="diff-unchanged">4</span><span class="diff-unchanged"> </span><span class="diff-unchanged">5</span><span class="diff-unchanged">6</span><span class="diff-unchanged">7</span><span class="diff-unchanged">8</span>';
-        // expect(result.originalDiff.map(p => `<span class="diff-${p.removed ? 'removed' : 'unchanged'}">${p.value}</span>`).join('')).toBe(expectedOriginalHtml);
-
-        // // Suggested: everything present is unchanged.
-        // const expectedSuggestedHtml =
-        //     '<span class="diff-unchanged">+</span><span class="diff-unchanged">4</span><span class="diff-unchanged">4</span><span class="diff-unchanged"> </span><span class="diff-unchanged">1</span><span class="diff-unchanged">2</span><span class="diff-unchanged">3</span><span class="diff-unchanged">4</span><span class="diff-unchanged"> </span><span class="diff-unchanged">5</span><span class="diff-unchanged">6</span><span class="diff-unchanged">7</span><span class="diff-unchanged">8</span>';
-        // expect(result.suggestedDiff.map(p => `<span class="diff-${p.added ? 'added' : 'unchanged'}">${p.value}</span>`).join('')).toBe(expectedSuggestedHtml);
     });
 });
 
@@ -265,9 +248,42 @@ describe('mergeDiffs', () => {
     });
 });
 
-describe('getDiffHtml (Multi-Number Diff Logic)', () => {
 
-    // Case 1: Simple two numbers, semicolon separated, with 0 removal
+describe('getDiffHtml', () => {
+
+    // Single number, adding country code
+    test('should correctly diff two semicolon-separated numbers', () => {
+        const original = '023 456 7890';
+        const suggested = '+27 23 456 7890';
+
+        const result = getDiffHtml(original, suggested);
+
+        // --- Original HTML (Removals) ---
+        const expectedOriginal = '<span class="diff-removed">0</span><span class="diff-unchanged">23 456 7890</span>';
+        expect(result.oldDiff).toBe(expectedOriginal);
+
+        // --- Suggested HTML (Additions) ---
+        const expectedSuggested = '<span class="diff-added">+27 </span><span class="diff-unchanged">23 456 7890</span>';
+        expect(result.newDiff).toBe(expectedSuggested);
+    });
+
+    // Number with dashes in original and suggested
+    test('should correctly diff two numbers with dashes and format change', () => {
+        const original = '(347) 456-7890';
+        const suggested = '+1 347-456-7890';
+
+        const result = getDiffHtml(original, suggested);
+
+        // --- Original HTML (Removals) ---
+        const expectedOriginal = '<span class="diff-removed">(</span><span class="diff-unchanged">347</span><span class="diff-removed">) </span><span class="diff-unchanged">456-7890</span>';
+        expect(result.oldDiff).toBe(expectedOriginal);
+
+        // --- Suggested HTML (Additions) ---
+        const expectedSuggested = '<span class="diff-added">+1 </span><span class="diff-unchanged">347</span><span class="diff-added">-</span><span class="diff-unchanged">456-7890</span>';
+        expect(result.newDiff).toBe(expectedSuggested);
+    });
+
+    // Simple two numbers, semicolon separated, with 0 removal
     test('should correctly diff two semicolon-separated numbers', () => {
         const original = '+32 058 515 592;+32 0473 792 951';
         const suggested = '+32 58 51 55 92; +32 473 79 29 51';
@@ -279,24 +295,15 @@ describe('getDiffHtml (Multi-Number Diff Logic)', () => {
         const expectedOriginalN1 = '<span class="diff-unchanged">+32 </span><span class="diff-removed">0</span><span class="diff-unchanged">58 515</span><span class="diff-removed"> </span><span class="diff-unchanged">592;';
         const expectedOriginalN2 = '+32 </span><span class="diff-removed">0</span><span class="diff-unchanged">473 792</span><span class="diff-removed"> </span><span class="diff-unchanged">951</span>';
         expect(result.oldDiff).toBe(expectedOriginalN1 + expectedOriginalN2);
-        // const expectedOriginalN1 = '<span class="diff-unchanged">+</span><span class="diff-unchanged">3</span><span class="diff-unchanged">2</span><span class="diff-unchanged"> </span><span class="diff-removed">0</span><span class="diff-unchanged">5</span><span class="diff-unchanged">8</span><span class="diff-unchanged"> </span><span class="diff-unchanged">5</span><span class="diff-unchanged">1</span><span class="diff-unchanged">5</span><span class="diff-removed"> </span><span class="diff-unchanged">5</span><span class="diff-unchanged">9</span><span class="diff-unchanged">2</span>';
-        // const expectedOriginalSeparator = '<span class="diff-unchanged">;</span>';
-        // const expectedOriginalN2 = '<span class="diff-unchanged">+</span><span class="diff-unchanged">3</span><span class="diff-unchanged">2</span><span class="diff-unchanged"> </span><span class="diff-removed">0</span><span class="diff-unchanged">4</span><span class="diff-unchanged">7</span><span class="diff-unchanged">3</span><span class="diff-unchanged"> </span><span class="diff-unchanged">7</span><span class="diff-unchanged">9</span><span class="diff-unchanged">2</span><span class="diff-removed"> </span><span class="diff-unchanged">9</span><span class="diff-unchanged">5</span><span class="diff-unchanged">1</span>';
-        // expect(result.oldDiff).toBe(expectedOriginalN1 + expectedOriginalSeparator + expectedOriginalN2);
-
 
         // --- Suggested HTML (Additions) ---
         // Suggested: added space after semicolon and space either side of 55 and of 29.
-        const expectedSuggestedN1 = '<span class="diff-unchanged">+32 </span><span class="diff-unchanged">58 51</span><span class="diff-added"> </span><span class="diff-unchanged">55</span><span class="diff-added"> </span><span class="diff-unchanged">92;';
+        const expectedSuggestedN1 = '<span class="diff-unchanged">+32 58 51</span><span class="diff-added"> </span><span class="diff-unchanged">55</span><span class="diff-added"> </span><span class="diff-unchanged">92;';
         const expectedSuggestedN2 = '</span><span class="diff-added"> </span><span class="diff-unchanged">+32 473 79</span><span class="diff-added"> </span><span class="diff-unchanged">29</span><span class="diff-added"> </span><span class="diff-unchanged">51</span>';
         expect(result.newDiff).toBe(expectedSuggestedN1 + expectedSuggestedN2);
-        // const expectedSuggestedN1 = '<span class="diff-unchanged">+</span><span class="diff-unchanged">3</span><span class="diff-unchanged">2</span><span class="diff-unchanged"> </span><span class="diff-unchanged">5</span><span class="diff-unchanged">8</span><span class="diff-unchanged"> </span><span class="diff-unchanged">5</span><span class="diff-unchanged">1</span><span class="diff-added"> </span><span class="diff-unchanged">5</span><span class="diff-unchanged">5</span><span class="diff-added"> </span><span class="diff-unchanged">9</span><span class="diff-unchanged">2</span>';
-        // const expectedSuggestedSeparator = '<span class="diff-unchanged">;</span><span class="diff-added"> </span>';
-        // const expectedSuggestedN2 = '<span class="diff-unchanged">+</span><span class="diff-unchanged">3</span><span class="diff-unchanged">2</span><span class="diff-unchanged"> </span><span class="diff-unchanged">4</span><span class="diff-unchanged">7</span><span class="diff-unchanged">3</span><span class="diff-unchanged"> </span><span class="diff-unchanged">7</span><span class="diff-unchanged">9</span><span class="diff-added"> </span><span class="diff-unchanged">2</span><span class="diff-unchanged">9</span><span class="diff-added"> </span><span class="diff-unchanged">5</span><span class="diff-unchanged">1</span>';
-        // expect(result.newDiff).toBe(expectedSuggestedN1 + expectedSuggestedSeparator + expectedSuggestedN2);
     });
 
-    // Case 2: Different separator in original
+    // Different separator in original
     test('should correctly handle complex separators like " / " and digit addition', () => {
         const original = '0123 / 4567';
         const suggested = '+90 123; +90 4567';
@@ -307,21 +314,8 @@ describe('getDiffHtml (Multi-Number Diff Logic)', () => {
         const expectedOriginal = '<span class="diff-unchanged">0123 </span><span class="diff-removed">/ </span><span class="diff-unchanged">4567</span>';
         expect(result.oldDiff).toBe(expectedOriginal);
 
+        // --- Suggested HTML (Additions) ---
         const expectedSuggested = '<span class="diff-added">+9</span><span class="diff-unchanged">0</span><span class="diff-added"> </span><span class="diff-unchanged">123</span><span class="diff-added">;</span><span class="diff-unchanged"> </span><span class="diff-added">+90 </span><span class="diff-unchanged">4567</span>';
-
         expect(result.newDiff).toBe(expectedSuggested);
-
-        // // The leading '0' is marked diff-unchanged in the received output, so we match that here.
-        // const expectedOriginalN1 = '<span class="diff-unchanged">0</span><span class="diff-unchanged">1</span><span class="diff-unchanged">2</span><span class="diff-unchanged">3</span>';
-        // const expectedOriginalSeparator = '<span class="diff-unchanged"> </span><span class="diff-removed">/ </span>';
-        // const expectedOriginalN2 = '<span class="diff-unchanged">4</span><span class="diff-unchanged">5</span><span class="diff-unchanged">6</span><span class="diff-unchanged">7</span>';
-        // expect(result.oldDiff).toBe(expectedOriginalN1 + expectedOriginalSeparator + expectedOriginalN2);
-
-        // // --- Suggested HTML (Additions) ---
-        // // The '0' in the first number is marked diff-unchanged in the received output.
-        // const expectedSuggestedN1 = '<span class="diff-added">+</span><span class="diff-added">9</span><span class="diff-unchanged">0</span><span class="diff-added"> </span><span class="diff-unchanged">1</span><span class="diff-unchanged">2</span><span class="diff-unchanged">3</span>';
-        // const expectedSuggestedSeparator = '<span class="diff-added">;</span><span class="diff-unchanged"> </span>';
-        // const expectedSuggestedN2 = '<span class="diff-added">+</span><span class="diff-added">9</span><span class="diff-added">0</span><span class="diff-added"> </span><span class="diff-unchanged">4</span><span class="diff-unchanged">5</span><span class="diff-unchanged">6</span><span class="diff-unchanged">7</span>';
-        // expect(result.newDiff).toBe(expectedSuggestedN1 + expectedSuggestedSeparator + expectedSuggestedN2);
     });
 });

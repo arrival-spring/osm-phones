@@ -70,7 +70,7 @@ function diffPhoneNumbers(original, suggested) {
     let originalDiff = [];
     let commonPointer = 0; // Tracks position in the commonDigits array
 
-    let originalRemainder = original; // We will cut these down to keep track of added/removed spaces
+    let originalRemainder = original; // We will cut these down to keep track of added/removed separators
     let suggestedRemainder = suggested;
 
     for (let i = 0; i < original.length; i++) {
@@ -111,7 +111,7 @@ function diffPhoneNumbers(original, suggested) {
     let suggestedDiff = [];
     let commonPointerNew = 0; // Separate pointer for suggested string traversal
 
-    let originalRemainderNew = original; // We will cut these down to keep track of added/removed spaces
+    let originalRemainderNew = original; // We will cut these down to keep track of added/removed separators
     let suggestedRemainderNew = suggested;
 
     for (let i = 0; i < suggested.length; i++) {
@@ -191,9 +191,6 @@ function getDiffHtml(oldString, newString) {
     const consolidatedOldParts = consolidatePlusSigns(oldParts);
     const consolidatedNewParts = consolidatePlusSigns(newParts);
 
-    // let oldDiffHtml = '';
-    // let newDiffHtml = '';
-
     let allOriginalDiff = [];
     let allSuggestedDiff = [];
 
@@ -210,40 +207,22 @@ function getDiffHtml(oldString, newString) {
         if (isPhoneNumber) {
             // --- This is a phone number segment ---
             const { originalDiff, suggestedDiff } = diffPhoneNumbers(oldSegment, newSegment);
-
             allOriginalDiff = [...allOriginalDiff, ...originalDiff];
             allSuggestedDiff = [...allSuggestedDiff, ...suggestedDiff]
-
-            // const mergedOriginalDiff = mergeDiffs(originalDiff);
-            // const mergedSuggestedDiff = mergeDiffs(suggestedDiff);
-
-            // mergedOriginalDiff.forEach((part) => {
-            //     const colorClass = part.removed ? 'diff-removed' : 'diff-unchanged';
-            //     oldDiffHtml += `<span class="${colorClass}">${part.value}</span>`;
-            // });
-
-            // mergedSuggestedDiff.forEach((part) => {
-            //     const colorClass = part.added ? 'diff-added' : 'diff-unchanged';
-            //     newDiffHtml += `<span class="${colorClass}">${part.value}</span>`;
-            // });
         } else {
             // --- This is a separator (e.g., ';', 'or', ',') ---
+
             // Just do a regular diffChars on the separators
             separatorDiff = diffChars(oldSegment, newSegment);
-            // mergedSeparatorDiff = mergeDiffs(separatorDiff)
 
             for (const part of separatorDiff) {
                 if (part.removed) {
-                    // oldDiffHtml += `<span class="diff-removed">${part.value}</span>`;
-                    allOriginalDiff.push({value: part.value, removed: true});
+                    allOriginalDiff.push({ value: part.value, removed: true });
                 } else if (part.added) {
-                    allSuggestedDiff.push({value: part.value, added: true});
-                    // newDiffHtml += `<span class="diff-added">${part.value}</span>`;;
+                    allSuggestedDiff.push({ value: part.value, added: true });
                 } else {
-                    allOriginalDiff.push({value: part.value, removed: false, added: false});
-                    allSuggestedDiff.push({value: part.value, removed: false, added: false});
-                    // oldDiffHtml += `<span class="diff-unchanged">${part.value}</span>`;
-                    // newDiffHtml += `<span class="diff-unchanged">${part.value}</span>`;
+                    allOriginalDiff.push({ value: part.value, removed: false, added: false });
+                    allSuggestedDiff.push({ value: part.value, removed: false, added: false });
                 }
             }
         }
