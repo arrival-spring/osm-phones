@@ -186,6 +186,9 @@ function getDiffHtml(oldString, newString) {
     const mergedOriginalDiff = mergeDiffs(originalDiff);
     const mergedSuggestedDiff = mergeDiffs(suggestedDiff)
 
+    let oldDiffHtml = '';
+    let newDiffHtml = '';
+
     mergedOriginalDiff.forEach((part) => {
         const colorClass = part.removed ? 'diff-removed' : 'diff-unchanged';
         oldDiffHtml += `<span class="${colorClass}">${part.value}</span>`;
@@ -210,8 +213,8 @@ function getDiffHtml(oldString, newString) {
     const consolidatedOldParts = consolidatePlusSigns(oldParts);
     const consolidatedNewParts = consolidatePlusSigns(newParts);
 
-    let oldDiffHtml = '';
-    let newDiffHtml = '';
+    // let oldDiffHtml = '';
+    // let newDiffHtml = '';
 
     // Iterate over the minimum length of the new, consolidated arrays
     const numSegments = Math.min(consolidatedOldParts.length, consolidatedNewParts.length);
