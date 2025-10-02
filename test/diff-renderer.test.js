@@ -204,7 +204,7 @@ describe('mergeDiffs', () => {
             {value: '0', removed: true},
             {value: '12', removed: false, added: false},
         ]
-        expect(mergeDiffs(original).toEqual(expectedMerged))
+        expect(mergeDiffs(original)).toEqual(expectedMerged)
     });
 
     test('merge multiple unchanged and removals diff', () => {
@@ -232,7 +232,7 @@ describe('mergeDiffs', () => {
             {value: '(0) ', removed: true},
             {value: '1234 5678', removed: false, added: false},
         ]
-        expect(mergeDiffs(original).toEqual(expectedMerged))
+        expect(mergeDiffs(original)).toEqual(expectedMerged)
     });
 
     test('merge various multiple additions and unchanged', () => {
@@ -261,7 +261,7 @@ describe('mergeDiffs', () => {
             {value: ' ', added: true},
             {value: '92', removed: false, added: false},
         ]
-        expect(mergeDiffs(original).toEqual(expectedMerged))
+        expect(mergeDiffs(original)).toEqual(expectedMerged)
     });
 });
 
