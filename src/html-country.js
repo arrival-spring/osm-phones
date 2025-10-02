@@ -78,15 +78,8 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
             const isDark = document.documentElement.classList.contains('dark');
             sortButtons.forEach(button => {
                 const isActive = button.dataset.sort === currentSort;
-                button.classList.toggle('bg-blue-500', isActive);
-                button.classList.toggle('text-white', isActive);
-                button.classList.toggle('shadow', isActive);
-                button.classList.toggle('bg-gray-200', !isActive);
-                button.classList.toggle('dark:bg-gray-700', !isActive);
-                button.classList.toggle('text-gray-800', !isActive);
-                button.classList.toggle('dark:text-gray-200', !isActive);
-                button.classList.toggle('hover:bg-gray-300', !isActive);
-                button.classList.toggle('dark:hover:bg-gray-600', !isActive);
+                button.classList.toggle('sort-btn-style-active', isActive);
+                button.classList.toggle('sort-btn-style-inactive', !isActive);
             });
         }
 
@@ -354,15 +347,15 @@ async function generateCountryIndexHtml(countryName, groupedDivisionStats, total
                 <div class="card-header">
                     <h2 class="card-title">${translate('divisionalReports', locale)}</h2>
                     <div class="card-actions">
-                        <div class="checkbox-container">
-                            <input type="checkbox" id="hide-empty" checked class="checkbox-input">
-                            <label for="hide-empty" class="checkbox-label">${translate('hideEmptyDivisions', locale)}</label>
-                        </div>
                         <div class="sort-controls">
                             <span class="sort-label">${translate('sortBy', locale)}</span>
                             <button id="sort-percentage" data-sort="percentage" class="sort-btn sort-btn-style">${translate('invalidPercentage', locale)}</button>
                             <button id="sort-invalid" data-sort="invalidCount" class="sort-btn sort-btn-style">${translate('invalidCount', locale)}</button>
                             <button id="sort-name" data-sort="name" class="sort-btn sort-btn-style">${translate('name', locale)}</button>
+                        </div>
+                        <div class="checkbox-container">
+                            <label for="hide-empty" class="checkbox-label">${translate('hideEmptyDivisions', locale)}</label>
+                            <input type="checkbox" id="hide-empty" checked class="checkbox-input">
                         </div>
                     </div>
                 </div>
