@@ -41,6 +41,24 @@ function consolidatePlusSigns(parts) {
 }
 
 
+/**
+ * Replaces invisible Unicode control characters (zero-width characters, 
+ * joiners, and directional marks) in a string with the visible space symbol (U+2423 '␣').
+ * * This is primarily used for displaying user input in a diff or log, ensuring 
+ * that characters which consume zero width (and would otherwise be invisible) 
+ * are clearly marked as present in the original string before being removed by 
+ * parsing/cleaning logic.
+ *
+ * @param {string} text The input string potentially containing invisible Unicode characters.
+ * @returns {string} The string with all specified invisible characters replaced by '␣'.
+ */
+function replaceInvisibleChars(text) {
+    // The pattern targets the common zero-width, joiner, and directional marks.
+    const invisibleCharPattern = /[\u200B-\u200F\u202A-\u202E\u2060-\u2064\uFEFF]/g;
+    return text.replace(invisibleCharPattern, '␣'); 
+}
+
+
 // --- Core Diff Logic ---
 
 /**
@@ -179,12 +197,14 @@ function mergeDiffs(diffResult) {
  * @returns {{oldDiff: string, newDiff: string}} - An object containing the HTML for both diffs.
  */
 function getDiffHtml(oldString, newString) {
+    const oldStringCleaned = replaceInvisibleChars(oldString)
+    const newStringCleaned = replaceInvisibleChars(newString)
     // Split and initial filter for both strings
-    const oldPartsUnfiltered = oldString.split(UNIVERSAL_SPLIT_CAPTURE_REGEX);
+    const oldPartsUnfiltered = oldStringCleaned.split(UNIVERSAL_SPLIT_CAPTURE_REGEX);
     // Filter out falsey values (undefined from capturing groups) and empty strings
     const oldParts = oldPartsUnfiltered.filter(s => s && s.trim().length > 0);
 
-    const newPartsUnfiltered = newString.split(NEW_SPLIT_CAPTURE_REGEX);
+    const newPartsUnfiltered = newStringCleaned.split(NEW_SPLIT_CAPTURE_REGEX);
     const newParts = newPartsUnfiltered.filter(s => s && s.trim().length > 0);
 
     // Apply consolidation to both old and new parts
@@ -251,4 +271,4 @@ function getDiffHtml(oldString, newString) {
     return { oldDiff: oldDiffHtml, newDiff: newDiffHtml };
 }
 
-module.exports = { normalize, consolidatePlusSigns, diffPhoneNumbers, getDiffHtml, mergeDiffs };
+module.exports = { normalize, consolidatePlusSigns, replaceInvisibleChars, diffPhoneNumbers, getDiffHtml, mergeDiffs };
