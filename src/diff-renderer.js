@@ -235,9 +235,9 @@ function getDiffHtml(oldString, newString) {
             for (const part of separatorDiff) {
                 if (part.removed) {
                     // oldDiffHtml += `<span class="diff-removed">${part.value}</span>`;
-                    allOriginalDiff.push({value: part, removed: true});
+                    allOriginalDiff.push({value: part.value, removed: true});
                 } else if (part.added) {
-                    allSuggestedDiff.push({value: part, added: true});
+                    allSuggestedDiff.push({value: part.value, added: true});
                     // newDiffHtml += `<span class="diff-added">${part.value}</span>`;;
                 } else {
                     allOriginalDiff.push({value: part, removed: false, added: false});
