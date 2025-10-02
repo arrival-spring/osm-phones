@@ -254,7 +254,7 @@ describe('getDiffHtml', () => {
     // Single number, adding country code
     test('should correctly diff two semicolon-separated numbers', () => {
         const original = '023 456 7890';
-        const suggested = '+27 23 456 7890';
+        const suggested = '+37 23 456 7890';
 
         const result = getDiffHtml(original, suggested);
 
@@ -263,7 +263,7 @@ describe('getDiffHtml', () => {
         expect(result.oldDiff).toBe(expectedOriginal);
 
         // --- Suggested HTML (Additions) ---
-        const expectedSuggested = '<span class="diff-added">+27 </span><span class="diff-unchanged">23 456 7890</span>';
+        const expectedSuggested = '<span class="diff-added">+37 </span><span class="diff-unchanged">23 456 7890</span>';
         expect(result.newDiff).toBe(expectedSuggested);
     });
 
