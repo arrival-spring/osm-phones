@@ -1,6 +1,6 @@
 const { parsePhoneNumber } = require('libphonenumber-js');
 const { FEATURE_TAGS, HISTORIC_AND_DISUSED_PREFIXES, EXCLUSIONS, PHONE_TAGS, WEBSITE_TAGS, BAD_SEPARATOR_REGEX, UNIVERSAL_SPLIT_REGEX } = require('./constants');
-const {slugify} = require('slugify');
+const slugify = require('slugify');
 
 /**
  * Converts a country or region name into a 'safe' string (slug)
