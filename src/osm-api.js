@@ -1,4 +1,4 @@
-const { OVERPASS_API_URL } = require('./constants');
+const { OVERPASS_API_URL, PHONE_TAGS } = require('./constants');
 
 /**
  * Recursive unction to fetch admin_level=6 subdivisions from Overpass API.
@@ -70,12 +70,15 @@ async function fetchOsmDataForDivision(division, retries = 3) {
     const areaId = division.id + 3600000000;
     const queryTimeout = 600;
 
+    const tagQuery = PHONE_TAGS
+        .map(tag => `nwr(area.division)["${tag}"~".*"];`)
+        .join('\n');
+
     const overpassQuery = `
         [out:json][timeout:${queryTimeout}];
         area(${areaId})->.division;
         (
-          nwr(area.division)["phone"~".*"];
-          nwr(area.division)["contact:phone"~".*"];
+          ${tagQuery}
         );
         out center;
     `;
