@@ -2,6 +2,7 @@ const {
     normalize,
     consolidatePlusSigns,
     diffPhoneNumbers,
+    mergeDiffs,
     getDiffHtml
 } = require('../src/diff-renderer');
 
@@ -191,6 +192,78 @@ describe('diffPhoneNumbers (Single Number Diff Logic)', () => {
     });
 });
 
+
+describe('mergeDiffs', () => {
+    test('merge simple diff', () => {
+        const original = [
+            {value: '0', removed: true},
+            {value: '1', removed: false, added: false},
+            {value: '2', removed: false, added: false},
+        ]
+        const expectedMerged = [
+            {value: '0', removed: true},
+            {value: '12', removed: false, added: false},
+        ]
+        expect(mergeDiffs(original).toEqual(expectedMerged))
+    });
+
+    test('merge multiple unchanged and removals diff', () => {
+        const original = [
+            {value: '+', removed: false, added: false},
+            {value: '4', removed: false, added: false},
+            {value: '4', removed: false, added: false},
+            {value: ' ', removed: false, added: false},
+            {value: '(', removed: true},
+            {value: '0', removed: true},
+            {value: ')', removed: true},
+            {value: ' ', removed: true},
+            {value: '1', removed: false, added: false},
+            {value: '2', removed: false, added: false},
+            {value: '3', removed: false, added: false},
+            {value: '4', removed: false, added: false},
+            {value: ' ', removed: false, added: false},
+            {value: '5', removed: false, added: false},
+            {value: '6', removed: false, added: false},
+            {value: '7', removed: false, added: false},
+            {value: '8', removed: false, added: false},
+        ]
+        const expectedMerged = [
+            {value: '+44 ', removed: false, added: false},
+            {value: '(0) ', removed: true},
+            {value: '1234 5678', removed: false, added: false},
+        ]
+        expect(mergeDiffs(original).toEqual(expectedMerged))
+    });
+
+    test('merge various multiple additions and unchanged', () => {
+        const original = [
+            {value: '+', added: true},
+            {value: '3', added: true},
+            {value: '2', added: true},
+            {value: ' ', added: true},
+            {value: '5', removed: false, added: false},
+            {value: '8', removed: false, added: false},
+            {value: ' ', removed: false, added: false},
+            {value: '5', removed: false, added: false},
+            {value: '1', removed: false, added: false},
+            {value: ' ', added: true},
+            {value: '5', removed: false, added: false},
+            {value: '5', removed: false, added: false},
+            {value: ' ', added: true},
+            {value: '9', removed: false, added: false},
+            {value: '2', removed: false, added: false},
+        ]
+        const expectedMerged = [
+            {value: '+32 ', added: true},
+            {value: '58 51', removed: false, added: false},
+            {value: ' ', added: true},
+            {value: '55', removed: false, added: false},
+            {value: ' ', added: true},
+            {value: '92', removed: false, added: false},
+        ]
+        expect(mergeDiffs(original).toEqual(expectedMerged))
+    });
+});
 
 describe('getDiffHtml (Multi-Number Diff Logic)', () => {
 

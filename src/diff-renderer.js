@@ -77,10 +77,7 @@ function diffPhoneNumbers(original, suggested) {
         const char = original[i];
 
         // + should only appear at the start
-        if (i === 0 && char === '+' && suggested[i] === '+') {
-            originalDiff.push({ value: char, removed: false, added: false });
-            suggestedRemainder = suggestedRemainder.slice(1);
-        } else if (/\d/.test(char)) {
+        if (/\d/.test(char)) {
             // It's a digit. Determine if it was removed in the semantic diff.
             if (commonPointer < commonDigits.length && char === commonDigits[commonPointer]) {
                 // Digit is part of the common sequence. UNCHANGED.
@@ -100,7 +97,7 @@ function diffPhoneNumbers(original, suggested) {
                 originalDiff.push({ value: char, removed: true });
             }
         } else if (char === suggestedRemainder[0]) {
-            // Both have a space (or formatting symbol) at this position, UNCHANGED
+            // Both have another character the same (plus, space or dash), UNCHANGED
             originalDiff.push({ value: char, removed: false, added: false });
             suggestedRemainder = suggestedRemainder.slice(1)
         } else {
@@ -121,11 +118,7 @@ function diffPhoneNumbers(original, suggested) {
     for (let i = 0; i < suggested.length; i++) {
         const char = suggested[i];
 
-        // + should only appear at the start
-        if (i === 0 && char === '+' && original[i] === '+') {
-            suggestedDiff.push({ value: char, removed: false, added: false });
-            originalRemainderNew = originalRemainderNew.slice(1);
-        } else if (/\d/.test(char)) {
+        if (/\d/.test(char)) {
             // It's a digit. Check if it's the next digit in the common sequence.
             if (commonPointerNew < commonDigits.length && commonDigits[commonPointerNew] === char) {
                 // Digit is part of the common sequence. UNCHANGED.
@@ -145,7 +138,7 @@ function diffPhoneNumbers(original, suggested) {
                 suggestedDiff.push({ value: char, added: true });
             }
         } else if (char === originalRemainderNew[0]) {
-            // Both have a space (or formatting symbol) at this position, UNCHANGED
+            // Both have another character the same (plus, space or dash), UNCHANGED
             suggestedDiff.push({ value: char, removed: false, added: false });
             originalRemainderNew = originalRemainderNew.slice(1);
         } else {
@@ -159,6 +152,23 @@ function diffPhoneNumbers(original, suggested) {
     return { originalDiff, suggestedDiff };
 }
 
+function mergeDiffs(diffResult) {
+    let mergedDiff = [];
+    if (!diffResult[0]) {
+        return mergedDiff;
+    }
+    mergedDiff.push(diffResult[0])
+    for (let i = 1; i < diffResult.length; i++) {
+        const thisDiff = diffResult[i];
+        const lastDiff = mergedDiff.at(-1);
+        if (diffResult[i] && thisDiff.added === lastDiff.added && thisDiff.removed === lastDiff.removed) {
+            lastDiff.value += thisDiff.value;
+        } else {
+            mergedDiff.push(thisDiff);
+        }
+    }
+    return mergedDiff;
+}
 
 // --- HTML Generation Logic ---
 
@@ -233,4 +243,4 @@ function getDiffHtml(oldString, newString) {
     return { oldDiff: oldDiffHtml, newDiff: newDiffHtml };
 }
 
-module.exports = { normalize, consolidatePlusSigns, diffPhoneNumbers, getDiffHtml };
+module.exports = { normalize, consolidatePlusSigns, diffPhoneNumbers, getDiffHtml, mergeDiffs };
