@@ -180,27 +180,6 @@ function mergeDiffs(diffResult) {
  * @returns {{oldDiff: string, newDiff: string}} - An object containing the HTML for both diffs.
  */
 function getDiffHtml(oldString, newString) {
-    // Do I need the other stuff?
-    const { originalDiff, suggestedDiff } = diffPhoneNumbers(oldString, newString);
-
-    const mergedOriginalDiff = mergeDiffs(originalDiff);
-    const mergedSuggestedDiff = mergeDiffs(suggestedDiff)
-
-    let oldDiffHtml = '';
-    let newDiffHtml = '';
-
-    mergedOriginalDiff.forEach((part) => {
-        const colorClass = part.removed ? 'diff-removed' : 'diff-unchanged';
-        oldDiffHtml += `<span class="${colorClass}">${part.value}</span>`;
-    });
-
-    mergedSuggestedDiff.forEach((part) => {
-        const colorClass = part.added ? 'diff-added' : 'diff-unchanged';
-        newDiffHtml += `<span class="${colorClass}">${part.value}</span>`;
-    });
-
-    return { oldDiff: oldDiffHtml, newDiff: newDiffHtml };
-
     // Split and initial filter for both strings
     const oldPartsUnfiltered = oldString.split(UNIVERSAL_SPLIT_CAPTURE_REGEX);
     // Filter out falsey values (undefined from capturing groups) and empty strings
@@ -216,6 +195,9 @@ function getDiffHtml(oldString, newString) {
     // let oldDiffHtml = '';
     // let newDiffHtml = '';
 
+    let allOriginalDiff = [];
+    let allSuggestedDiff = [];
+
     // Iterate over the minimum length of the new, consolidated arrays
     const numSegments = Math.min(consolidatedOldParts.length, consolidatedNewParts.length);
 
@@ -230,18 +212,20 @@ function getDiffHtml(oldString, newString) {
             // --- This is a phone number segment ---
             const { originalDiff, suggestedDiff } = diffPhoneNumbers(oldSegment, newSegment);
 
-            const mergedOriginalDiff = mergeDiffs(originalDiff);
-            const mergedSuggestedDiff = mergeDiffs(suggestedDiff)
+            allOriginalDiff += originalDiff;
+            allSuggestedDiff += suggestedDiff;
+            // const mergedOriginalDiff = mergeDiffs(originalDiff);
+            // const mergedSuggestedDiff = mergeDiffs(suggestedDiff);
 
-            mergedOriginalDiff.forEach((part) => {
-                const colorClass = part.removed ? 'diff-removed' : 'diff-unchanged';
-                oldDiffHtml += `<span class="${colorClass}">${part.value}</span>`;
-            });
+            // mergedOriginalDiff.forEach((part) => {
+            //     const colorClass = part.removed ? 'diff-removed' : 'diff-unchanged';
+            //     oldDiffHtml += `<span class="${colorClass}">${part.value}</span>`;
+            // });
 
-            mergedSuggestedDiff.forEach((part) => {
-                const colorClass = part.added ? 'diff-added' : 'diff-unchanged';
-                newDiffHtml += `<span class="${colorClass}">${part.value}</span>`;
-            });
+            // mergedSuggestedDiff.forEach((part) => {
+            //     const colorClass = part.added ? 'diff-added' : 'diff-unchanged';
+            //     newDiffHtml += `<span class="${colorClass}">${part.value}</span>`;
+            // });
         } else {
             // --- This is a separator (e.g., ';', 'or', ',') ---
             // Just do a regular diffChars on the separators
@@ -250,16 +234,36 @@ function getDiffHtml(oldString, newString) {
 
             for (const part of mergedSeparatorDiff) {
                 if (part.removed) {
-                    oldDiffHtml += `<span class="diff-removed">${part.value}</span>`;
+                    // oldDiffHtml += `<span class="diff-removed">${part.value}</span>`;
+                    allOriginalDiff.push({value: part, removed: true});
                 } else if (part.added) {
-                    newDiffHtml += `<span class="diff-added">${part.value}</span>`;;
+                    allSuggestedDiff.push({value: part, added: true});
+                    // newDiffHtml += `<span class="diff-added">${part.value}</span>`;;
                 } else {
-                    oldDiffHtml += `<span class="diff-unchanged">${part.value}</span>`;
-                    newDiffHtml += `<span class="diff-unchanged">${part.value}</span>`;
+                    allOriginalDiff.push({value: part, removed: false, added: false});
+                    allSuggestedDiff.push({value: part, removed: false, added: false});
+                    // oldDiffHtml += `<span class="diff-unchanged">${part.value}</span>`;
+                    // newDiffHtml += `<span class="diff-unchanged">${part.value}</span>`;
                 }
             }
         }
     }
+
+    const mergedOriginalDiff = mergeDiffs(allOriginalDiff);
+    const mergedSuggestedDiff = mergeDiffs(allSuggestedDiff);
+
+    let oldDiffHtml = '';
+    let newDiffHtml = '';
+
+    mergedOriginalDiff.forEach((part) => {
+        const colorClass = part.removed ? 'diff-removed' : 'diff-unchanged';
+        oldDiffHtml += `<span class="${colorClass}">${part.value}</span>`;
+    });
+
+    mergedSuggestedDiff.forEach((part) => {
+        const colorClass = part.added ? 'diff-added' : 'diff-unchanged';
+        newDiffHtml += `<span class="${colorClass}">${part.value}</span>`;
+    });
 
     // Append any trailing parts
     oldDiffHtml += consolidatedOldParts.slice(numSegments).join('');
