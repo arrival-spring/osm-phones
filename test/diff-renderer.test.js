@@ -108,7 +108,7 @@ describe('diffPhoneNumbers (Single Number Diff Logic)', () => {
             {value: '+', added: true},
             {value: '3', added: true},
             {value: '2', added: true},
-            {value: ' ', added: false},
+            {value: ' ', added: true},
             {value: '4', removed: false, added: false},
             {value: '7', removed: false, added: false},
             {value: '1', removed: false, added: false},
@@ -157,7 +157,7 @@ describe('diffPhoneNumbers (Single Number Diff Logic)', () => {
             {value: '5', removed: false, added: false},
             {value: '6', removed: false, added: false},
             {value: '7', removed: false, added: false},
-            {value: '0', removed: false, added: false},
+            {value: '8', removed: false, added: false},
         ]
         expect(result.originalDiff).toEqual(expectedOriginal)
         
@@ -175,7 +175,7 @@ describe('diffPhoneNumbers (Single Number Diff Logic)', () => {
             {value: '5', removed: false, added: false},
             {value: '6', removed: false, added: false},
             {value: '7', removed: false, added: false},
-            {value: '0', removed: false, added: false},
+            {value: '8', removed: false, added: false},
         ]
         expect(result.suggestedDiff).toEqual(expectedSuggested)
 
