@@ -2,12 +2,48 @@ const { parsePhoneNumber } = require('libphonenumber-js');
 const { FEATURE_TAGS, HISTORIC_AND_DISUSED_PREFIXES, EXCLUSIONS, PHONE_TAGS, WEBSITE_TAGS, BAD_SEPARATOR_REGEX, UNIVERSAL_SPLIT_REGEX } = require('./constants');
 
 /**
- * Creates a safe, slug-like name for filenames.
- * @param {string} name
- * @returns {string}
+ * Converts a country or region name into a 'safe' string (slug) suitable for
+ * use as filenames, URLs, or command-line identifiers.
+ *
+ * This function uses Unicode property escapes (\p{L} and \p{N}) to robustly
+ * preserve all letters and numbers across all world scripts (including accented
+ * Latin and non-Latin scripts like Japanese/Cyrillic).
+ *
+ * @param {string} name - The country or region name to convert.
+ * @returns {string} The safe, slugified string.
  */
 function safeName(name) {
-    return name.replace(/\s+|\//g, '-').toLowerCase();
+    if (!name) {
+        return '';
+    }
+
+    let processedName = name;
+
+    // 1. Convert to lowercase
+    processedName = processedName.toLowerCase();
+
+    // 2. Substitute non-letter (\p{L}), non-number (\p{N}), and non-space (\s) characters with a hyphen.
+    // The 'gu' flags enable global replacement and robust Unicode handling.
+    // This step preserves all letters/numbers across all scripts and substitutes all symbols.
+    // Note: If running in a very old JS environment that doesn't support \p{L}, this may fail.
+    try {
+        processedName = processedName.replace(/[^\p{L}\p{N}\s]+/gu, '-');
+    } catch (e) {
+        // Fallback for environments lacking full Unicode property support
+        // This regex is less precise but covers most common use cases
+        processedName = processedName.replace(/[^a-z0-9\s\u00C0-\uFFFF]+/g, '-');
+    }
+
+    // 3. Replace one or more spaces with a hyphen.
+    processedName = processedName.replace(/\s+/g, '-');
+
+    // 4. Remove repeated substitutes (e.g., '--' becomes '-')
+    processedName = processedName.replace(/-+/g, '-');
+
+    // 5. Remove substitutes appearing at the start or end of the string.
+    processedName = processedName.replace(/^-|-$/g, '');
+
+    return processedName;
 }
 
 /**
