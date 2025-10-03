@@ -366,7 +366,7 @@ const ICON_PACKS = {
 }
 
 const ICONS_DIR = path.join(__dirname, '..', 'build-assets', 'icons');
-const GITHUB_API_BASE_URL = 'https://api.github.com/repos/';
+const GITHUB_API_BASE_URL = 'https://api.github.com/repos';
 
 
 module.exports = {
