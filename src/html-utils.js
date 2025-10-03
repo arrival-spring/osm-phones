@@ -1,5 +1,5 @@
 const { translate } = require('./i18n');
-
+const { ICON_ATTRIBUTION } = require('./constants.js')
 const githubLink = "https://github.com/arrival-spring/osm-phones/";
 
 /**
@@ -55,13 +55,52 @@ function createStatsBox(total, invalid, fixable, locale) {
     `;
 }
 
+
+function getIconAttributionHtml(includeIconAttribution, locale) {
+    if (!includeIconAttribution) {
+        return '';
+    }
+
+    const attributionSections = ICON_ATTRIBUTION.map(iconPack => {
+        // Part 1: Icon Name Link (or just the name if link is missing)
+        const nameElement = (iconPack.name && iconPack.link)
+            ? `<a href="${iconPack.link}" target="_blank" rel="noopener noreferrer" class="footer-link">${iconPack.name}</a>`
+            : iconPack.name || '';
+
+        // Part 2: Attribution Text
+        const attributionElement = iconPack.attribution || '';
+
+        // Part 3: License Link (or just the license if link is missing)
+        const licenseElement = (iconPack.license && iconPack.license_link)
+            ? `<a href="${iconPack.license_link}" target="_blank" rel="noopener noreferrer" class="footer-link">${iconPack.license}</a>`
+            : iconPack.license || '';
+
+        // Combine all non-empty parts with a space separator
+        const combinedContent = [nameElement, attributionElement, licenseElement]
+            .filter(Boolean) // Filters out any empty strings ('', 0, null, undefined)
+            .join(' ');
+
+        // Return the combined content string
+        return combinedContent;
+    });
+
+    // Join all sections with a full stop and a space ('. ')
+    const allAttributions = attributionSections.filter(Boolean).join('. ');
+
+    // Wrap the entire string in a single <p> tag
+    return allAttributions
+        ? `<p class="footer-text">${translate('iconsSourcedFrom', locale)} ${allAttributions}</p>`
+        : '';
+}
+
+
 /**
  * Creates the HTML footer with data timestamp and GitHub link.
  * @param {string} locale - Locale to format the date in
  * @param {Object} translations - The translations dictionary for the current locale
  * @returns {string}
  */
-function createFooter(locale = 'en-GB', translations) {
+function createFooter(locale = 'en-GB', translations, includeIconAttribution = false) {
     translations = translations || {};
 
     const dataTimestamp = new Date();
@@ -89,7 +128,7 @@ function createFooter(locale = 'en-GB', translations) {
         ${dataSourcedTemplate}
     </p>
     <p class="footer-text">${suggestionIssueLink} <a href="${githubLink}" target="_blank" rel="noopener noreferrer" class="footer-link">${letMeKnowOnGitHub}</a>.</p>
-    
+    ${getIconAttributionHtml(includeIconAttribution, locale)}
     <script>
         // Embed the translations object for client-side use
         const translations = ${JSON.stringify(translations)};

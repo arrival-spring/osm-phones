@@ -34,6 +34,7 @@ const MASTER_KEYS = {
     'disused': [],
     'noSubdivisionsFound': [],
     'fixable': [],
+    'iconsSourcedFrom': [],
 
     'fixableNumbersDescription': [],
     'invalidNumbersDescription': [],

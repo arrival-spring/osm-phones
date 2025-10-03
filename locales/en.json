@@ -8,6 +8,7 @@
   "calculating": "calculating...",
   "suggestionIssueLink": "Got a suggestion or an issue?",
   "letMeKnowOnGitHub": "Let me know on GitHub",
+  "iconsSourcedFrom": "Icons sourced from:",
 
   "settings": "settings",
 
@@ -15,7 +16,7 @@
   "editIn": "Edit in %e",
   "fixInJOSM": "Fix in JOSM",
   "website": "Website",
-  "suggestedFix": "Suggested fix:",
+  "suggestedFix": "Suggested fix",
 
   "backToCountryPage": "Back to country page",
   "phoneNumberReport": "Phone Number Report",

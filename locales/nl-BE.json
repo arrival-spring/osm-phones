@@ -8,6 +8,7 @@
   "calculating": "bezig met berekenen...",
   "suggestionIssueLink": "Heeft u een suggestie of een probleem?",
   "letMeKnowOnGitHub": "Laat het me weten op GitHub",
+  "iconsSourcedFrom": "Pictogrammen afkomstig van:",
   
   "settings": "instellingen",
 
@@ -15,7 +16,7 @@
   "editIn": "Bewerken in %e",
   "fixInJOSM": "Corrigeren in JOSM",
   "website": "Website",
-  "suggestedFix": "Voorgestelde correctie:",
+  "suggestedFix": "Voorgestelde correctie",
 
   "backToCountryPage": "Terug naar landenpagina",
   "phoneNumberReport": "Telefoon&shy;nummer&shy;rapport",

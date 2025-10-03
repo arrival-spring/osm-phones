@@ -15,7 +15,8 @@
   "editIn": "Modifier dans %e",
   "fixInJOSM": "Corriger dans JOSM",
   "website": "Site web",
-  "suggestedFix": "Correction suggérée :",
+  "suggestedFix": "Correction suggérée",
+  "iconsSourcedFrom": "Icônes provenant de :",
 
   "backToCountryPage": "Retour à la page du pays",
   "phoneNumberReport": "Rapport sur les numéros de téléphone",
