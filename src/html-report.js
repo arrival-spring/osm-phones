@@ -4,7 +4,7 @@ const { PUBLIC_DIR, OSM_EDITORS, ALL_EDITOR_IDS, DEFAULT_EDITORS_DESKTOP, DEFAUL
 const { safeName, getFeatureTypeName, isDisused } = require('./data-processor');
 const { translate } = require('./i18n');
 const { getDiffHtml } = require('./diff-renderer');
-const { favicon, themeButton, createFooter, createStatsBox } = require('./html-utils')
+const { favicon, themeButton, createFooter, createStatsBox, escapeHTML } = require('./html-utils')
 
 function createDetailsGrid(item, locale) {
     const detailsGrid = Object.keys(item.invalidNumbers).map(key => {
@@ -26,7 +26,7 @@ function createDetailsGrid(item, locale) {
                 </div>
             `;
         } else {
-            originalNumberHtml = `<span>${originalNumber}</span>`;
+            originalNumberHtml = `<span>${escapeHTML(originalNumber)}</span>`;
         }
 
         // Return the HTML for one set of phone number details
@@ -120,7 +120,7 @@ function createListItem(item, locale) {
             <div class="list-item-content-wrapper">
                 <div class="list-item-header">
                     <h3 class="list-item-title">
-                        <a href="${item.osmUrl}" target="_blank" rel="noopener noreferrer" class="list-item-link">${getFeatureTypeName(item)}</a>
+                        <a href="${item.osmUrl}" target="_blank" rel="noopener noreferrer" class="list-item-link">${escapeHTML(getFeatureTypeName(item))}</a>
                     </h3>
                     ${disusedLabel}
                 </div>
@@ -220,7 +220,7 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
                     <span class="align-middle">${translate('backToCountryPage', locale)}</span>
                 </a>
                 <h1 class="page-title">${translate('phoneNumberReport', locale)}</h1>
-                <h2 class="page-subtitle">${subdivision.name}</h2>
+                <h2 class="page-subtitle">${escapeHTML(subdivision.name)}</h2>
             </header>
             ${createStatsBox(totalNumbers, invalidNumbers.length, autofixableNumbers.length, locale)}
             ${fixableAndInvalidSectionContent}

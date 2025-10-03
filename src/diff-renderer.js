@@ -190,6 +190,27 @@ function mergeDiffs(diffResult) {
 // --- HTML Generation Logic ---
 
 /**
+ * Escapes special HTML characters in a string.
+ * @param {string} str - The string to escape.
+ * @returns {string} The escaped string.
+ */
+function escapeHTML(str) {
+    if (!str) {
+        return '';
+    }
+    return str.replace(/[&<>"']/g, (match) => {
+        switch (match) {
+            case '&': return '&amp;';
+            case '<': return '&lt;';
+            case '>': return '&gt;';
+            case '"': return '&quot;';
+            case "'": return '&#039;';
+            default: return match;
+        }
+    });
+}
+
+/**
  * Creates an HTML string with diff highlighting for two phone number strings, 
  * handling multiple numbers separated by various delimiters.
  * @param {string} oldString - The original phone number string(s).
@@ -256,17 +277,17 @@ function getDiffHtml(oldString, newString) {
 
     mergedOriginalDiff.forEach((part) => {
         const colorClass = part.removed ? 'diff-removed' : 'diff-unchanged';
-        oldDiffHtml += `<span class="${colorClass}">${part.value}</span>`;
+        oldDiffHtml += `<span class="${colorClass}">${escapeHTML(part.value)}</span>`;
     });
 
     mergedSuggestedDiff.forEach((part) => {
         const colorClass = part.added ? 'diff-added' : 'diff-unchanged';
-        newDiffHtml += `<span class="${colorClass}">${part.value}</span>`;
+        newDiffHtml += `<span class="${colorClass}">${escapeHTML(part.value)}</span>`;
     });
 
     // Append any trailing parts
-    oldDiffHtml += consolidatedOldParts.slice(numSegments).join('');
-    newDiffHtml += consolidatedNewParts.slice(numSegments).join('');
+    oldDiffHtml += escapeHTML(consolidatedOldParts.slice(numSegments).join(''));
+    newDiffHtml += escapeHTML(consolidatedNewParts.slice(numSegments).join(''));
 
     return { oldDiff: oldDiffHtml, newDiff: newDiffHtml };
 }
