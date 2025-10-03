@@ -57,30 +57,40 @@ function createStatsBox(total, invalid, fixable, locale) {
 
 
 function getIconAttributionHtml(includeIconAttribution) {
-    return includeIconAttribution ? (
-        ICON_ATTRIBUTION.map(iconPack => {
+    if (!includeIconAttribution) {
+        return '';
+    }
 
-            // Part 1: Icon Name Link (or just the name if link is missing)
-            const nameElement = (iconPack.name && iconPack.link)
-                ? `<a href="${iconPack.link}" target="_blank" rel="noopener noreferrer" class="footer-link">${iconPack.name}</a>`
-                : iconPack.name || '';
+    const attributionSections = ICON_ATTRIBUTION.map(iconPack => {
+        // Part 1: Icon Name Link (or just the name if link is missing)
+        const nameElement = (iconPack.name && iconPack.link)
+            ? `<a href="${iconPack.link}" target="_blank" rel="noopener noreferrer" class="footer-link">${iconPack.name}</a>`
+            : iconPack.name || '';
 
-            // Part 2: Attribution Text
-            const attributionElement = iconPack.attribution || '';
+        // Part 2: Attribution Text
+        const attributionElement = iconPack.attribution || '';
 
-            // Part 3: License Link (or just the license if link is missing)
-            const licenseElement = (iconPack.license && iconPack.license_link)
-                ? `<a href="${iconPack.license_link}" target="_blank" rel="noopener noreferrer" class="footer-link">${iconPack.license}</a>`
-                : iconPack.license || '';
+        // Part 3: License Link (or just the license if link is missing)
+        const licenseElement = (iconPack.license && iconPack.license_link)
+            ? `<a href="${iconPack.license_link}" target="_blank" rel="noopener noreferrer" class="footer-link">${iconPack.license}</a>`
+            : iconPack.license || '';
 
-            // Combine all non-empty parts with a space separator
-            const combinedContent = [nameElement, attributionElement, licenseElement]
-                .filter(Boolean) // Filters out any empty strings ('', 0, null, undefined)
-                .join(' ');
+        // Combine all non-empty parts with a space separator
+        const combinedContent = [nameElement, attributionElement, licenseElement]
+            .filter(Boolean) // Filters out any empty strings ('', 0, null, undefined)
+            .join(' ');
 
-            return `<p class="footer-text">${combinedContent}</p>`;
-        }).join('\n') // Join all the generated <p> tags
-    ) : '';
+        // Return the combined content string
+        return combinedContent;
+    });
+
+    // Join all sections with a full stop and a space ('. ')
+    const allAttributions = attributionSections.filter(Boolean).join('. ');
+
+    // Wrap the entire string in a single <p> tag
+    return allAttributions
+        ? `<p class="footer-text">${allAttributions}</p>`
+        : '';
 }
 
 
