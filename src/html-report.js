@@ -85,7 +85,7 @@ function getIconHtml(iconName) {
     // --- Font Awesome (Class-Based Icons) ---
     if (library === 'fas' || library === 'far' || library === 'fab' || library === 'fa') {
         const className = `${library} fa-${icon}`;
-        iconHtml = `<span class="list-item-icon-container"><i class="icon ${className}"></i></span>`;
+        iconHtml = `<i class="icon ${className}"></i>`;
     } 
 
     // --- NPM-Installed SVG Packs (Maki, Temaki) ---
@@ -204,14 +204,12 @@ function createListItem(item, locale) {
 
     return `
         <li class="report-list-item">
-            <div class="list-item-icon-circle-preview">
+            <a class="list-item-icon-circle-preview" href="${item.osmUrl}" target="_blank" rel="noopener noreferrer">
                 ${iconHtml}
-            </div>
+            </a>
             <div class="list-item-content-wrapper">
                 <div class="list-item-header">
-                    <h3 class="list-item-title">
-                        <a href="${item.osmUrl}" target="_blank" rel="noopener noreferrer" class="list-item-link">${getFeatureTypeName(item, locale)}</a>
-                    </h3>
+                    <h3 class="list-item-title">${getFeatureTypeName(item, locale)}</h3>
                     ${disusedLabel}
                 </div>
                 ${createDetailsGrid(item, locale)}
