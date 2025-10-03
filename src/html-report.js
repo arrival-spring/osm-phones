@@ -281,7 +281,6 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
         ${favicon}
         <link href="../styles.css" rel="stylesheet">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-        <link rel="stylesheet" href="https://unpkg.com/@openstreetmap/iD/dist/iD.css">
         <script src="../theme.js"></script>
     </head>
     <body class="body-styles">
