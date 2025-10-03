@@ -1,5 +1,7 @@
 const { diffChars } = require('diff');
 const { UNIVERSAL_SPLIT_CAPTURE_REGEX } = require('./constants.js');
+const { escapeHTML } = require('./html-utils.js');
+
 
 // Used for splitting the suggested fix (assuming standard semicolon separation)
 const NEW_SPLIT_CAPTURE_REGEX = /(; ?)/g;
@@ -188,27 +190,6 @@ function mergeDiffs(diffResult) {
 }
 
 // --- HTML Generation Logic ---
-
-/**
- * Escapes special HTML characters in a string.
- * @param {string} str - The string to escape.
- * @returns {string} The escaped string.
- */
-function escapeHTML(str) {
-    if (!str) {
-        return '';
-    }
-    return str.replace(/[&<>"']/g, (match) => {
-        switch (match) {
-            case '&': return '&amp;';
-            case '<': return '&lt;';
-            case '>': return '&gt;';
-            case '"': return '&quot;';
-            case "'": return '&#039;';
-            default: return match;
-        }
-    });
-}
 
 /**
  * Creates an HTML string with diff highlighting for two phone number strings, 
