@@ -45,27 +45,6 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
             invalid: \`${T.invalid}\`,
             noSubdivisionsFound: \`${T.noSubdivisionsFound}\`
         };
-        
-        /**
-         * Escapes special HTML characters in a string.
-         * @param {string} str - The string to escape.
-         * @returns {string} The escaped string.
-         */
-        function escapeHTML(str) {
-            if (!str) {
-                return '';
-            }
-            return str.replace(/[&<>"']/g, (match) => {
-                switch (match) {
-                    case '&': return '&amp;';
-                    case '<': return '&lt;';
-                    case '>': return '&gt;';
-                    case '"': return '&quot;';
-                    case "'": return '&#039;';
-                    default: return match;
-                }
-            });
-        }
 
         // Utility function for consistent number formatting
         function formatNumber(num) {
@@ -301,7 +280,7 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
                             <a href="\${safeCountryName}/\${safeDivisionName}.html" class="list-item-main-link">
                                 <div class="color-indicator" data-percentage="\${invalidPercentage}"></div>
                                 <div class="list-item-content-wrapper">
-                                    <h3 class="list-item-sub-title">\${escapeHTML(division.name)}</h3>
+                                    <h3 class="list-item-sub-title">\${division.name}</h3>
                                     <p class="country-description">\${itemStatsLine}</p>
                                 </div>
                             </a>
