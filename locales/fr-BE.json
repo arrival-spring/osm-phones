@@ -21,7 +21,7 @@
   "backToCountryPage": "Retour à la page du pays",
   "phoneNumberReport": "Rapport sur les numéros de téléphone",
   "fixableNumbersHeader": "Numéros corrigeables",
-  "fixableNumbersDescription": "Ces numéros semblent être valides mais sont mal formatés. La correction suggérée suppose qu'il s'agit bien de numéros pour ce pays. Toutes les corrections &apos;automatiques&apos; ne sont pas nécessairement valides, veuillez donc ne pas cliquer aveuglément sur tous les liens de correction sans d'abord vérifier le numéro.",
+  "fixableNumbersDescription": "Ces numéros semblent être valides mais sont mal formatés. La correction suggérée suppose qu&apos;il s&apos;agit bien de numéros pour ce pays. Toutes les corrections &apos;automatiques&apos; ne sont pas nécessairement valides, veuillez donc ne pas cliquer aveuglément sur tous les liens de correction sans d&apos;abord vérifier le numéro.",
   "noAutoFixable": "Aucun numéro de téléphone corrigeable automatiquement trouvé dans cette subdivision.",
   "invalidNumbersHeader": "Numéros invalides",
   "invalidNumbersDescription": "Ces numéros sont tous invalides d&apos;une manière ou d&apos;une autre ; peut-être sont-ils trop longs ou trop courts, ou peut-être leur manque-t-il un indicatif régional. Le site web pourrait être utilisé pour vérifier un numéro valide, ou un relevé sur place pourrait être nécessaire.",
