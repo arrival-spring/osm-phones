@@ -1,4 +1,4 @@
-const { getBestPreset, getMatchScore, getGeometry } = require('./preset-matcher');
+const { getBestPreset, getMatchScore, getGeometry } = require('../src/preset-matcher.js');
 
 // 1. Mock the file system to prevent errors when requiring the main file
 jest.mock('fs', () => ({
