@@ -98,8 +98,7 @@ function getGeometry(item) {
 /**
  * Calculates a match score between a preset's required tags and a feature's actual tags and geometry.
  * A score of -1 indicates an incompatible match.
- * * Score Calculation: preset.matchScore + (specific_matches * 2) + (wildcard_matches * 0.5)
- * * @param {object} preset - The preset definition (must have .tags and .geometry).
+ * @param {object} preset - The preset definition (must have .tags and .geometry).
  * @param {object} tags - The target OSM feature's tags (e.g., item.allTags).
  * @param {string} geometry - The target OSM feature's geometry type.
  * @returns {number} The match score. Higher scores indicate a better, more specific match.
@@ -110,7 +109,7 @@ function getMatchScore(preset, tags, geometry) {
         return -1;
     }
 
-    let score = preset.matchScore || 0;
+    let score = 0;
     let specificMatches = 0;
     let wildcardMatches = 0;
 
@@ -135,9 +134,12 @@ function getMatchScore(preset, tags, geometry) {
         }
     }
 
-    // Assign a high weight (2) to specific matches to beat high base scores (like 0.8)
-    // and keep wildcard matches fractional (0.5).
-    return score + (specificMatches * 2) + (wildcardMatches * 0.5);
+    // matchScore is less than 1, if we got to here then we have found a match so have more than 1 for the score
+    if (preset.matchScore) {
+        return preset.matchScore
+    }
+
+    return score + specificMatches + wildcardMatches * 0.5;
 }
 
 /**

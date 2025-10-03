@@ -47,7 +47,6 @@ const mockPresets = {
         tags: {
             'emergency': 'defibrillator' // Specific match
         },
-        matchScore: 0 // Base score 0
     },
     // 2. Indoor (High Base Score + Wildcard Match)
     'indoor': {
@@ -67,7 +66,6 @@ const mockPresets = {
         tags: {
             'seamark:type': '*'
         },
-        matchScore: 0
     },
     // 4. Line (Generic)
     'line': {
@@ -98,30 +96,26 @@ describe('Preset Matching Logic', () => {
     // Test the specific match score function
     describe('getMatchScore', () => {
         
-        test('should prioritize a specific tag match (x2) over high base score + wildcard (x0.5)', () => {
+        test('should prioritize a specific tag match generic match score', () => {
             const geometry = getGeometry(defibrillatorItem); // 'point'
             
             const defibPreset = mockPresets['emergency/defibrillator'];
-            // Score based on specific match weight (2.0)
-            expect(getMatchScore(defibPreset, defibrillatorItem.allTags, geometry)).toBe(2.0);
+            expect(getMatchScore(defibPreset, defibrillatorItem.allTags, geometry)).toBe(1.0);
             
             const indoorPreset = mockPresets.indoor;
-            // Score based on high base score (0.8) and wildcard weight (0.5)
-            expect(getMatchScore(indoorPreset, defibrillatorItem.allTags, geometry)).toBe(1.3);
+            expect(getMatchScore(indoorPreset, defibrillatorItem.allTags, geometry)).toBe(0.8);
         });
         
         test('should correctly score the "seamark" preset (Wildcard Match)', () => {
             const geometry = getGeometry(cableItem); // 'line'
             const preset = mockPresets.seamark;
-            // Score: matchScore (0) + specific (0) + wildcard (1 * 0.5)
-            expect(getMatchScore(preset, cableItem.allTags, geometry)).toBe(0.5);
+            expect(getMatchScore(preset, cableItem.allTags, geometry)).toBe(1.0);
         });
         
         test('should correctly score the "comm/cable" preset (Specific Match)', () => {
             const geometry = getGeometry(cableItem); // 'line'
             const preset = mockPresets['comm/cable'];
-            // Score: matchScore (2) + specific (2 * 2) + wildcard (0)
-            expect(getMatchScore(preset, cableItem.allTags, geometry)).toBe(6);
+            expect(getMatchScore(preset, cableItem.allTags, geometry)).toBe(2);
         });
     });
 
@@ -142,7 +136,7 @@ describe('Preset Matching Logic', () => {
 
         test('should select "seamark" if it is the highest scorer, beating the generic "line" preset', () => {
             const competitionPresets = {
-                'seamark': mockPresets.seamark,      // Score: 0.5
+                'seamark': mockPresets.seamark,      // Score: 1.0
                 'line': mockPresets.line             // Score: 0.1
             };
             global.getMockPresets = () => competitionPresets;
