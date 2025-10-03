@@ -1,10 +1,56 @@
-const { promises: fsPromises } = require('fs');
+const { promises: fsPromises, readFileSync, existsSync } = require('fs');
 const path = require('path');
-const { PUBLIC_DIR, OSM_EDITORS, ALL_EDITOR_IDS, DEFAULT_EDITORS_DESKTOP, DEFAULT_EDITORS_MOBILE } = require('./constants');
-const { safeName, getFeatureTypeName, isDisused } = require('./data-processor');
+const { PUBLIC_DIR, OSM_EDITORS, ALL_EDITOR_IDS, DEFAULT_EDITORS_DESKTOP, DEFAULT_EDITORS_MOBILE, ICONS_DIR } = require('./constants');
+const { safeName, getFeatureTypeName, getFeatureIcon, isDisused } = require('./data-processor');
 const { translate } = require('./i18n');
 const { getDiffHtml } = require('./diff-renderer');
 const { favicon, themeButton, createFooter, createStatsBox } = require('./html-utils')
+
+// Global map to store unique icons that need to be in the SVG sprite
+// Stores: { iconName: { content: <path/g data>, viewBox: '0 0 24 24' } }
+const iconSvgData = new Map();
+
+/**
+ * Adds an icon's SVG content and viewBox to the global collection for sprite generation.
+ * @param {string} iconName - The ID the icon will have in the sprite (e.g., 'maki-restaurant').
+ * @param {string} svgContent - The cleaned SVG path/group content (inner XML).
+ * @param {string} viewBox - The SVG's viewBox attribute value.
+ */
+function addIconToSprite(iconName, svgContent, viewBox) {
+    if (!iconSvgData.has(iconName)) {
+        iconSvgData.set(iconName, { content: svgContent, viewBox: viewBox });
+    }
+}
+
+/**
+ * Generates the complete SVG sprite content.
+ * @returns {string} The HTML string for the hidden SVG sprite.
+ */
+function generateSvgSprite() {
+    let symbols = '';
+    
+    // We set a default in case the viewBox is somehow missed
+    const defaultViewBox = '0 0 24 24';
+
+    for (const [iconName, data] of iconSvgData.entries()) {
+        const viewBox = data.viewBox || defaultViewBox;
+        
+        // Wrap the inner SVG content in a <symbol> with the correct ID and viewBox
+        symbols += `
+            <symbol id="${iconName}" viewBox="${viewBox}">
+                ${data.content}
+            </symbol>
+        `;
+    }
+
+    // Wrap all symbols in a hidden SVG container
+    // We add 'display: none' to hide the entire sprite element
+    return `
+        <svg xmlns="http://www.w3.org/2000/svg" style="display: none;" aria-hidden="true" focusable="false">
+            ${symbols}
+        </svg>
+    `;
+}
 
 function createDetailsGrid(item, locale) {
     const detailsGrid = Object.keys(item.invalidNumbers).map(key => {
@@ -45,6 +91,109 @@ function createDetailsGrid(item, locale) {
 
     return detailsGrid;
 }
+
+/**
+ * Reads an SVG file, cleans it, extracts the viewBox, and returns the inner content.
+ * @param {string} iconPath - The full path to the SVG file.
+ * @returns {{content: string, viewBox: string}} An object with the inner content and the viewBox string.
+ */
+function getSvgContent(iconPath) {
+    let svgContent = readFileSync(iconPath, 'utf8');
+    
+    // 1. Extract viewBox before removing the outer tag
+    const viewBoxMatch = svgContent.match(/viewBox=["']([^"']+)["']/i);
+    const viewBox = viewBoxMatch ? viewBoxMatch[1] : '0 0 24 24'; // Default fallback
+
+    // 2. Remove non-essential parts
+    // Remove the outer <svg> tag and its closing tag
+    svgContent = svgContent.replace(/<svg[^>]*>/i, '').replace(/<\/svg>\s*$/i, '');
+    
+    // Remove XML declaration
+    svgContent = svgContent.replace(/<\?xml[^>]*\?>/, '');
+    // Remove comments
+    svgContent = svgContent.replace(/<!--[\s\S]*?-->/g, '');
+    // Remove DOCTYPE
+    svgContent = svgContent.replace(/<!DOCTYPE[^>]*>/i, '');
+
+    // 3. Return the data needed for the sprite
+    return {
+        content: svgContent.trim(),
+        viewBox: viewBox
+    };
+}
+
+/**
+ * Generates the HTML string for a specified icon, supporting Font Awesome classes,
+ * and collects SVGs for the sprite.
+ *
+ * @param {string} iconName - The full icon name string (e.g., 'maki-restaurant' or 'roentgen-food_court').
+ * @returns {string} The HTML string containing the icon (Font Awesome <i> or <svg><use>).
+ */
+function getIconHtml(iconName) {
+    if (!iconName) {
+        // Fallback case 1: If no iconName is provided, use the ultimate fallback
+        return getIconHtml('iD-icon-point');
+    }
+
+    const parts = iconName.split('-');
+    const library = parts[0];
+    const icon = parts.slice(1).join('-');
+
+    let iconHtml = '';
+
+    // --- Font Awesome (Class-Based Icons) ---
+    if (library === 'fas' || library === 'far' || library === 'fab' || library === 'fa') {
+        const className = `${library} fa-${icon}`;
+        iconHtml = `<i class="icon ${className}"></i>`;
+    }
+
+    // --- SVG Packs (Maki, Temaki, Roentgen, iD_presets) ---
+    else if (library === 'maki' || library === 'temaki' || library === 'roentgen' || library === 'iD') {
+        let iconPath = '';
+        let packageName = '';
+        let isFound = false;
+
+        // Determine icon path (logic remains the same)
+        if (library === 'maki' || library === 'temaki') {
+            packageName = library === 'maki' ? '@mapbox/maki' : '@rapideditor/temaki';
+            iconPath = path.resolve(__dirname, '..', `node_modules/${packageName}/icons/${icon}.svg`);
+        } else {
+            const basePath = path.resolve(ICONS_DIR, library);
+            iconPath = path.join(basePath, `${icon}.svg`);
+        }
+
+        if (existsSync(iconPath)) {
+            // Get the inner content and viewBox
+            const { content, viewBox } = getSvgContent(iconPath);
+            
+            // 1. Collect the icon for the sprite
+            addIconToSprite(iconName, content, viewBox);
+            isFound = true;
+
+            // 2. Return the minimal <svg> with <use> tag
+            // The class 'icon-svg' will be used to apply size/styles to the outer SVG container.
+            // Using `<svg><use>` is the standard for sprite usage.
+            iconHtml = `
+                <span class="icon-svg-container">
+                    <svg class="icon-svg"><use href="#${iconName}"></use></svg>
+                </span>
+            `;
+        } else {
+            console.log(`Icon not found: ${library}-${icon}`)
+        }
+    }
+
+    // --- Ultimate Fallback: iD-icon-point ---
+    if (!iconHtml && iconName !== 'iD-icon-point') {
+        console.log(`No icon found for ${iconName}, using point fallback`)
+        // The recursive call handles adding the fallback icon to the sprite
+        return getIconHtml('iD-icon-point');
+    }
+
+    // Return the HTML with <use> or Font Awesome <i>, or the critical fallback
+    return iconHtml || `<span class="list-item-icon-container icon-fallback">?</span>`;
+}
+
 
 /**
  * Creates the HTML content for a single invalid number item.
@@ -115,18 +264,24 @@ function createListItem(item, locale) {
         '';
     const disusedLabel = isDisused(item) ? `<span class="label label-disused">${translate('disused', locale)}</span>` : '';
 
+    const iconName = getFeatureIcon(item, locale);
+    const iconHtml = getIconHtml(iconName);
+
     return `
         <li class="report-list-item">
             <div class="list-item-content-wrapper">
-                <div class="list-item-header">
-                    <h3 class="list-item-title">
-                        <a href="${item.osmUrl}" target="_blank" rel="noopener noreferrer" class="list-item-link">${getFeatureTypeName(item)}</a>
-                    </h3>
-                    ${disusedLabel}
+                <a class="list-item-icon-circle-preview" href="${item.osmUrl}" target="_blank" rel="noopener noreferrer">
+                    ${iconHtml}
+                </a>
+                <div class="list-item-details-wrapper">
+                    <div class="list-item-header">
+                        <h3 class="list-item-title">${getFeatureTypeName(item, locale)}</h3>
+                        ${disusedLabel}
+                    </div>
+                    ${createDetailsGrid(item, locale)}
                 </div>
-                ${createDetailsGrid(item, locale)}
             </div>
-            
+
             <div class="list-item-actions-container">
                 ${websiteButton}
                 ${fixableLabel}
@@ -147,6 +302,10 @@ function createListItem(item, locale) {
  * @param {Object} translations
  */
 async function generateHtmlReport(countryName, subdivision, invalidNumbers, totalNumbers, locale, translations) {
+
+    // Clear the map at the start of report generation for a new page.
+    iconSvgData.clear(); 
+
     const safeSubdivisionName = safeName(subdivision.name);
     const safeCountryName = safeName(countryName);
     const filePath = path.join(PUBLIC_DIR, safeCountryName, `${safeSubdivisionName}.html`);
@@ -159,6 +318,9 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
 
     const fixableListContent = autofixableNumbers.map(item => createListItem(item, locale)).join('');
     const invalidListContent = manualFixNumbers.map(item => createListItem(item, locale)).join('');
+
+    // Generate the sprite after all list items have been processed
+    const svgSprite = generateSvgSprite();
 
     const fixableSectionAndHeader = `
         <div class="section-header-container">
@@ -198,9 +360,11 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
         <title>${translate('countryReportTitle', locale, [countryName])}</title>
         ${favicon}
         <link href="../styles.css" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
         <script src="../theme.js"></script>
     </head>
     <body class="body-styles">
+        ${svgSprite}
         <div class="page-container">
             <header class="page-header">
                 <div class="absolute top-0 right-0 flex items-center space-x-2">
@@ -225,7 +389,7 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
             ${createStatsBox(totalNumbers, invalidNumbers.length, autofixableNumbers.length, locale)}
             ${fixableAndInvalidSectionContent}
             <div class="footer-container">
-                ${createFooter(locale, translations)}
+                ${createFooter(locale, translations, true)}
             </div>
         </div>
     <script>

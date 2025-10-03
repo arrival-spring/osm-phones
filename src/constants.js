@@ -344,6 +344,66 @@ const UNIVERSAL_SPLIT_REGEX = /(?:; ?)|(?:\s*,\s*)|(?:\s*\/\s*)|(?:\s+or\s+)|(?:
 // When used in diff, the groups need to be capturing
 const UNIVERSAL_SPLIT_CAPTURE_REGEX = /(; ?)|(\s*,\s*)|(\s*\/\s*)|(\s+or\s+)|(\s+and\s+)/gi;
 
+const ICON_ATTRIBUTION = [
+    {
+        name: 'Font Awesome Icons',
+        attribution: 'Copyright (c) 2025 Fonticons, Inc.',
+        license: '(SIL OFL 1.1 License)',
+        license_link: 'https://github.com/FortAwesome/Font-Awesome/blob/7.x/LICENSE.txt',
+        link: 'https://fontawesome.com'
+    },
+    {
+        name: 'Maki Icons',
+        license: '(CC0 1.0)',
+        license_link: 'https://creativecommons.org/publicdomain/zero/1.0/',
+        link: 'https://github.com/mapbox/maki'
+    },
+    {
+        name: 'Temaki icons',
+        license: '(CC0 1.0)',
+        license_link: 'https://creativecommons.org/publicdomain/zero/1.0/',
+        link: 'https://github.com/rapideditor/temaki'
+    },
+    {
+        name: 'Röntgen icons',
+        attribution: 'by Sergey Vartanov',
+        license: '(CC BY 4.0)',
+        license_link: 'https://creativecommons.org/licenses/by/4.0/',
+        link: 'https://github.com/enzet/Roentgen'
+    },
+    {
+        name: 'iD icons',
+        attribution: 'Copyright (c) 2017, iD Contributors',
+        license: 'ISC License',
+        license_link: 'https://github.com/openstreetmap/iD/blob/develop/LICENSE.md',
+        link: 'https://github.com/openstreetmap/iD/tree/develop/svg/iD-sprite'
+    }
+]
+
+const ICON_PACKS = {
+    'roentgen': {
+        owner: 'enzet',
+        repo: 'Roentgen',
+        folder_path: 'icons',
+        output_sub_dir: 'roentgen',
+    },
+    'iD-preset': {
+        owner: 'openstreetmap',
+        repo: 'iD',
+        folder_path: 'svg/iD-sprite/presets',
+        output_sub_dir: 'iD',
+    },
+    'iD-icon': {
+        owner: 'openstreetmap',
+        repo: 'iD',
+        folder_path: 'svg/iD-sprite/icons',
+        output_sub_dir: 'iD' // same as presets, shouldn't be any filename clashes though
+    }
+}
+
+const ICONS_DIR = path.join(__dirname, '..', 'build-assets', 'icons');
+const GITHUB_API_BASE_URL = 'https://api.github.com/repos';
+
 
 module.exports = {
     PUBLIC_DIR,
@@ -360,5 +420,9 @@ module.exports = {
     EXCLUSIONS,
     BAD_SEPARATOR_REGEX,
     UNIVERSAL_SPLIT_REGEX,
-    UNIVERSAL_SPLIT_CAPTURE_REGEX
+    UNIVERSAL_SPLIT_CAPTURE_REGEX,
+    ICONS_DIR,
+    GITHUB_API_BASE_URL,
+    ICON_PACKS,
+    ICON_ATTRIBUTION
 };

@@ -56,10 +56,8 @@ jobs:
       - name: Install Dependencies
         run: npm install 
 
-      - name: Generate Reports and Build Production CSS
-        run: |
-          node src/main.js
-          npm run build:css
+      - name: Run Full Build Process (Icons, Reports, CSS) 
+        run: npm run build
 
       - name: Run HTML Minifier
         run: find public -name "*.html" | xargs -I {} sh -c 'npx html-minifier-terser "$0" --output "$0" --collapse-whitespace --remove-comments --minify-css true --minify-js true' {}

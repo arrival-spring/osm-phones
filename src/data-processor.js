@@ -1,4 +1,5 @@
 const { parsePhoneNumber } = require('libphonenumber-js');
+const { getBestPreset, getGeometry } = require('./preset-matcher');
 const { FEATURE_TAGS, HISTORIC_AND_DISUSED_PREFIXES, EXCLUSIONS, PHONE_TAGS, WEBSITE_TAGS, BAD_SEPARATOR_REGEX, UNIVERSAL_SPLIT_REGEX } = require('./constants');
 
 /**
@@ -95,9 +96,14 @@ function getFeatureType(item) {
  * @param {Array<Object>} item - An array of an OSM objects including allTags.
  * @returns {string}
  */
-function getFeatureTypeName(item) {
+function getFeatureTypeName(item, locale) {
     if (item.name) {
         return `${item.name}`;
+    }
+
+    const preset = getBestPreset(item, locale);
+    if (preset && preset.name) {
+        return preset.name;
     }
 
     const featureType = getFeatureType(item);
@@ -108,6 +114,29 @@ function getFeatureTypeName(item) {
     } else {
         const formattedType = item.type.replace(/\b\w/g, c => c.toUpperCase());
         return `OSM ${formattedType}`;
+    }
+}
+
+/**
+ * Gets the icon for a feature based on its tags.
+ * Defaults to a generic icon for the type of item if nothing specific is found
+ * @param {Object} item - The OSM data item.
+ * @returns {string} The icon name
+ */
+function getFeatureIcon(item, locale) {
+    const preset = getBestPreset(item, locale);
+    if (preset && preset.icon) {
+        return preset.icon;
+    }
+    const geometry = getGeometry(item);
+    if (geometry === 'point') {
+        return "iD-icon-point"
+    } else if (geometry === 'area') {
+        return 'iD-icon-area'
+    } else if (geometry === 'line') {
+        return 'iD-icon-line'
+    } else { // relation (getGeometry always returns a value)
+        return 'iD-icon-relation'
     }
 }
 
@@ -360,7 +389,7 @@ function validateNumbers(elements, countryCode) {
                 }
 
                 const validationResult = validateSingleTag(phoneTagValue, countryCode, tags);
-                
+
                 const isInvalid = validationResult.isInvalid;
                 const autoFixable = validationResult.isAutoFixable;
                 // Only give a suggested fix if it is fixable
@@ -369,7 +398,7 @@ function validateNumbers(elements, countryCode) {
                     : null;
                 totalNumbers += validationResult.numberOfValues;
 
-                if (isInvalid) {        
+                if (isInvalid) {
                     if (!invalidItemsMap.has(key)) {
                         invalidItemsMap.set(key, { ...baseItem, autoFixable: autoFixable });
                     }
@@ -398,6 +427,7 @@ module.exports = {
     validateNumbers,
     isDisused,
     getFeatureTypeName,
+    getFeatureIcon,
     stripExtension,
     processSingleNumber,
     validateSingleTag,
