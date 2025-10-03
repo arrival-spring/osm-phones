@@ -109,7 +109,6 @@ function getMatchScore(preset, tags, geometry) {
         return -1;
     }
 
-    let score = 0;
     let specificMatches = 0;
     let wildcardMatches = 0;
 
@@ -134,12 +133,12 @@ function getMatchScore(preset, tags, geometry) {
         }
     }
 
-    // matchScore is less than 1, if we got to here then we have found a match so have more than 1 for the score
+    // matchScore is less than 1, if we got to here then we have found a match so would have more than 1 for the score
     if (preset.matchScore) {
         return preset.matchScore
     }
 
-    return score + specificMatches + wildcardMatches * 0.5;
+    return specificMatches + wildcardMatches * 0.5;
 }
 
 /**

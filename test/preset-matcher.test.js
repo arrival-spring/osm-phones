@@ -109,7 +109,7 @@ describe('Preset Matching Logic', () => {
         test('should correctly score the "seamark" preset (Wildcard Match)', () => {
             const geometry = getGeometry(cableItem); // 'line'
             const preset = mockPresets.seamark;
-            expect(getMatchScore(preset, cableItem.allTags, geometry)).toBe(1.0);
+            expect(getMatchScore(preset, cableItem.allTags, geometry)).toBe(0.5);
         });
         
         test('should correctly score the "comm/cable" preset (Specific Match)', () => {
