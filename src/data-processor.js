@@ -125,12 +125,8 @@ function getFeatureTypeName(item, locale) {
  */
 function getFeatureIcon(item, locale) {
     const preset = getBestPreset(item, locale);
-    if (preset) {
-        if (preset.icon) {
-            return preset.icon;
-        } else {
-            console.log(`No icon for ${preset.id}`)
-        }
+    if (preset && preset.icon) {
+        return preset.icon;
     }
     const geometry = getGeometry(item);
     if (geometry === 'point') {

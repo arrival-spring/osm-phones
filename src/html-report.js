@@ -86,6 +86,8 @@ function getIconHtml(iconName) {
             let svgContent = readFileSync(iconPath, 'utf8');
             svgContent = svgContent.replace(/ width="[^"]*"/, ' width="100%"').replace(/ height="[^"]*"/, ' height="100%"');
             iconHtml = `<span class="list-item-icon-container icon-svg">${svgContent}</span>`;
+        } else {
+            console.log(`Icon not found: ${library}-${icon}`)
         }
     } 
     
@@ -93,8 +95,6 @@ function getIconHtml(iconName) {
     else if (library === 'roentgen' || library === 'iD') {
         const basePath = path.resolve(ICONS_DIR, library);
         const iconPath = path.join(basePath, `${icon}.svg`);
-
-        console.log(`Checking for ${iconPath}`)
 
         if (existsSync(iconPath)) {
             let svgContent = readFileSync(iconPath, 'utf8');
@@ -106,7 +106,7 @@ function getIconHtml(iconName) {
             
             iconHtml = `<span class="list-item-icon-container icon-svg">${svgContent}</span>`;
         } else {
-            console.log(`Didn't find ${iconPath}`)
+            console.log(`Icon not found: ${library}-${icon}`)
         }
     }
 
@@ -195,9 +195,6 @@ function createListItem(item, locale) {
 
     const iconName = getFeatureIcon(item, locale);
     const iconHtml = getIconHtml(iconName);
-    if (iconHtml.includes('>?<')) {
-        console.log(`Looks like fallback for ${iconName}, on object named ${getFeatureTypeName(item, locale)}`)
-    }
 
     return `
         <li class="report-list-item">

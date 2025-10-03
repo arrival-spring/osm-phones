@@ -11,7 +11,7 @@ const { ICONS_DIR, ICON_PACKS, GITHUB_API_BASE_URL } = require('./constants.js')
 async function downloadSinglePack(packName, packDetails) {
     const { owner, repo, folder_path } = packDetails;
     const GITHUB_API_URL = `${GITHUB_API_BASE_URL}/${owner}/${repo}/contents/${folder_path}`;
-    const FINAL_OUTPUT_DIR = path.join(ICONS_DIR, packName);
+    const FINAL_OUTPUT_DIR = path.join(ICONS_DIR, packDetails.output_sub_dir);
     console.log(`\n--- Processing Pack: ${packName} ---`);
     console.log(`  Source: ${owner}/${repo}/${folder_path}`);
     
@@ -61,7 +61,6 @@ async function downloadSinglePack(packName, packDetails) {
     const totalFiles = svgFiles.length;
     const failCount = failedDownloads.length;
     
-    console.log(`Icons saved in ${FINAL_OUTPUT_DIR}`)
     console.log(`\n  --- Download Summary for ${packName} ---`);
     console.log(`  Total files processed: ${totalFiles}`);
     console.log(`  Successful downloads: ${successCount}`);
