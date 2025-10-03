@@ -46,7 +46,7 @@ loadTranslation('en');
 
 // A simple way to determine geometry for an OSM item
 function getGeometry(item) {
-    if (item.type === 'node') return 'point';
+    if (item.type === 'node') return 'point'; // TODO: could also be vertex, but is there anything that can only be a vertex and have a phone number?
 
     // For ways and relations, determine if it's an area
     if (item.allTags.area === 'yes') return 'area';
@@ -74,6 +74,7 @@ function getMatchScore(preset, tags, geometry) {
 
     let score = preset.matchScore || 0;
     let specificMatches = 0;
+    let wildcardMatches = 0; // Tracks wildcard tags ('*')
 
     for (const key in preset.tags) {
         const value = preset.tags[key];
@@ -81,15 +82,17 @@ function getMatchScore(preset, tags, geometry) {
             return -1; // A required tag is missing
         }
         if (value === '*') {
-            // Wildcard match
+            // Wildcard match: contributes a fractional score
+            wildcardMatches++;
         } else if (value === tags[key]) {
+            // Specific match: contributes a full score
             specificMatches++;
         } else {
             return -1; // Tag value doesn't match
         }
     }
 
-    return score + specificMatches;
+    return score + specificMatches + (wildcardMatches * 0.5);
 }
 
 function getBestPreset(item, locale = 'en') {
@@ -128,5 +131,7 @@ function getBestPreset(item, locale = 'en') {
 
 module.exports = {
     getBestPreset,
-    getGeometry
+    getGeometry,
+    getMatchScore,
+    allPresets
 };
