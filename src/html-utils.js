@@ -56,7 +56,7 @@ function createStatsBox(total, invalid, fixable, locale) {
 }
 
 
-function getIconAttributionHtml(includeIconAttribution) {
+function getIconAttributionHtml(includeIconAttribution, locale) {
     if (!includeIconAttribution) {
         return '';
     }
@@ -89,7 +89,7 @@ function getIconAttributionHtml(includeIconAttribution) {
 
     // Wrap the entire string in a single <p> tag
     return allAttributions
-        ? `<p class="footer-text">${allAttributions}</p>`
+        ? `<p class="footer-text">${translate('iconsSourcedFrom', locale)} ${allAttributions}</p>`
         : '';
 }
 
@@ -128,7 +128,7 @@ function createFooter(locale = 'en-GB', translations, includeIconAttribution = f
         ${dataSourcedTemplate}
     </p>
     <p class="footer-text">${suggestionIssueLink} <a href="${githubLink}" target="_blank" rel="noopener noreferrer" class="footer-link">${letMeKnowOnGitHub}</a>.</p>
-    ${getIconAttributionHtml(includeIconAttribution)}
+    ${getIconAttributionHtml(includeIconAttribution, locale)}
     <script>
         // Embed the translations object for client-side use
         const translations = ${JSON.stringify(translations)};
