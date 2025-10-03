@@ -2,12 +2,47 @@ const fs = require('fs');
 const path = require('path');
 
 const presetsData = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', 'node_modules/@openstreetmap/id-tagging-schema/dist/presets.json'), 'utf8'));
-const enTranslations = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', 'node_modules/@openstreetmap/id-tagging-schema/dist/translations/en.json'), 'utf8')).en;
 
 const allPresets = {};
 for (const key in presetsData) {
     allPresets[key] = { ...presetsData[key], id: key };
 }
+
+const translations = {};
+
+function loadTranslation(locale) {
+    if (translations[locale]) {
+        return translations[locale];
+    }
+
+    const lang = locale.split('-')[0];
+    let translation;
+
+    // Try full locale, then language, then fallback to english
+    const translationPaths = [
+        path.resolve(__dirname, '..', `node_modules/@openstreetmap/id-tagging-schema/dist/translations/${locale}.json`),
+        path.resolve(__dirname, '..', `node_modules/@openstreetmap/id-tagging-schema/dist/translations/${lang}.json`),
+        path.resolve(__dirname, '..', `node_modules/@openstreetmap/id-tagging-schema/dist/translations/en.json`)
+    ];
+
+    for (const p of translationPaths) {
+        if (fs.existsSync(p)) {
+            const translationData = JSON.parse(fs.readFileSync(p, 'utf8'));
+            translation = translationData[locale] || translationData[lang] || translationData.en;
+            if (translation) break;
+        }
+    }
+
+    if (translation) {
+        translations[locale] = translation;
+        return translation;
+    }
+
+    return null;
+}
+
+// Preload 'en'
+loadTranslation('en');
 
 // A simple way to determine geometry for an OSM item
 function getGeometry(item) {
@@ -54,7 +89,7 @@ function getMatchScore(preset, tags, geometry) {
     return score + specificMatches;
 }
 
-function getBestPreset(item) {
+function getBestPreset(item, locale = 'en') {
     const geometry = getGeometry(item);
     let bestPreset = null;
     let maxScore = -1;
@@ -72,10 +107,10 @@ function getBestPreset(item) {
     if (bestPreset) {
         // Create a copy to avoid modifying the original preset object
         const presetCopy = { ...bestPreset };
+        const translation = loadTranslation(locale) || loadTranslation('en');
 
-        // Get translated name
-        if (enTranslations && enTranslations.presets && enTranslations.presets.presets && enTranslations.presets.presets[presetCopy.id]) {
-            presetCopy.name = enTranslations.presets.presets[presetCopy.id].name;
+        if (translation && translation.presets && translation.presets.presets && translation.presets.presets[presetCopy.id]) {
+            presetCopy.name = translation.presets.presets[presetCopy.id].name;
         } else {
              // Fallback name if translation not found
             const nameParts = presetCopy.id.split('/');

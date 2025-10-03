@@ -11,7 +11,7 @@ def test_report_page_with_icons(page: Page):
     expect(first_item).to_be_visible()
 
     # Check for the presence of an icon within the first list item that has one
-    icon = first_item.locator(".list-item-icon-container i")
+    icon = first_item.locator(".list-item-icon-container i, .list-item-icon-container svg").first
     if icon.count() > 0:
         expect(icon.first).to_be_visible()
 

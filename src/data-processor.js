@@ -96,12 +96,12 @@ function getFeatureType(item) {
  * @param {Array<Object>} item - An array of an OSM objects including allTags.
  * @returns {string}
  */
-function getFeatureTypeName(item) {
+function getFeatureTypeName(item, locale) {
     if (item.name) {
         return `${item.name}`;
     }
 
-    const preset = getBestPreset(item);
+    const preset = getBestPreset(item, locale);
     if (preset && preset.name) {
         return preset.name;
     }
@@ -122,8 +122,8 @@ function getFeatureTypeName(item) {
  * @param {Object} item - The OSM data item.
  * @returns {string|null} The icon name or null if not found.
  */
-function getFeatureIcon(item) {
-    const preset = getBestPreset(item);
+function getFeatureIcon(item, locale) {
+    const preset = getBestPreset(item, locale);
     return preset ? preset.icon : null;
 }
 

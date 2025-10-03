@@ -1,4 +1,4 @@
-const { promises: fsPromises } = require('fs');
+const { promises: fsPromises, readFileSync, existsSync } = require('fs');
 const path = require('path');
 const { PUBLIC_DIR, OSM_EDITORS, ALL_EDITOR_IDS, DEFAULT_EDITORS_DESKTOP, DEFAULT_EDITORS_MOBILE } = require('./constants');
 const { safeName, getFeatureTypeName, getFeatureIcon, isDisused } = require('./data-processor');
@@ -115,20 +115,28 @@ function createListItem(item, locale) {
         '';
     const disusedLabel = isDisused(item) ? `<span class="label label-disused">${translate('disused', locale)}</span>` : '';
 
-    const iconName = getFeatureIcon(item);
+    const iconName = getFeatureIcon(item, locale);
     let iconHtml = '';
     if (iconName) {
         const parts = iconName.split('-');
         const library = parts[0];
         const icon = parts.slice(1).join('-');
 
-        let className = '';
         if (library === 'fas' || library === 'far' || library === 'fab' || library === 'fa') {
-            className = `${library} fa-${icon}`;
+            const className = `${library} fa-${icon}`;
+            iconHtml = `<span class="list-item-icon-container"><i class="icon ${className}"></i></span>`;
+        } else if (library === 'maki' || library === 'temaki') {
+            const packageName = library === 'maki' ? '@mapbox/maki' : '@rapideditor/temaki';
+            const iconPath = path.resolve(__dirname, '..', `node_modules/${packageName}/icons/${icon}.svg`);
+            if (existsSync(iconPath)) {
+                let svgContent = readFileSync(iconPath, 'utf8');
+                svgContent = svgContent.replace(/ width="[^"]*"/, ' width="100%"').replace(/ height="[^"]*"/, ' height="100%"');
+                iconHtml = `<span class="list-item-icon-container icon-svg">${svgContent}</span>`;
+            }
         } else {
-            className = `${library} ${library}-${icon}`;
+            const className = `iD-${iconName}`;
+            iconHtml = `<span class="list-item-icon-container"><svg class="icon"><use href="#${className}"/></svg></span>`;
         }
-        iconHtml = `<span class="list-item-icon-container"><i class="icon ${className}"></i></span>`;
     }
 
     return `
@@ -137,7 +145,7 @@ function createListItem(item, locale) {
                 <div class="list-item-header">
                     ${iconHtml}
                     <h3 class="list-item-title">
-                        <a href="${item.osmUrl}" target="_blank" rel="noopener noreferrer" class="list-item-link">${getFeatureTypeName(item)}</a>
+                        <a href="${item.osmUrl}" target="_blank" rel="noopener noreferrer" class="list-item-link">${getFeatureTypeName(item, locale)}</a>
                     </h3>
                     ${disusedLabel}
                 </div>
@@ -217,8 +225,6 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
         <link href="../styles.css" rel="stylesheet">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
         <link rel="stylesheet" href="https://unpkg.com/@openstreetmap/iD/dist/iD.css">
-        <link rel="stylesheet" href="https://unpkg.com/temaki/dist/temaki.css">
-        <link href='https://api.mapbox.com/mapbox.js/v3.3.1/mapbox.css' rel='stylesheet' />
         <script src="../theme.js"></script>
     </head>
     <body class="body-styles">
