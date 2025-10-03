@@ -344,6 +344,30 @@ const UNIVERSAL_SPLIT_REGEX = /(?:; ?)|(?:\s*,\s*)|(?:\s*\/\s*)|(?:\s+or\s+)|(?:
 // When used in diff, the groups need to be capturing
 const UNIVERSAL_SPLIT_CAPTURE_REGEX = /(; ?)|(\s*,\s*)|(\s*\/\s*)|(\s+or\s+)|(\s+and\s+)/gi;
 
+const ICON_PACKS = {
+    'roentgen': {
+        owner: 'enzet',
+        repo: 'Roentgen',
+        folder_path: 'icons',
+        output_sub_dir: 'roentgen'
+    },
+    'iD-preset': {
+        owner: 'openstreetmap',
+        repo: 'iD',
+        folder_path: 'svg/iD-sprite/presets',
+        output_sub_dir: 'iD'
+    },
+    'iD-icon': {
+        owner: 'openstreetmap',
+        repo: 'iD',
+        folder_path: 'svg/iD-sprite/icons',
+        output_sub_dir: 'iD' // same as presets, shouldn't be any filename clashes though
+    }
+}
+
+const ICONS_DIR = path.join(__dirname, '..', 'build-assets', 'icons');
+const GITHUB_API_BASE_URL = 'https://api.github.com/repos/';
+
 
 module.exports = {
     PUBLIC_DIR,
@@ -360,5 +384,8 @@ module.exports = {
     EXCLUSIONS,
     BAD_SEPARATOR_REGEX,
     UNIVERSAL_SPLIT_REGEX,
-    UNIVERSAL_SPLIT_CAPTURE_REGEX
+    UNIVERSAL_SPLIT_CAPTURE_REGEX,
+    ICONS_DIR,
+    GITHUB_API_BASE_URL,
+    ICON_PACKS
 };

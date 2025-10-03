@@ -1,6 +1,6 @@
 const { promises: fsPromises, readFileSync, existsSync } = require('fs');
 const path = require('path');
-const { PUBLIC_DIR, OSM_EDITORS, ALL_EDITOR_IDS, DEFAULT_EDITORS_DESKTOP, DEFAULT_EDITORS_MOBILE } = require('./constants');
+const { PUBLIC_DIR, OSM_EDITORS, ALL_EDITOR_IDS, DEFAULT_EDITORS_DESKTOP, DEFAULT_EDITORS_MOBILE, ICONS_DIR } = require('./constants');
 const { safeName, getFeatureTypeName, getFeatureIcon, isDisused } = require('./data-processor');
 const { translate } = require('./i18n');
 const { getDiffHtml } = require('./diff-renderer');
@@ -45,6 +45,80 @@ function createDetailsGrid(item, locale) {
 
     return detailsGrid;
 }
+
+
+/**
+ * Generates the HTML string for a specified icon, supporting Font Awesome classes,
+ * NPM-installed SVG packs (Maki, Temaki), and build-time downloaded SVG packs 
+ * (Roentgen, iD_presets).
+ *
+ * The ultimate fallback is always the 'iD-icon-point' SVG.
+ *
+ * @param {string} iconName - The full icon name string (e.g., 'maki-restaurant' or 'roentgen-food_court').
+ * @returns {string} The HTML string containing the icon (Font Awesome <i> or inline <svg>).
+ */
+function getIconHtml(iconName) {
+    if (!iconName) {
+        // Fallback case 1: If no iconName is provided, use the ultimate fallback
+        return getIconHtml('iD-icon-point');
+    }
+
+    const parts = iconName.split('-');
+    const library = parts[0];
+    const icon = parts.slice(1).join('-');
+
+    let iconHtml = '';
+
+    // --- Font Awesome (Class-Based Icons) ---
+    if (library === 'fas' || library === 'far' || library === 'fab' || library === 'fa') {
+        const className = `${library} fa-${icon}`;
+        iconHtml = `<span class="list-item-icon-container"><i class="icon ${className}"></i></span>`;
+    } 
+
+    // --- NPM-Installed SVG Packs (Maki, Temaki) ---
+    else if (library === 'maki' || library === 'temaki') {
+        const packageName = library === 'maki' ? '@mapbox/maki' : '@rapideditor/temaki';
+        
+        // Path resolves relative to node_modules/
+        const iconPath = path.resolve(__dirname, '..', `node_modules/${packageName}/icons/${icon}.svg`);
+        
+        if (existsSync(iconPath)) {
+            let svgContent = readFileSync(iconPath, 'utf8');
+            svgContent = svgContent.replace(/ width="[^"]*"/, ' width="100%"').replace(/ height="[^"]*"/, ' height="100%"');
+            iconHtml = `<span class="list-item-icon-container icon-svg">${svgContent}</span>`;
+        }
+    } 
+    
+    // --- Build-Time Downloaded SVG Packs (Roentgen, iD_presets) ---
+    else if (library === 'roentgen' || library === 'iD') {
+        const basePath = path.resolve(ICONS_DIR, library);
+        const iconPath = path.join(basePath, `${icon}.svg`);
+
+        if (existsSync(iconPath)) {
+            let svgContent = readFileSync(iconPath, 'utf8');
+            
+            svgContent = svgContent
+                .replace(/ width="[^"]*"/, ' width="100%"')
+                .replace(/ height="[^"]*"/, ' height="100%"')
+                .replace(/<svg/, `<svg aria-label="${icon}"`); 
+            
+            iconHtml = `<span class="list-item-icon-container icon-svg">${svgContent}</span>`;
+        }
+    }
+
+    // --- Ultimate Fallback: iD-icon-point ---
+    // If iconHtml is empty (meaning the requested icon was not found), 
+    // and we haven't already tried the iD-icon-point fallback, call it recursively.
+    if (!iconHtml && iconName !== 'iD-icon-point') {
+        console.error(`No icon found for ${iconName}, using point fallback`)
+        return getIconHtml('iD-icon-point');
+    }
+
+    // If iconHtml is still empty here, it means the iD-icon-point icon also couldn't be loaded (a major error).
+    // In this critical scenario, we return a simple default placeholder.
+    return iconHtml || `<span class="list-item-icon-container icon-fallback">?</span>`;
+}
+
 
 /**
  * Creates the HTML content for a single invalid number item.
@@ -116,28 +190,7 @@ function createListItem(item, locale) {
     const disusedLabel = isDisused(item) ? `<span class="label label-disused">${translate('disused', locale)}</span>` : '';
 
     const iconName = getFeatureIcon(item, locale);
-    let iconHtml = '';
-    if (iconName) {
-        const parts = iconName.split('-');
-        const library = parts[0];
-        const icon = parts.slice(1).join('-');
-
-        if (library === 'fas' || library === 'far' || library === 'fab' || library === 'fa') {
-            const className = `${library} fa-${icon}`;
-            iconHtml = `<span class="list-item-icon-container"><i class="icon ${className}"></i></span>`;
-        } else if (library === 'maki' || library === 'temaki') {
-            const packageName = library === 'maki' ? '@mapbox/maki' : '@rapideditor/temaki';
-            const iconPath = path.resolve(__dirname, '..', `node_modules/${packageName}/icons/${icon}.svg`);
-            if (existsSync(iconPath)) {
-                let svgContent = readFileSync(iconPath, 'utf8');
-                svgContent = svgContent.replace(/ width="[^"]*"/, ' width="100%"').replace(/ height="[^"]*"/, ' height="100%"');
-                iconHtml = `<span class="list-item-icon-container icon-svg">${svgContent}</span>`;
-            }
-        } else {
-            const className = `iD-${iconName}`;
-            iconHtml = `<span class="list-item-icon-container"><svg class="icon"><use href="#${className}"/></svg></span>`;
-        }
-    }
+    const iconHtml = getIconHtml(iconName);
 
     return `
         <li class="report-list-item">

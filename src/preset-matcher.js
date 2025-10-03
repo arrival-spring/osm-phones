@@ -47,9 +47,8 @@ loadTranslation('en');
 // A simple way to determine geometry for an OSM item
 function getGeometry(item) {
     if (item.type === 'node') return 'point';
-    if (item.type === 'relation') return 'relation';
 
-    // For ways, determine if it's an area or line
+    // For ways and relations, determine if it's an area
     if (item.allTags.area === 'yes') return 'area';
     if (item.allTags.area === 'no') return 'line';
 
@@ -60,6 +59,10 @@ function getGeometry(item) {
         }
     }
 
+    // Relations can be areas, so only check this after checking for area
+    if (item.type === 'relation') return 'relation';
+
+    // Not a relation or an area
     return 'line';
 }
 
@@ -124,5 +127,6 @@ function getBestPreset(item, locale = 'en') {
 }
 
 module.exports = {
-    getBestPreset
+    getBestPreset,
+    getGeometry
 };

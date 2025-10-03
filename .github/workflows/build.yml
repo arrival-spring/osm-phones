@@ -56,7 +56,7 @@ jobs:
       - name: Install Dependencies
         run: npm install 
 
-      - name: Generate Reports and Build Production CSS
+      - name: Download Icons, Generate Reports and Build Production CSS
         run: |
           node src/main.js
           npm run build:css
