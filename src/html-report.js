@@ -204,17 +204,19 @@ function createListItem(item, locale) {
 
     return `
         <li class="report-list-item">
-            <a class="list-item-icon-circle-preview" href="${item.osmUrl}" target="_blank" rel="noopener noreferrer">
-                ${iconHtml}
-            </a>
             <div class="list-item-content-wrapper">
-                <div class="list-item-header">
-                    <h3 class="list-item-title">${getFeatureTypeName(item, locale)}</h3>
-                    ${disusedLabel}
+                <a class="list-item-icon-circle-preview" href="${item.osmUrl}" target="_blank" rel="noopener noreferrer">
+                    ${iconHtml}
+                </a>
+                <div class="list-item-details-wrapper">
+                    <div class="list-item-header">
+                        <h3 class="list-item-title">${getFeatureTypeName(item, locale)}</h3>
+                        ${disusedLabel}
+                    </div>
+                    ${createDetailsGrid(item, locale)}
                 </div>
-                ${createDetailsGrid(item, locale)}
             </div>
-            
+
             <div class="list-item-actions-container">
                 ${websiteButton}
                 ${fixableLabel}

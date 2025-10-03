@@ -234,6 +234,9 @@
     .list-item-content-wrapper {
         @apply items-start sm:w-2/3;
     }
+    .list-item-details-wrapper {
+        @apply flex items-start flex-grow;
+    }
     .list-item-phone-value-container {
         @apply col-span-1 text-gray-900 dark:text-gray-100;
     }
