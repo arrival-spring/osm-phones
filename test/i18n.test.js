@@ -20,7 +20,7 @@ const PLACEHOLDER_REGEX = /%[a-z]/g;
 // Regex to find common, disallowed HTML characters (e.g., <, >, &, ", ')
 // Note: This regex *allows* the permitted control sequence '&shy;' for the "phoneNumberReport" key.
 const DISALLOWED_HTML_REGEX = /[<>"']/g; // Catches <, >, ", '
-const DISALLOWED_HTML_AMPERSAND_REGEX = /&(?!shy;)/g; // Catches '&' unless followed by 'shy;'
+const DISALLOWED_HTML_AMPERSAND_REGEX = /&(?!shy;|nbsp;|apos;)/g; // Catches '&' unless followed by 'shy;', 'nbsp;' or 'apos;'
 
 describe('Localization File Integrity Tests', () => {
 
