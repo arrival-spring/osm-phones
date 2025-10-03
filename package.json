@@ -13,7 +13,8 @@
     "download-icons": "node src/download-icons.js",
     "start": "node src/main.js",
     "test": "jest",
-    "build:css": "tailwindcss -i src/input.css -o public/styles.css --minify"
+    "build:css": "tailwindcss -i src/input.css -o public/styles.css --minify",
+    "build": "npm run download-icons && node src/main.js && npm run build:css"
   },
   "devDependencies": {
     "@mapbox/maki": "^8.2.0",
