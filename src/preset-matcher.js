@@ -1,15 +1,37 @@
 const fs = require('fs');
 const path = require('path');
 
+// --- Global Data Setup ---
+
+/**
+ * Loads the raw preset data from the iD Tagging Schema module.
+ * @type {Object<string, object>}
+ */
 const presetsData = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', 'node_modules/@openstreetmap/id-tagging-schema/dist/presets.json'), 'utf8'));
 
+/**
+ * A map of all presets, indexed by their ID, with the ID added as a property to the preset object.
+ * @type {Object<string, object>}
+ */
 const allPresets = {};
 for (const key in presetsData) {
     allPresets[key] = { ...presetsData[key], id: key };
 }
 
+/**
+ * Cache for loaded translation data to avoid redundant file system access.
+ * @type {Object<string, object>}
+ */
 const translations = {};
 
+// --- Helper Functions ---
+
+/**
+ * Loads translation data for a given locale, falling back to language code and then 'en'.
+ * The resulting translation object is cached.
+ * @param {string} locale - The target locale string (e.g., 'en', 'en-US', 'fr').
+ * @returns {object|null} The translation object for the locale, or null if loading fails.
+ */
 function loadTranslation(locale) {
     if (translations[locale]) {
         return translations[locale];
@@ -41,17 +63,23 @@ function loadTranslation(locale) {
     return null;
 }
 
-// Preload 'en'
+// Preload 'en' for immediate fallback access
 loadTranslation('en');
 
-// A simple way to determine geometry for an OSM item
+/**
+ * Determines the simplified geometry type for an OpenStreetMap item based on its type and tags.
+ * This logic attempts to classify ways/relations as 'area' if they contain known area keys.
+ * @param {object} item - The OSM item object (must have 'type' and 'allTags').
+ * @returns {('point'|'line'|'area'|'relation')} The determined geometry type.
+ */
 function getGeometry(item) {
     if (item.type === 'node') return 'point'; // TODO: could also be vertex, but is there anything that can only be a vertex and have a phone number?
 
-    // For ways and relations, determine if it's an area
+    // For ways and relations, determine if it's an area based on 'area' tag
     if (item.allTags.area === 'yes') return 'area';
     if (item.allTags.area === 'no') return 'line';
 
+    // Check for common area-defining keys
     const areaKeys = ['building', 'landuse', 'natural', 'leisure', 'amenity', 'shop', 'tourism', 'historic'];
     for (const key of areaKeys) {
         if (item.allTags[key]) {
@@ -59,13 +87,22 @@ function getGeometry(item) {
         }
     }
 
-    // Relations can be areas, so only check this after checking for area
+    // Relations that weren't classified as an area based on tags
     if (item.type === 'relation') return 'relation';
 
-    // Not a relation or an area
+    // Default for ways (lines)
     return 'line';
 }
 
+/**
+ * Calculates a match score between a preset's required tags and a feature's actual tags and geometry.
+ * A score of -1 indicates an incompatible match.
+ * * Score Calculation: preset.matchScore + specific_matches + (wildcard_matches * 0.5)
+ * * @param {object} preset - The preset definition (must have .tags and .geometry).
+ * @param {object} tags - The target OSM feature's tags (e.g., item.allTags).
+ * @param {string} geometry - The target OSM feature's geometry type.
+ * @returns {number} The match score. Higher scores indicate a better, more specific match.
+ */
 function getMatchScore(preset, tags, geometry) {
     // Check geometry compatibility
     if (preset.geometry && !preset.geometry.includes(geometry)) {
@@ -74,27 +111,40 @@ function getMatchScore(preset, tags, geometry) {
 
     let score = preset.matchScore || 0;
     let specificMatches = 0;
-    let wildcardMatches = 0; // Tracks wildcard tags ('*')
+    let wildcardMatches = 0;
 
+    // Check tag compatibility and count matches
     for (const key in preset.tags) {
         const value = preset.tags[key];
+        
+        // Fail if a required tag key is missing from the feature
         if (!tags.hasOwnProperty(key)) {
-            return -1; // A required tag is missing
+            return -1; 
         }
+        
         if (value === '*') {
-            // Wildcard match: contributes a fractional score
+            // Wildcard match
             wildcardMatches++;
         } else if (value === tags[key]) {
-            // Specific match: contributes a full score
+            // Exact value match
             specificMatches++;
         } else {
-            return -1; // Tag value doesn't match
+            // Fail if the tag exists but the value is incorrect
+            return -1; 
         }
     }
 
+    // Return the final calculated score
     return score + specificMatches + (wildcardMatches * 0.5);
 }
 
+/**
+ * Finds the best matching preset for a given OSM item by iterating through all known presets
+ * and maximizing the match score.
+ * * @param {object} item - The OSM item object (must have .allTags and .type).
+ * @param {string} [locale='en'] - The desired language locale for the preset name translation.
+ * @returns {object|null} A copy of the best matching preset with its name translated, or null if no match is found.
+ */
 function getBestPreset(item, locale = 'en') {
     const geometry = getGeometry(item);
     let bestPreset = null;
@@ -115,10 +165,11 @@ function getBestPreset(item, locale = 'en') {
         const presetCopy = { ...bestPreset };
         const translation = loadTranslation(locale) || loadTranslation('en');
 
+        // Apply translation if available
         if (translation && translation.presets && translation.presets.presets && translation.presets.presets[presetCopy.id]) {
             presetCopy.name = translation.presets.presets[presetCopy.id].name;
         } else {
-             // Fallback name if translation not found
+             // Fallback name generation
             const nameParts = presetCopy.id.split('/');
             const fallbackName = nameParts[nameParts.length - 1];
             presetCopy.name = fallbackName.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
@@ -132,6 +183,5 @@ function getBestPreset(item, locale = 'en') {
 module.exports = {
     getBestPreset,
     getGeometry,
-    getMatchScore,
-    allPresets
+    getMatchScore
 };

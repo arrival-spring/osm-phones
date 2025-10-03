@@ -1,4 +1,4 @@
-const { getBestPreset, getMatchScore } = require('../src/preset-matcher.js');
+const { getBestPreset, getMatchScore, getGeometry } = require('../src/preset-matcher.js');
 
 // 1. Mock the file system to prevent errors when requiring the main file
 // This ensures that `fs.readFileSync` does not try to load real files during the test.
