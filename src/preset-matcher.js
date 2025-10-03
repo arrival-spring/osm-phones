@@ -29,6 +29,7 @@ const translations = {};
 /**
  * Loads translation data for a given locale, falling back to language code and then 'en'.
  * The resulting translation object is cached.
+ * * NOTE: This function's actual file access logic is often mocked in tests.
  * @param {string} locale - The target locale string (e.g., 'en', 'en-US', 'fr').
  * @returns {object|null} The translation object for the locale, or null if loading fails.
  */
@@ -150,8 +151,13 @@ function getBestPreset(item, locale = 'en') {
     let bestPreset = null;
     let maxScore = -1;
 
-    for (const id in allPresets) {
-        const preset = allPresets[id];
+    // Use globally injected mock presets for testing, or the real presets otherwise.
+    const presetsToTest = (typeof global !== 'undefined' && typeof global.getMockPresets === 'function')
+        ? global.getMockPresets()
+        : allPresets;
+
+    for (const id in presetsToTest) {
+        const preset = presetsToTest[id];
 
         const score = getMatchScore(preset, item.allTags, geometry);
         if (score > maxScore) {
