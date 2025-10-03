@@ -45,7 +45,7 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
             invalid: \`${T.invalid}\`,
             noSubdivisionsFound: \`${T.noSubdivisionsFound}\`
         };
-        
+
         // Utility function for consistent number formatting
         function formatNumber(num) {
             // Ensure the number formatting respects the locale for grouping

@@ -4,7 +4,7 @@ const { PUBLIC_DIR, OSM_EDITORS, ALL_EDITOR_IDS, DEFAULT_EDITORS_DESKTOP, DEFAUL
 const { safeName, getFeatureTypeName, getFeatureIcon, isDisused } = require('./data-processor');
 const { translate } = require('./i18n');
 const { getDiffHtml } = require('./diff-renderer');
-const { favicon, themeButton, createFooter, createStatsBox } = require('./html-utils')
+const { favicon, themeButton, createFooter, createStatsBox, escapeHTML } = require('./html-utils')
 
 // Global map to store unique icons that need to be in the SVG sprite
 // Stores: { iconName: { content: <path/g data>, viewBox: '0 0 24 24' } }
@@ -72,7 +72,7 @@ function createDetailsGrid(item, locale) {
                 </div>
             `;
         } else {
-            originalNumberHtml = `<span>${originalNumber}</span>`;
+            originalNumberHtml = `<span>${escapeHTML(originalNumber)}</span>`;
         }
 
         // Return the HTML for one set of phone number details
@@ -275,7 +275,7 @@ function createListItem(item, locale) {
                 </a>
                 <div class="list-item-details-wrapper">
                     <div class="list-item-header">
-                        <h3 class="list-item-title">${getFeatureTypeName(item, locale)}</h3>
+                        <h3 class="list-item-title">${escapeHTML(getFeatureTypeName(item, locale))}</h3>
                         ${disusedLabel}
                     </div>
                     ${createDetailsGrid(item, locale)}
@@ -384,7 +384,7 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
                     <span class="align-middle">${translate('backToCountryPage', locale)}</span>
                 </a>
                 <h1 class="page-title">${translate('phoneNumberReport', locale)}</h1>
-                <h2 class="page-subtitle">${subdivision.name}</h2>
+                <h2 class="page-subtitle">${escapeHTML(subdivision.name)}</h2>
             </header>
             ${createStatsBox(totalNumbers, invalidNumbers.length, autofixableNumbers.length, locale)}
             ${fixableAndInvalidSectionContent}

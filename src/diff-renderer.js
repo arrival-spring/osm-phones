@@ -1,5 +1,7 @@
 const { diffChars } = require('diff');
 const { UNIVERSAL_SPLIT_CAPTURE_REGEX } = require('./constants.js');
+const { escapeHTML } = require('./html-utils.js');
+
 
 // Used for splitting the suggested fix (assuming standard semicolon separation)
 const NEW_SPLIT_CAPTURE_REGEX = /(; ?)/g;
@@ -256,17 +258,17 @@ function getDiffHtml(oldString, newString) {
 
     mergedOriginalDiff.forEach((part) => {
         const colorClass = part.removed ? 'diff-removed' : 'diff-unchanged';
-        oldDiffHtml += `<span class="${colorClass}">${part.value}</span>`;
+        oldDiffHtml += `<span class="${colorClass}">${escapeHTML(part.value)}</span>`;
     });
 
     mergedSuggestedDiff.forEach((part) => {
         const colorClass = part.added ? 'diff-added' : 'diff-unchanged';
-        newDiffHtml += `<span class="${colorClass}">${part.value}</span>`;
+        newDiffHtml += `<span class="${colorClass}">${escapeHTML(part.value)}</span>`;
     });
 
     // Append any trailing parts
-    oldDiffHtml += consolidatedOldParts.slice(numSegments).join('');
-    newDiffHtml += consolidatedNewParts.slice(numSegments).join('');
+    oldDiffHtml += escapeHTML(consolidatedOldParts.slice(numSegments).join(''));
+    newDiffHtml += escapeHTML(consolidatedNewParts.slice(numSegments).join(''));
 
     return { oldDiff: oldDiffHtml, newDiff: newDiffHtml };
 }

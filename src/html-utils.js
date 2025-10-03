@@ -197,9 +197,31 @@ function createFooter(locale = 'en-GB', translations, includeIconAttribution = f
     `
 }
 
+/**
+ * Escapes special HTML characters in a string.
+ * @param {string} str - The string to escape.
+ * @returns {string} The escaped string.
+ */
+function escapeHTML(str) {
+    if (!str) {
+        return '';
+    }
+    return str.replace(/[&<>"']/g, (match) => {
+        switch (match) {
+            case '&': return '&amp;';
+            case '<': return '&lt;';
+            case '>': return '&gt;';
+            case '"': return '&quot;';
+            case "'": return '&#039;';
+            default: return match;
+        }
+    });
+}
+
 module.exports = {
     themeButton,
     favicon,
     createStatsBox,
     createFooter,
+    escapeHTML,
 };

@@ -3,9 +3,10 @@ const path = require('path');
 const { PUBLIC_DIR, COUNTRIES } = require('./constants');
 const { fetchAdminLevels, fetchOsmDataForDivision } = require('./osm-api');
 const { safeName, validateNumbers } = require('./data-processor');
-const {generateCountryIndexHtml} = require('./html-country')
-const {generateMainIndexHtml} = require('./html-index')
-const {generateHtmlReport} = require('./html-report')
+const { generateCountryIndexHtml } = require('./html-country')
+const { generateMainIndexHtml } = require('./html-index')
+const { generateHtmlReport } = require('./html-report')
+const { escapeHTML } = require('./html-utils')
 const { getTranslations } = require('./i18n');
 
 const CLIENT_KEYS = [
@@ -58,7 +59,7 @@ async function main() {
 
     for (const countryKey in COUNTRIES) {
         const countryData = COUNTRIES[countryKey];
-        const countryName = countryData.name;
+        const countryName = escapeHTML(countryData.name);
         const locale = countryData.locale;
 
         const fullTranslations = getTranslations(locale);
@@ -78,8 +79,9 @@ async function main() {
 
         const divisions = countryData.divisions ?? countryData.divisionMap;
 
-        let divisionCount = 0; 
-        for (const divisionName in divisions) {
+        let divisionCount = 0;
+        for (const rawDivisionName in divisions) {
+            const divisionName = escapeHTML(rawDivisionName);
             console.log(`Processing subdivisions for ${divisionName}...`);
 
             const subdivisions = await (async () => {
@@ -120,7 +122,7 @@ async function main() {
                 const autoFixableCount = invalidNumbers.filter(item => item.autoFixable).length;
 
                 const stats = {
-                    name: subdivision.name,
+                    name: escapeHTML(subdivision.name),
                     invalidCount: invalidNumbers.length,
                     autoFixableCount: autoFixableCount,
                     totalNumbers: totalNumbers
