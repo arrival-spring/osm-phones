@@ -61,6 +61,7 @@ async function downloadSinglePack(packName, packDetails) {
     const totalFiles = svgFiles.length;
     const failCount = failedDownloads.length;
     
+    console.log(`Icons saved in ${FINAL_OUTPUT_DIR}`)
     console.log(`\n  --- Download Summary for ${packName} ---`);
     console.log(`  Total files processed: ${totalFiles}`);
     console.log(`  Successful downloads: ${successCount}`);

@@ -94,6 +94,8 @@ function getIconHtml(iconName) {
         const basePath = path.resolve(ICONS_DIR, library);
         const iconPath = path.join(basePath, `${icon}.svg`);
 
+        console.log(`Checking for ${iconPath}`)
+
         if (existsSync(iconPath)) {
             let svgContent = readFileSync(iconPath, 'utf8');
             
@@ -103,6 +105,8 @@ function getIconHtml(iconName) {
                 .replace(/<svg/, `<svg aria-label="${icon}"`); 
             
             iconHtml = `<span class="list-item-icon-container icon-svg">${svgContent}</span>`;
+        } else {
+            console.log(`Didn't find ${iconPath}`)
         }
     }
 
