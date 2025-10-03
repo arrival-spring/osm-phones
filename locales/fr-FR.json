@@ -40,14 +40,14 @@
   "hideEmptyDivisions": "Masquer les divisions sans problème",
   "sortBy": "Trier par :",
   "invalidPercentage": "Pourcentage invalide",
-  "invalidCount": "Nombre d'invalides",
+  "invalidCount": "Nombre d&apos;invalides",
   "name": "Nom",
   "noDivisionsFound": "Aucune subdivision avec des numéros invalides n&apos;a été trouvée.",
   "noSubdivisionsFound": "Aucune subdivision trouvée",
 
   "dataSourcedTemplate": "Données extraites le %d à %t %z (%a)",
 
-  "timeAgoJustNow": "à l'instant",
+  "timeAgoJustNow": "à l&apos;instant",
   "timeAgoError": "erreur de calcul du temps",
   "timeAgoMinute": "il y a %n&nbsp;minute",
   "timeAgoMinutesPlural": "il y a %n&nbsp;minutes",
