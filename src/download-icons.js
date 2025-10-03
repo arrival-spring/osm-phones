@@ -12,7 +12,10 @@ async function downloadSinglePack(packName, packDetails) {
     const { owner, repo, folder_path } = packDetails;
     const GITHUB_API_URL = `${GITHUB_API_BASE_URL}/${owner}/${repo}/contents/${folder_path}`;
     const FINAL_OUTPUT_DIR = path.join(ICONS_DIR, packName);
-    console.log(`Fetching file list from: ${GITHUB_API_URL}`);
+    console.log(`\n--- Processing Pack: ${packName} ---`);
+    console.log(`  Source: ${owner}/${repo}/${folder_path}`);
+    
+    // Use dynamic import for fetch as before
     const { default: fetch } = await import('node-fetch');
 
     // 1. Get the list of files
@@ -26,11 +29,13 @@ async function downloadSinglePack(packName, packDetails) {
     const svgFiles = files.filter(file => file.type === 'file' && file.name.endsWith('.svg'));
     await fs.mkdir(FINAL_OUTPUT_DIR, { recursive: true });
 
-    console.log(`Found ${svgFiles.length} SVG icons. Starting download...`);
+    console.log(`  Found ${svgFiles.length} SVG icons. Starting download...`);
+
+    let successCount = 0;
+    const failedDownloads = []; // Array to store error messages for failed files
 
     // 3. Download each SVG file
     const downloadPromises = svgFiles.map(async (file) => {
-        // The 'download_url' is the direct link to the raw file content
         const rawUrl = file.download_url;
         const filePath = path.join(FINAL_OUTPUT_DIR, file.name);
 
@@ -42,18 +47,30 @@ async function downloadSinglePack(packName, packDetails) {
 
             const fileContent = await fileResponse.text();
             await fs.writeFile(filePath, fileContent, 'utf-8');
-
-            return `Downloaded: ${file.name}`;
+            
+            successCount++; 
         } catch (error) {
-            console.error(`Error downloading ${file.name}:`, error.message);
-            return `Failed: ${file.name}`;
+            // Push the error details to the failures array
+            failedDownloads.push(`  - FAILED ${file.name}: ${error.message}`);
         }
     });
 
-    const results = await Promise.all(downloadPromises);
-    console.log('\n--- Download Summary ---');
-    results.forEach(result => console.log(result));
-    console.log('------------------------\n');
+    // Wait for all downloads to complete
+    await Promise.all(downloadPromises);
+
+    const totalFiles = svgFiles.length;
+    const failCount = failedDownloads.length;
+    
+    console.log(`\n  --- Download Summary for ${packName} ---`);
+    console.log(`  Total files processed: ${totalFiles}`);
+    console.log(`  Successful downloads: ${successCount}`);
+    console.log(`  Failed downloads: ${failCount}`);
+    
+    if (failCount > 0) {
+        console.log('\n  --- Errors for Failed Downloads ---');
+        failedDownloads.forEach(errorMsg => console.error(errorMsg));
+    }
+    console.log('------------------------------------------');
 }
 
 /**

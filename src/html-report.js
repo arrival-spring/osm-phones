@@ -110,7 +110,7 @@ function getIconHtml(iconName) {
     // If iconHtml is empty (meaning the requested icon was not found), 
     // and we haven't already tried the iD-icon-point fallback, call it recursively.
     if (!iconHtml && iconName !== 'iD-icon-point') {
-        console.error(`No icon found for ${iconName}, using point fallback`)
+        console.log(`No icon found for ${iconName}, using point fallback`)
         return getIconHtml('iD-icon-point');
     }
 
