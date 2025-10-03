@@ -1,8 +1,8 @@
 const fs = require('fs');
 const path = require('path');
 
-const presets = JSON.parse(fs.readFileSync(path.join(__dirname, '../node_modules/@openstreetmap/id-tagging-schema/dist/presets.json'), 'utf8'));
-const en = JSON.parse(fs.readFileSync(path.join(__dirname, '../node_modules/@openstreetmap/id-tagging-schema/dist/translations/en.json'), 'utf8'));
+const presets = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', 'node_modules/@openstreetmap/id-tagging-schema/dist/presets.json'), 'utf8'));
+const en = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', 'node_modules/@openstreetmap/id-tagging-schema/dist/translations/en.json'), 'utf8')).en;
 
 const presetCache = new Map();
 const presetKeyMapping = new Map();
