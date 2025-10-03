@@ -1,62 +1,86 @@
 const fs = require('fs');
 const path = require('path');
 
-const presets = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', 'node_modules/@openstreetmap/id-tagging-schema/dist/presets.json'), 'utf8'));
-const en = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', 'node_modules/@openstreetmap/id-tagging-schema/dist/translations/en.json'), 'utf8')).en;
+const presetsData = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', 'node_modules/@openstreetmap/id-tagging-schema/dist/presets.json'), 'utf8'));
+const enTranslations = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', 'node_modules/@openstreetmap/id-tagging-schema/dist/translations/en.json'), 'utf8')).en;
 
-const presetCache = new Map();
-const presetKeyMapping = new Map();
+const allPresets = {};
+for (const key in presetsData) {
+    allPresets[key] = { ...presetsData[key], id: key };
+}
 
-for (const key in presets) {
-    const preset = presets[key];
-    presetKeyMapping.set(preset, key);
-    if (preset.tags) {
-        for (const tagKey in preset.tags) {
-            if (preset.tags[tagKey] === '*') {
-                if (!presetCache.has(tagKey)) {
-                    presetCache.set(tagKey, []);
-                }
-                presetCache.get(tagKey).push(preset);
-            }
+// A simple way to determine geometry for an OSM item
+function getGeometry(item) {
+    if (item.type === 'node') return 'point';
+    if (item.type === 'relation') return 'relation';
+
+    // For ways, determine if it's an area or line
+    if (item.allTags.area === 'yes') return 'area';
+    if (item.allTags.area === 'no') return 'line';
+
+    const areaKeys = ['building', 'landuse', 'natural', 'leisure', 'amenity', 'shop', 'tourism', 'historic'];
+    for (const key of areaKeys) {
+        if (item.allTags[key]) {
+            return 'area';
         }
     }
+
+    return 'line';
+}
+
+function getMatchScore(preset, tags, geometry) {
+    // Check geometry compatibility
+    if (preset.geometry && !preset.geometry.includes(geometry)) {
+        return -1;
+    }
+
+    let score = preset.matchScore || 0;
+    let specificMatches = 0;
+
+    for (const key in preset.tags) {
+        const value = preset.tags[key];
+        if (!tags.hasOwnProperty(key)) {
+            return -1; // A required tag is missing
+        }
+        if (value === '*') {
+            // Wildcard match
+        } else if (value === tags[key]) {
+            specificMatches++;
+        } else {
+            return -1; // Tag value doesn't match
+        }
+    }
+
+    return score + specificMatches;
 }
 
 function getBestPreset(item) {
+    const geometry = getGeometry(item);
     let bestPreset = null;
     let maxScore = -1;
 
-    for (const tagKey in item.allTags) {
-        if (presetCache.has(tagKey)) {
-            const potentialPresets = presetCache.get(tagKey);
-            for (const preset of potentialPresets) {
-                let score = preset.matchScore || 0;
-                let allTagsMatch = true;
+    for (const id in allPresets) {
+        const preset = allPresets[id];
 
-                for (const pTagKey in preset.tags) {
-                    if (preset.tags[pTagKey] !== '*' && item.allTags[pTagKey] !== preset.tags[pTagKey]) {
-                        allTagsMatch = false;
-                        break;
-                    }
-                }
-
-                if (allTagsMatch && score > maxScore) {
-                    bestPreset = preset;
-                    maxScore = score;
-                }
-            }
+        const score = getMatchScore(preset, item.allTags, geometry);
+        if (score > maxScore) {
+            maxScore = score;
+            bestPreset = preset;
         }
     }
 
     if (bestPreset) {
-        const presetKey = presetKeyMapping.get(bestPreset);
+        // Create a copy to avoid modifying the original preset object
         const presetCopy = { ...bestPreset };
 
-        if (en && en.presets && en.presets.presets && en.presets.presets[presetKey]) {
-            presetCopy.name = en.presets.presets[presetKey].name;
+        // Get translated name
+        if (enTranslations && enTranslations.presets && enTranslations.presets.presets && enTranslations.presets.presets[presetCopy.id]) {
+            presetCopy.name = enTranslations.presets.presets[presetCopy.id].name;
         } else {
-             // fallback name if translation not found
-            presetCopy.name = presetKey.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+             // Fallback name if translation not found
+            const nameParts = presetCopy.id.split('/');
+            const fallbackName = nameParts[nameParts.length - 1];
+            presetCopy.name = fallbackName.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
         }
         return presetCopy;
     }
