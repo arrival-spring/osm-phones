@@ -46,6 +46,19 @@ function createDetailsGrid(item, locale) {
     return detailsGrid;
 }
 
+function getSvgContent(iconPath) {
+    let svgContent = readFileSync(iconPath, 'utf8');
+    // Remove the XML declaration
+    svgContent = svgContent.replace(/<\?xml[^>]*\?>/, '');
+    // Remove comments
+    svgContent = svgContent.replace(/<!--[\s\S]*?-->/g, '');
+    // Remove DOCTYPE
+    svgContent = svgContent.replace(/<!DOCTYPE[^>]*>/i, '');
+    // Set width and height
+    svgContent = svgContent.replace(/ width="[^"]*"/, ' width="100%"').replace(/ height="[^"]*"/, ' height="100%"');
+
+    return svgContent;
+}
 
 /**
  * Generates the HTML string for a specified icon, supporting Font Awesome classes,
@@ -83,9 +96,8 @@ function getIconHtml(iconName) {
         const iconPath = path.resolve(__dirname, '..', `node_modules/${packageName}/icons/${icon}.svg`);
         
         if (existsSync(iconPath)) {
-            let svgContent = readFileSync(iconPath, 'utf8');
-            svgContent = svgContent.replace(/ width="[^"]*"/, ' width="100%"').replace(/ height="[^"]*"/, ' height="100%"');
-            iconHtml = `<span class="list-item-icon-container icon-svg">${svgContent}</span>`;
+            const svgContent = getSvgContent(iconPath);
+            iconHtml = `<span class="icon-svg">${svgContent}</span>`;
         } else {
             console.log(`Icon not found: ${library}-${icon}`)
         }
@@ -97,14 +109,8 @@ function getIconHtml(iconName) {
         const iconPath = path.join(basePath, `${icon}.svg`);
 
         if (existsSync(iconPath)) {
-            let svgContent = readFileSync(iconPath, 'utf8');
-            
-            svgContent = svgContent
-                .replace(/ width="[^"]*"/, ' width="100%"')
-                .replace(/ height="[^"]*"/, ' height="100%"')
-                .replace(/<svg/, `<svg aria-label="${icon}"`); 
-            
-            iconHtml = `<span class="list-item-icon-container icon-svg">${svgContent}</span>`;
+            const svgContent = getSvgContent(iconPath);
+            iconHtml = `<span class="icon-svg">${svgContent}</span>`;
         } else {
             console.log(`Icon not found: ${library}-${icon}`)
         }
@@ -198,9 +204,11 @@ function createListItem(item, locale) {
 
     return `
         <li class="report-list-item">
+            <div class="list-item-icon-circle-preview">
+                ${iconHtml}
+            </div>
             <div class="list-item-content-wrapper">
                 <div class="list-item-header">
-                    ${iconHtml}
                     <h3 class="list-item-title">
                         <a href="${item.osmUrl}" target="_blank" rel="noopener noreferrer" class="list-item-link">${getFeatureTypeName(item, locale)}</a>
                     </h3>

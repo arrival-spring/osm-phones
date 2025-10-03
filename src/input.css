@@ -137,6 +137,9 @@
     .list-item-header {
         @apply flex-shrink-0 flex flex-wrap items-center gap-2;
     }
+    .list-item-icon-circle-preview {
+      @apply w-10 h-10 inline-flex items-center justify-center rounded-full bg-blue-500 dark:bg-blue-700 text-white flex-shrink-0;
+    }
     .list-item-icon-container {
         @apply w-6 h-6 inline-flex items-center justify-center mr-2;
     }
