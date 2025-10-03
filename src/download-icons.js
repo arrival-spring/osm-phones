@@ -1,6 +1,5 @@
 const fs = require('fs/promises');
 const path = require('path');
-const fetch = require('node-fetch');
 const { ICONS_DIR, ICON_PACKS, GITHUB_API_BASE_URL } = require('./constants.js')
 
 
@@ -14,6 +13,7 @@ async function downloadSinglePack(packName, packDetails) {
     const GITHUB_API_URL = `${GITHUB_API_BASE_URL}/${owner}/${repo}/contents/${folder_path}`;
     const FINAL_OUTPUT_DIR = path.join(ICONS_DIR, packName);
     console.log(`Fetching file list from: ${GITHUB_API_URL}`);
+    const { default: fetch } = await import('node-fetch');
 
     // 1. Get the list of files
     const response = await fetch(GITHUB_API_URL);
