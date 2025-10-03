@@ -232,7 +232,7 @@
         @apply text-center space-y-2 relative;
     }
     .list-item-content-wrapper {
-        @apply flex flex-grow items-start sm:w-2/3;
+        @apply flex flex-grow items-center sm:w-2/3;
     }
     .list-item-details-wrapper {
         @apply ml-4;
