@@ -126,7 +126,11 @@ function getFeatureTypeName(item, locale) {
 function getFeatureIcon(item, locale) {
     const preset = getBestPreset(item, locale);
     if (preset) {
-        return preset.icon;
+        if (preset.icon) {
+            return preset.icon;
+        } else {
+            console.log(`No icon for ${preset.id}`)
+        }
     }
     const geometry = getGeometry(item);
     if (geometry === 'point') {
@@ -389,7 +393,7 @@ function validateNumbers(elements, countryCode) {
                 }
 
                 const validationResult = validateSingleTag(phoneTagValue, countryCode, tags);
-                
+
                 const isInvalid = validationResult.isInvalid;
                 const autoFixable = validationResult.isAutoFixable;
                 // Only give a suggested fix if it is fixable
@@ -398,7 +402,7 @@ function validateNumbers(elements, countryCode) {
                     : null;
                 totalNumbers += validationResult.numberOfValues;
 
-                if (isInvalid) {        
+                if (isInvalid) {
                     if (!invalidItemsMap.has(key)) {
                         invalidItemsMap.set(key, { ...baseItem, autoFixable: autoFixable });
                     }

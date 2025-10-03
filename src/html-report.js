@@ -114,8 +114,6 @@ function getIconHtml(iconName) {
         return getIconHtml('iD-icon-point');
     }
 
-    console.log(`No icon found, using point fallback: ${iconName}`)
-
     // If iconHtml is still empty here, it means the iD-icon-point icon also couldn't be loaded (a major error).
     // In this critical scenario, we return a simple default placeholder.
     return iconHtml || `<span class="list-item-icon-container icon-fallback">?</span>`;
@@ -193,7 +191,7 @@ function createListItem(item, locale) {
 
     const iconName = getFeatureIcon(item, locale);
     const iconHtml = getIconHtml(iconName);
-    if (iconHtml.includes('?')) {
+    if (iconHtml.includes('>?<')) {
         console.log(`Looks like fallback for ${iconName}, on object named ${getFeatureTypeName(item, locale)}`)
     }
 
