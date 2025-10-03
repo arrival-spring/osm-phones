@@ -389,7 +389,7 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
             ${createStatsBox(totalNumbers, invalidNumbers.length, autofixableNumbers.length, locale)}
             ${fixableAndInvalidSectionContent}
             <div class="footer-container">
-                ${createFooter(locale, translations)}
+                ${createFooter(locale, translations, true)}
             </div>
         </div>
     <script>
