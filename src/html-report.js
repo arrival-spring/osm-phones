@@ -223,7 +223,7 @@ function createListItem(item, locale) {
         return `${encodedKey}=${encodedValue}`;
     });
 
-    const addtagsValue = encodedTags.join('|');
+    const addtagsValue = encodedTags.join('%7C');
 
     const josmFixUrl = item.autoFixable ?
         `${josmEditUrl}&addtags=${addtagsValue}` :
