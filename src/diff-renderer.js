@@ -2,6 +2,12 @@ const { diffChars } = require('diff');
 const { UNIVERSAL_SPLIT_CAPTURE_REGEX } = require('./constants.js');
 const { escapeHTML } = require('./html-utils.js');
 
+// We need custom diff logic, because if diffChars is used alone then it marks characters as
+// being added or removed when, semantically, they are just being moved.
+// e.g. 0123 456 being changed to 012 34 56 would show the 3 as being deleted from the first
+// string and added to the second string. Instead, we want to show the digits as unchanging
+// and the formatting as the change.
+
 
 // Used for splitting the suggested fix (assuming standard semicolon separation)
 const NEW_SPLIT_CAPTURE_REGEX = /(; ?)/g;
