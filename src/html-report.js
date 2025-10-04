@@ -160,10 +160,12 @@ function getIconHtml(iconName) {
 
     switch (library) {
         case 'fas':
-            packageName = '@fortawesome/free-solid-svg-icons';
+            packageName = '@fortawesome/fontawesome-free';
+            faStyleDir = 'solid';
             break;
         case 'far':
-            packageName = '@fortawesome/free-regular-svg-icons';
+            packageName = '@fortawesome/fontawesome-free';
+            faStyleDir = 'regular';
             break;
         case 'maki':
             packageName = '@mapbox/maki';
@@ -176,9 +178,14 @@ function getIconHtml(iconName) {
             iconPath = path.join(basePath, `${icon}.svg`);
             return; 
     }
-    if (!iconPath) {
-        // This executes for 'fas', 'far', 'maki', and 'temaki'.
-        iconPath = path.resolve(__dirname, '..', `node_modules/${packageName}/icons/${icon}.svg`);
+    if (packageName) { // This covers 'fas', 'far', 'maki', and 'temaki'
+        let svgSubPath = '';
+        if (faStyleDir) { // Font Awesome Icons
+            svgSubPath = `svgs/${faStyleDir}/${icon}.svg`;
+        } else { // Maki, Temaki
+            svgSubPath = `icons/${icon}.svg`;
+        }
+        iconPath = path.resolve(__dirname, '..', `node_modules/${packageName}/${svgSubPath}`);
     }
 
     if (existsSync(iconPath)) {
