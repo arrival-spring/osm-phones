@@ -373,7 +373,7 @@ async function generateHtmlReport(countryName, subdivisionStats, invalidNumbers,
                         </svg>
                         <span class="align-middle">${translate('backToCountryPage', locale)}</span>
                     </a>
-                    <div class="flex items-center space-x-2">
+                    <div class="flex items-center space-x-2 relative">
                         ${themeButton}
                         <button id="settings-toggle" class="settings-button" aria-label="${translate('settings', locale)}">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340.274 340.274" fill="currentColor" class="7 w-7">
@@ -381,7 +381,7 @@ async function generateHtmlReport(countryName, subdivisionStats, invalidNumbers,
                             </svg>
                         </button>
                         <div id="editor-settings-menu" class="settings-menu hidden">
-                            </div>
+                        </div>
                     </div>
                 </div>
                 <h1 class="page-title">${translate('phoneNumberReport', locale)}</h1>
