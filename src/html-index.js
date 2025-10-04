@@ -1,7 +1,6 @@
 const { promises: fsPromises } = require('fs');
 const path = require('path');
 const { PUBLIC_DIR } = require('./constants');
-const { safeName } = require('./data-processor');
 const { translate } = require('./i18n');
 const {favicon, themeButton, createFooter} = require('./html-utils')
 
@@ -14,8 +13,8 @@ const {favicon, themeButton, createFooter} = require('./html-utils')
 async function generateMainIndexHtml(countryStats, locale, translations) {
 
     const listContent = countryStats.map(country => {
-        const safeCountryName = safeName(country.name);
-        const countryPageName = `${safeCountryName}.html`;
+        const safeCountryName = country.slug;
+        const countryPageName = `/${safeCountryName}/`;
         const percentage = country.totalNumbers > 0 ? (country.invalidCount / country.totalNumbers) * 100 : 0;
         const invalidPercentage = Math.max(0, Math.min(100, percentage));
 

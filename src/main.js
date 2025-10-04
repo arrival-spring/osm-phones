@@ -123,6 +123,7 @@ async function main() {
 
                 const stats = {
                     name: escapeHTML(subdivision.name),
+                    slug: `${safeName(rawDivisionName)}/${safeName(subdivision.name)}`,
                     invalidCount: invalidNumbers.length,
                     autoFixableCount: autoFixableCount,
                     totalNumbers: totalNumbers
@@ -149,15 +150,19 @@ async function main() {
             }
         }
 
-        countryStats.push({
+        const stats = {
             name: countryName,
+            slug: safeName(countryName),
             locale: countryData.locale,
             invalidCount: totalInvalidCount,
             autoFixableCount: totalAutofixableCount,
-            totalNumbers: totalTotalNumbers
-        });
+            totalNumbers: totalTotalNumbers,
+            groupedDivisionStats: groupedDivisionStats
+        }
 
-        await generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, locale, clientTranslations);
+        countryStats.push(stats);
+
+        await generateCountryIndexHtml(stats, clientTranslations);
 
         if (testMode) {
             break;

@@ -306,9 +306,9 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
     // Clear the map at the start of report generation for a new page.
     iconSvgData.clear(); 
 
-    const safeSubdivisionName = safeName(subdivision.name);
+    const subdivisionSlug = subdivision.slug;
     const safeCountryName = safeName(countryName);
-    const filePath = path.join(PUBLIC_DIR, safeCountryName, `${safeSubdivisionName}.html`);
+    const filePath = path.join(PUBLIC_DIR, safeCountryName, `${subdivisionSlug}.html`);
 
     const autofixableNumbers = invalidNumbers.filter(item => item.autoFixable);
     const manualFixNumbers = invalidNumbers.filter(item => !item.autoFixable);
@@ -377,7 +377,7 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
                     <div id="editor-settings-menu" class="settings-menu hidden">
                         </div>
                 </div>
-                <a href="../${safeCountryName}.html" class="back-link">
+                <a href="../../" class="back-link">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline-block align-middle mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                     </svg>

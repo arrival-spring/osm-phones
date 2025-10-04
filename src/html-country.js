@@ -1,20 +1,18 @@
 const { promises: fsPromises } = require('fs');
 const path = require('path');
 const { PUBLIC_DIR } = require('./constants');
-const { safeName } = require('./data-processor');
 const { translate } = require('./i18n');
-const {favicon, themeButton, createFooter, createStatsBox} = require('./html-utils')
+const {favicon, themeButton, createFooter, createStatsBox} = require('./html-utils');
+const { safeName } = require('./data-processor');
 
 /**
  * Creates the renderListScript for the country index page.
- * @param {string} countryName
+ * @param {string} countrySlug
  * @param {Object} groupedDivisionStats
  * @param {string} locale
  * @returns {string}
  */
-function createRenderListScript(countryName, groupedDivisionStats, locale) {
-    const safeCountryName = safeName(countryName);
-
+function createRenderListScript(countrySlug, groupedDivisionStats, locale) {
     // --- Server-side translation of dynamic client script strings ---
     // These strings are translated on the server and embedded as literals in the script.
     const T = {
@@ -32,7 +30,7 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
     return `
     <script>
         const groupedDivisionStats = ${JSON.stringify(groupedDivisionStats)};
-        const safeCountryName = '${safeCountryName}';
+        const safeCountryName = '${countrySlug}';
         const listContainer = document.getElementById('division-list');
         const sortButtons = document.querySelectorAll('.sort-btn');
         const hideEmptyCheckbox = document.getElementById('hide-empty');
@@ -141,7 +139,7 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
                 let sortedData = [...groupedDivisionStats[divisionName]];
 
                 if (hideEmptyCheckbox.checked) {
-                    sortedData = sortedData.filter(division => division.invalidCount > 0);
+                    sortedData = sortedData.filter(subdivision => subdivision.invalidCount > 0);
                 }
 
                 if (sortedData.length > 0) {
@@ -254,16 +252,16 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
                     }
 
                     // --- LIST ITEM RENDERING (Common Logic) ---
-                    sortedData.forEach(division => {
-                        const safeDivisionName = division.name.toLowerCase().replace(/[^\p{L}\p{N}\s]+/gu, '-').replace(/[^a-z0-9\s\u00C0-\uFFFF]+/g, '-').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
-                        const percentage = division.totalNumbers > 0 ? (division.invalidCount / division.totalNumbers) * 100 : 0;
+                    sortedData.forEach(subdivision => {
+                        const subdivisionSlug = subdivision.slug;
+                        const percentage = subdivision.totalNumbers > 0 ? (subdivision.invalidCount / subdivision.totalNumbers) * 100 : 0;
                         const invalidPercentage = Math.max(0, Math.min(100, percentage));
 
-                        const formattedInvalidCount = formatNumber(division.invalidCount);
-                        const formattedFixableCount = formatNumber(division.autoFixableCount);
-                        const formattedTotalCount = formatNumber(division.totalNumbers);
+                        const formattedInvalidCount = formatNumber(subdivision.invalidCount);
+                        const formattedFixableCount = formatNumber(subdivision.autoFixableCount);
+                        const formattedTotalCount = formatNumber(subdivision.totalNumbers);
 
-                        const percentageNumber = division.totalNumbers > 0 ? (division.invalidCount / division.totalNumbers) * 100 : 0;
+                        const percentageNumber = subdivision.totalNumbers > 0 ? (subdivision.invalidCount / subdivision.totalNumbers) * 100 : 0;
                         const formattedPercentage = percentageNumber.toLocaleString(locale, percentageOptions);
                         
                         // Client-side substitution using the embedded template literal
@@ -277,10 +275,10 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
                         li.className = 'report-list-item';
 
                         li.innerHTML = \`
-                            <a href="\${safeCountryName}/\${safeDivisionName}.html" class="list-item-main-link">
+                            <a href="\${safeCountryName}/\${subdivisionSlug}.html" class="list-item-main-link">
                                 <div class="color-indicator" data-percentage="\${invalidPercentage}"></div>
                                 <div class="list-item-content-wrapper">
-                                    <h3 class="list-item-sub-title">\${division.name}</h3>
+                                    <h3 class="list-item-sub-title">\${subdivision.name}</h3>
                                     <p class="country-description">\${itemStatsLine}</p>
                                 </div>
                             </a>
@@ -323,22 +321,18 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
 
 /**
  * Generates the country index page with a list of its subdivisions.
- * @param {string} countryName
- * @param {Object} groupedDivisionStats
- * @param {number} totalInvalidCount
- * @param {number} totalAutofixableCount
- * @param {number} totalTotalNumbers
- * @param {string} locale
+ * @param {Object} countryData
  * @param {Object} translations
  */
-async function generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, locale, translations) {
+async function generateCountryIndexHtml(countryData, translations) {
+    const locale = countryData.locale;
     const htmlContent = `
     <!DOCTYPE html>
     <html lang="${locale}" class="">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>${translate('countryReportTitle', locale, [countryName])}</title>
+        <title>${translate('countryReportTitle', locale, [countryData.name])}</title>
         ${favicon}
         <link href="./styles.css" rel="stylesheet">
         <script src="theme.js"></script>
@@ -349,16 +343,16 @@ async function generateCountryIndexHtml(countryName, groupedDivisionStats, total
                 <div class="absolute top-0 right-0">
                     ${themeButton}
                 </div>
-                <a href="index.html" class="back-link">
+                <a href="../" class="back-link">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline-block align-middle mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                     </svg>
                     <span class="align-middle">${translate('backToAllCountries', locale)}</span>
                 </a>
                 <h1 class="page-title">${translate('osmPhoneNumberValidation', locale)}</h1>
-                <p class="report-subtitle">${translate('reportSubtitle', locale, [countryName])}</p>
+                <p class="report-subtitle">${translate('reportSubtitle', locale, [countryData.name])}</p>
             </header>
-            ${createStatsBox(totalTotalNumbers, totalInvalidCount, totalAutofixableCount, locale)}
+            ${createStatsBox(countryData.totalTotalNumbers, countryData.totalInvalidCount, countryData.totalAutofixableCount, locale)}
             <div class="card">
                 <div class="card-header">
                     <h2 class="card-title">${translate('divisionalReports', locale)}</h2>
@@ -382,14 +376,14 @@ async function generateCountryIndexHtml(countryName, groupedDivisionStats, total
                 ${createFooter(locale, translations)}
             </div>
         </div>
-        ${createRenderListScript(countryName, groupedDivisionStats, locale)}
+        ${createRenderListScript(countryData.slug, countryData.groupedDivisionStats, locale)}
         <script src="./backgroundColor.js"></script>
     </body>
     </html>
     `;
-    pageFileName = path.join(PUBLIC_DIR, `${safeName(countryName)}.html`)
+    pageFileName = path.join(PUBLIC_DIR, countryData.slug, 'index.html')
     await fsPromises.writeFile(pageFileName, htmlContent);
-    console.log(`Report for ${countryName} generated at ${pageFileName}.`);
+    console.log(`Report for ${countryData.name} generated at ${pageFileName}.`);
 }
 
 module.exports = {
