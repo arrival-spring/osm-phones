@@ -135,7 +135,7 @@ async function main() {
                 totalAutofixableCount += autoFixableCount;
                 totalTotalNumbers += totalNumbers;
 
-                await generateHtmlReport(countryName, subdivision, invalidNumbers, totalNumbers, locale, clientTranslations);
+                await generateHtmlReport(countryName, stats, invalidNumbers, locale, clientTranslations);
 
                 // Do one subdivision for one division in one country in test mode
                 // count is here in case of needing to change it to test something
