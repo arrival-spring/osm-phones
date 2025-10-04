@@ -159,7 +159,7 @@ async function main() {
         const stats = {
             name: countryName,
             slug: safeName(countryName),
-            locale: countryData.locale,
+            locale: locale,
             invalidCount: totalInvalidCount,
             autoFixableCount: totalAutofixableCount,
             totalNumbers: totalTotalNumbers,

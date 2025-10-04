@@ -325,6 +325,7 @@ function createRenderListScript(countrySlug, groupedDivisionStats, locale) {
  * @param {Object} translations
  */
 async function generateCountryIndexHtml(countryData, translations) {
+    console.log(`Creating report for ${countryData.name} using locale ${countryData.locale}`)
     const locale = countryData.locale;
     const htmlContent = `
     <!DOCTYPE html>
