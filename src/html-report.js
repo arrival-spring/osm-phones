@@ -30,7 +30,7 @@ function generateSvgSprite() {
     let symbols = '';
     
     // Set a default in case the viewBox is somehow missed
-    const defaultViewBox = '0 0 24 24';
+    const defaultViewBox = '0 0 15 15';
 
     // Remove hardcoded colours
     const cleanContent = data.content
