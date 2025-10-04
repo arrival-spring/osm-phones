@@ -141,7 +141,7 @@ function diffPhoneNumbers(original, suggested) {
 
     for (let i = 0; i < suggested.length; i++) {
         const char = suggested[i];
-        console.log(`O: ${originalRemainderNew}    S: ${suggestedRemainderNew}`)
+        console.log(`O: >${originalRemainderNew}<    S: >${suggestedRemainderNew}<`)
         if (/\d/.test(char)) {
             // It's a digit. Check if it's the next digit in the common sequence.
             if (commonPointerNew < commonDigits.length && commonDigits[commonPointerNew] === char) {
@@ -149,7 +149,7 @@ function diffPhoneNumbers(original, suggested) {
                 suggestedDiff.push({ value: char, removed: false, added: false });
 
                 // Cut down until we get to a matching character
-                while (originalRemainderNew[0] != suggestedRemainderNew[0] && originalRemainderNew[0] != commonDigits[commonPointer]) {
+                while (originalRemainderNew[0] != char && originalRemainderNew[0] != commonDigits[commonPointer]) {
                     originalRemainderNew = originalRemainderNew.slice(1);
                 }
                 // Remove the current digit
@@ -172,17 +172,17 @@ function diffPhoneNumbers(original, suggested) {
                 // && suggestedRemainderNew.includes(originalRemainderNew[0])
                 && !(/[-+ \d]/.test(originalRemainderNew[0])) // Check that character is acceptable
             ) {
-                while (originalRemainderNew[0] != suggestedRemainderNew[0] && originalRemainderNew[0] != commonDigits[commonPointer]) {
+                while (originalRemainderNew[0] != char && originalRemainderNew[0] != commonDigits[commonPointer]) {
                     originalRemainderNew = originalRemainderNew.slice(1);
                 }
                 if (char === originalRemainder[0]) {
                     suggestedDiff.push({ value: char, removed: false, added: false });
                     originalRemainderNew = originalRemainderNew.slice(1);
                 } else {
-                    suggestedDiff.push({ value: char, added: true });
+                    suggestedDiff.push({ value: char, added: true, added_1: true });
                 }
             } else {
-                suggestedDiff.push({ value: char, added: true });
+                suggestedDiff.push({ value: char, added: true, added_2: true });
             }
         }
         // Remove the current checked char
