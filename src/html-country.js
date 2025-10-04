@@ -284,7 +284,7 @@ function createRenderListScript(groupedDivisionStats, locale) {
                         li.innerHTML = \`
                             <a href="\${subdivision.divisionSlug}/\${subdivisionSlug}.html" class="list-item-main-link">
                                 <div class="color-indicator" data-percentage="\${invalidPercentage}"></div>
-                                <div class="list-item-content-wrapper">
+                                <div class="subdivision-item-container">
                                     <h3 class="list-item-sub-title">\${subdivision.name}</h3>
                                     <p class="country-description">\${itemStatsLine}</p>
                                 </div>
@@ -346,15 +346,15 @@ async function generateCountryIndexHtml(countryData, translations) {
     <body class="body-styles">
         <div class="page-container">
             <header class="page-header">
-                <div class="absolute top-0 right-0">
+                <div class="action-row">
+                    <a href="../" class="back-link">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline-block align-middle mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                        <span class="align-middle">${translate('backToAllCountries', locale)}</span>
+                    </a>
                     ${themeButton}
                 </div>
-                <a href="../" class="back-link">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline-block align-middle mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                    </svg>
-                    <span class="align-middle">${translate('backToAllCountries', locale)}</span>
-                </a>
                 <h1 class="page-title">${translate('osmPhoneNumberValidation', locale)}</h1>
                 <p class="report-subtitle">${translate('reportSubtitle', locale, [countryData.name])}</p>
             </header>
