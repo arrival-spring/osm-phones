@@ -15,10 +15,8 @@ const {favicon, themeButton, createFooter, createStatsBox} = require('./html-uti
 function createRenderListScript(countryName, groupedDivisionStats, locale) {
     const safeCountryName = safeName(countryName);
 
-    // --- Server-side translation of dynamic client script strings ---
-    // These strings are translated on the server and embedded as literals in the script.
     const T = {
-        invalidNumbersOutOf: translate('invalidNumbersOutOf', locale), // e.g., "%i invalid numbers (%f potentially fixable) out of %t"
+        invalidNumbersOutOf: translate('invalidNumbersOutOf', locale),
         invalid: translate('invalid', locale),
         hideEmptyDivisions: translate('hideEmptyDivisions', locale),
         sortBy: translate('sortBy', locale),
@@ -27,7 +25,6 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
         name: translate('name', locale),
         noSubdivisionsFound: translate('noSubdivisionsFound', locale)
     };
-    // -----------------------------------------------------------------
 
     return `
     <script>
@@ -39,16 +36,18 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
         let currentSort = 'percentage';
         const locale = '${locale}'; 
 
-        // Embedded translated string literals from the server-side 'T' object
         const T_CLIENT = {
             invalidNumbersOutOf: \`${T.invalidNumbersOutOf}\`,
             invalid: \`${T.invalid}\`,
             noSubdivisionsFound: \`${T.noSubdivisionsFound}\`
         };
 
-        // Utility function for consistent number formatting
+        /**
+         * Formats a number using the current locale for consistent display.
+         * @param {number} num - The number to format.
+         * @returns {string} The locale-formatted number string.
+         */
         function formatNumber(num) {
-            // Ensure the number formatting respects the locale for grouping
             return num.toLocaleString(locale, { 
                 useGrouping: true, 
                 minimumFractionDigits: 0, 
@@ -56,7 +55,6 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
             });
         }
 
-        // Pre-calculate total stats for each division group 
         const calculatedDivisionTotals = {};
         for (const divisionName in groupedDivisionStats) {
             let groupInvalid = 0;
@@ -74,6 +72,9 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
             };
         }
 
+        /**
+         * Updates the visual styles of the sort buttons to indicate which one is active.
+         */
         function updateButtonStyles() {
             const isDark = document.documentElement.classList.contains('dark');
             sortButtons.forEach(button => {
@@ -83,7 +84,10 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
             });
         }
 
-        // Function to create the collapsible icon (right-pointing arrow)
+        /**
+         * Creates and returns an SVG element for the collapsible section icon (a right-pointing arrow).
+         * @returns {SVGElement} The SVG element for the icon.
+         */
         function createCollapseIcon() {
             const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
             svg.setAttribute('class', 'collapse-icon');
@@ -97,6 +101,10 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
             return svg;
         }
 
+        /**
+         * Renders the list of divisions and subdivisions based on the current sort order
+         * and filter settings. It handles both grouped and flat list layouts.
+         */
         function renderList() {
             const TARGET_LI_CLASS = 'list-item';
 
@@ -212,7 +220,6 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
 
                         const statsLine = document.createElement('p');
                         statsLine.className = 'summary-stats';
-                        // Use the dynamically generated translated string
                         statsLine.textContent = groupStatsLine;
 
                         divisionNameContainer.appendChild(divisionHeader);
@@ -299,12 +306,11 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
                 listContainer.innerHTML = '';
                 const li = document.createElement('li');
                 li.className = 'no-subdivisions-item';
-                // Use the translated fallback message
                 li.textContent = T_CLIENT.noSubdivisionsFound;
                 listContainer.appendChild(li);
             }
             updateButtonStyles();
-            applyColors(); // update circle styling
+            applyColors();
         }
 
         sortButtons.forEach(button => {

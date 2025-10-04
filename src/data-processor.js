@@ -49,8 +49,10 @@ function safeName(name) {
 
 /**
  * Determines if an OSM feature should be considered disused.
- * @param {Array<Object>} item - An array of an OSM objects including allTags.
- * @returns {boolean}
+ * It checks for various `disused:*` or `historic:*` prefixed tags.
+ * An item is not considered disused if it has a primary feature tag (e.g. `amenity`).
+ * @param {object} item - An OSM object including allTags.
+ * @returns {boolean} True if the feature is considered disused.
  */
 function isDisused(item) {
     const featureType = getFeatureType(item);
@@ -69,9 +71,11 @@ function isDisused(item) {
 }
 
 /**
- * Determines a name from OSM tags or null if one cannot be determined.
- * @param {Array<Object>} item - An array of an OSM objects including allTags.
- * @returns {string}
+ * Determines a feature's primary type value from its OSM tags.
+ * For example, for a feature with `amenity=restaurant`, it returns 'restaurant'.
+ * It checks standard feature tags first, then prefixed tags (e.g. `disused:amenity`).
+ * @param {object} item - An OSM object including allTags.
+ * @returns {string|null} The value of the most relevant feature tag, or null if not found.
  */
 function getFeatureType(item) {
     for (const tag of FEATURE_TAGS) {
@@ -79,8 +83,7 @@ function getFeatureType(item) {
             return item.allTags[tag];
         }
     }
-    // If nothing was found then look in at disused prefixes
-    // (disused label will be applied anyway)
+
     for (const prefix of HISTORIC_AND_DISUSED_PREFIXES) {
         for (const tag of FEATURE_TAGS) {
             if (item.allTags[`${prefix}:${tag}`]) {
@@ -93,8 +96,11 @@ function getFeatureType(item) {
 
 /**
  * Determines a readable feature name from OSM tags.
- * @param {Array<Object>} item - An array of an OSM objects including allTags.
- * @returns {string}
+ * If the feature has a `name` tag, it is returned. Otherwise, it attempts to find a
+ * descriptive name from presets, or falls back to a formatted feature type.
+ * @param {object} item - An OSM object including allTags.
+ * @param {string} locale - The locale for translating preset names.
+ * @returns {string} A displayable name for the feature.
  */
 function getFeatureTypeName(item, locale) {
     if (item.name) {
@@ -119,9 +125,11 @@ function getFeatureTypeName(item, locale) {
 
 /**
  * Gets the icon for a feature based on its tags.
- * Defaults to a generic icon for the type of item if nothing specific is found
+ * It first tries to find a matching preset icon. If none is found, it falls back
+ * to a generic icon based on the feature's geometry (point, line, area, or relation).
  * @param {Object} item - The OSM data item.
- * @returns {string} The icon name
+ * @param {string} locale - The locale used for preset matching.
+ * @returns {string} The icon name (e.g., 'iD-icon-point', 'maki-restaurant').
  */
 function getFeatureIcon(item, locale) {
     const preset = getBestPreset(item, locale);
@@ -135,7 +143,7 @@ function getFeatureIcon(item, locale) {
         return 'iD-icon-area'
     } else if (geometry === 'line') {
         return 'iD-icon-line'
-    } else { // relation (getGeometry always returns a value)
+    } else {
         return 'iD-icon-relation'
     }
 }
@@ -163,7 +171,7 @@ function stripExtension(numberStr) {
 /**
  * Checks if a parsed phone number matches any defined exclusions based on country 
  * code and OSM tags.
- * * @param {Object} phoneNumber - The parsed phone number object from libphonenumber-js.
+ * @param {Object} phoneNumber - The parsed phone number object from libphonenumber-js.
  * @param {string} countryCode - The country code.
  * @param {Object} osmTags - The OpenStreetMap tags associated with the number.
  * @returns {Object|null} - Returns an object with { isInvalid: false, autoFixable: true, suggestedFix } 
@@ -231,20 +239,12 @@ function processSingleNumber(numberStr, countryCode, osmTags = {}) {
         let normalizedParsed = '';
 
         if (phoneNumber) {
-            // Use phoneNumber.number (E.164 format, guaranteed NO extension) 
-            // and re-parse it to get the correctly spaced 'INTERNATIONAL' format.
             const coreNumberE164 = phoneNumber.number;
-
-            // Re-parse the core number to get the spaced INTERNATIONAL format without the extension
-            // Note: This is required because format('INTERNATIONAL') on the original number might include the extension.
             const coreFormatted = parsePhoneNumber(coreNumberE164).format('INTERNATIONAL');
-
-            // Manually append the extension in the standard format (' x{ext}').
             const extension = phoneNumber.ext ? ` x${phoneNumber.ext}` : '';
 
             suggestedFix = (() => {
                 if (countryCode === 'US') {
-                    // Use dashes as separator, but space after country code
                     const countryCodePrefix = `+${phoneNumber.countryCallingCode}`;
 
                     let nationalNumberFormatted = phoneNumber.format('NATIONAL');
@@ -358,7 +358,7 @@ function validateNumbers(elements, countryCode) {
 
             let website = WEBSITE_TAGS.map(tag => tags[tag]).find(url => url);
             if (website && !website.startsWith('http://') && !website.startsWith('https://')) {
-                website = `http://${website}`; // Otherwise it won't be clickable later
+                website = `http://${website}`;
             }
 
             const lat = element.lat || (element.center && element.center.lat);

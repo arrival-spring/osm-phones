@@ -41,6 +41,18 @@ function filterClientTranslations(fullTranslations) {
     return clientTranslations;
 }
 
+/**
+ * The main function to orchestrate the entire build process for the validation reports.
+ * It performs the following steps:
+ * 1. Sets up the output directory ('public').
+ * 2. Copies static assets (like JS and CSS) to the output directory.
+ * 3. Iterates through each country defined in `constants.js`.
+ * 4. For each country, it fetches administrative divisions and their subdivisions.
+ * 5. For each subdivision, it fetches OSM data, validates phone numbers, and generates a detailed HTML report.
+ * 6. It aggregates statistics for each country and generates a country-level index page.
+ * 7. Finally, it generates the main `index.html` page that links to all country reports.
+ * The build can be run in a 'simplified' test mode by setting the BUILD_TYPE environment variable.
+ */
 async function main() {
     if (!fs.existsSync(PUBLIC_DIR)) {
         fs.mkdirSync(PUBLIC_DIR);

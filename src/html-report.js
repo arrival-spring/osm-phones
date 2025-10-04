@@ -52,6 +52,13 @@ function generateSvgSprite() {
     `;
 }
 
+/**
+ * Creates the HTML grid for displaying an invalid phone number tag and its suggested fix.
+ * It generates a diff view if a fix is available.
+ * @param {Object} item - The invalid item object, containing `invalidNumbers` and `suggestedFixes`.
+ * @param {string} locale - The current locale for translations.
+ * @returns {string} The HTML string for the details grid.
+ */
 function createDetailsGrid(item, locale) {
     const detailsGrid = Object.keys(item.invalidNumbers).map(key => {
         const originalNumber = item.invalidNumbers[key];
@@ -393,6 +400,12 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
             </div>
         </div>
     <script>
+        /**
+         * Sends a command to the JOSM Remote Control API.
+         * Prevents the default link action and provides user feedback in the console.
+         * @param {string} url - The JOSM Remote Control URL to fetch.
+         * @param {Event} event - The click event, to prevent its default action.
+         */
         function openInJosm(url, event) {
             event.preventDefault();
             fetch(url)
@@ -417,6 +430,10 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
         const DEFAULT_EDITORS_MOBILE = ${JSON.stringify(DEFAULT_EDITORS_MOBILE)};
         const STORAGE_KEY = 'osm_report_editors';
 
+        /**
+         * Checks if the current viewport width corresponds to a mobile device.
+         * @returns {boolean} True if the viewport is likely a mobile device.
+         */
         function isMobileView() {
             // This checks if the viewport width is less than a common tablet/desktop breakpoint (e.g., 768px for Tailwind's 'md')
             return window.matchMedia("(max-width: 767px)").matches;
@@ -431,6 +448,10 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
 
         // Storage & Utility Functions
         
+        /**
+         * Loads the user's preferred editor settings from localStorage.
+         * If no settings are found, it falls back to the default editors.
+         */
         function loadSettings() {
             try {
                 const saved = localStorage.getItem(STORAGE_KEY);
@@ -445,6 +466,9 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
             currentActiveEditors = [...DEFAULT_EDITORS]; 
         }
 
+        /**
+         * Saves the current editor visibility settings to localStorage.
+         */
         function saveSettings() {
             try {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(currentActiveEditors));
@@ -455,6 +479,10 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
 
         // 2. UI Rendering and Event Handlers
 
+        /**
+         * Renders the editor selection checkboxes inside the settings menu
+         * based on the list of all available editors.
+         */
         function createSettingsCheckboxes() {
             settingsMenu.innerHTML = '';
 
@@ -473,6 +501,11 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
             settingsMenu.addEventListener('change', handleEditorChange);
         }
 
+        /**
+         * Handles the change event for editor visibility checkboxes.
+         * Updates the \`currentActiveEditors\` array and saves the settings.
+         * @param {Event} event - The change event from the checkbox.
+         */
         function handleEditorChange(event) {
             const checkbox = event.target;
             if (checkbox.type === 'checkbox') {
@@ -493,6 +526,10 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
         
         // 3. Visibility Application
 
+        /**
+         * Shows or hides editor buttons on the page based on the user's
+         * current visibility settings in \`currentActiveEditors\`.
+         */
         function applyEditorVisibility() {
             // Find all editor buttons using the data-editor-id attribute
             const buttons = document.querySelectorAll(':not(input)[data-editor-id]');
