@@ -61,7 +61,7 @@ async function generateMainIndexHtml(countryStats, locale, translations) {
         <div class="page-container">
             <header class="page-header">
                 <div class="flex flex-col">
-                    <div class="items-end>
+                    <div class="items-end">
                         ${themeButton}
                     </div>
                     <h1 class="page-title">${translate('osmPhoneNumberValidation', locale)}</h1>
