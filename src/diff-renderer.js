@@ -20,7 +20,7 @@ const normalize = (str) => str.replace(/[^\d]/g, '');
 /**
  * Helper function to consolidate lone '+' signs with the following segment, 
  * ensuring the full international number is treated as one segment.
- * * @param {Array<string>} parts - Array of segments from a split operation.
+ * @param {Array<string>} parts - Array of segments from a split operation.
  * @returns {Array<string>} Consolidated array.
  */
 function consolidatePlusSigns(parts) {
@@ -46,11 +46,10 @@ function consolidatePlusSigns(parts) {
 /**
  * Replaces invisible Unicode control characters (zero-width characters, 
  * joiners, and directional marks) in a string with the visible space symbol (U+2423 '␣').
- * * This is primarily used for displaying user input in a diff or log, ensuring 
+ * This is primarily used for displaying user input in a diff or log, ensuring
  * that characters which consume zero width (and would otherwise be invisible) 
  * are clearly marked as present in the original string before being removed by 
  * parsing/cleaning logic.
- *
  * @param {string} text The input string potentially containing invisible Unicode characters.
  * @returns {string} The string with all specified invisible characters replaced by '␣'.
  */
@@ -171,6 +170,13 @@ function diffPhoneNumbers(original, suggested) {
     return { originalDiff, suggestedDiff };
 }
 
+/**
+ * Merges consecutive diff parts that have the same status (added/removed).
+ * For example, `[{value: '1', removed: true}, {value: '2', removed: true}]`
+ * becomes `[{value: '12', removed: true}]`.
+ * @param {Array<Object>} diffResult - An array of diff objects from `diffChars`.
+ * @returns {Array<Object>} The merged array of diff objects.
+ */
 function mergeDiffs(diffResult) {
     let mergedDiff = [];
     if (!diffResult[0]) {

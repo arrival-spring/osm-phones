@@ -56,38 +56,38 @@ function createStatsBox(total, invalid, fixable, locale) {
 }
 
 
+/**
+ * Generates the HTML for icon attributions.
+ * It combines data from the `ICON_ATTRIBUTION` constant into a readable paragraph.
+ * @param {boolean} includeIconAttribution - If true, the attribution HTML is generated.
+ * @param {string} locale - The locale for translating the introductory text.
+ * @returns {string} The HTML string for the icon attributions, or an empty string.
+ */
 function getIconAttributionHtml(includeIconAttribution, locale) {
     if (!includeIconAttribution) {
         return '';
     }
 
     const attributionSections = ICON_ATTRIBUTION.map(iconPack => {
-        // Part 1: Icon Name Link (or just the name if link is missing)
         const nameElement = (iconPack.name && iconPack.link)
             ? `<a href="${iconPack.link}" target="_blank" rel="noopener noreferrer" class="footer-link">${iconPack.name}</a>`
             : iconPack.name || '';
 
-        // Part 2: Attribution Text
         const attributionElement = iconPack.attribution || '';
 
-        // Part 3: License Link (or just the license if link is missing)
         const licenseElement = (iconPack.license && iconPack.license_link)
             ? `<a href="${iconPack.license_link}" target="_blank" rel="noopener noreferrer" class="footer-link">${iconPack.license}</a>`
             : iconPack.license || '';
 
-        // Combine all non-empty parts with a space separator
         const combinedContent = [nameElement, attributionElement, licenseElement]
-            .filter(Boolean) // Filters out any empty strings ('', 0, null, undefined)
+            .filter(Boolean)
             .join(' ');
 
-        // Return the combined content string
         return combinedContent;
     });
 
-    // Join all sections with a full stop and a space ('. ')
     const allAttributions = attributionSections.filter(Boolean).join('. ');
 
-    // Wrap the entire string in a single <p> tag
     return allAttributions
         ? `<p class="footer-text">${translate('iconsSourcedFrom', locale)} ${allAttributions}</p>`
         : '';
@@ -130,24 +130,32 @@ function createFooter(locale = 'en-GB', translations, includeIconAttribution = f
     <p class="footer-text">${suggestionIssueLink} <a href="${githubLink}" target="_blank" rel="noopener noreferrer" class="footer-link">${letMeKnowOnGitHub}</a>.</p>
     ${getIconAttributionHtml(includeIconAttribution, locale)}
     <script>
-        // Embed the translations object for client-side use
+        const clientFormattedDate = '${formattedDate}';
+        const clientFormattedTime = '${formattedTime}';
         const translations = ${JSON.stringify(translations)};
         
+        /**
+         * A simple client-side translation utility that uses the embedded translations object.
+         * @param {string} key - The translation key.
+         * @param {Object} [substitutions={}] - An object with values for placeholders.
+         * @returns {string} The translated string.
+         */
         function translate(key, substitutions = {}) {
-            let str = translations[key] || \`MISSING_KEY:\${key}\`;
-            // Simple substitution utility for %n placeholders
+            let str = translations[key] || 'MISSING_KEY:' + key;
             if (str.includes('%n') && substitutions['%n'] !== undefined) {
                 str = str.replace('%n', substitutions['%n']);
             }
             return str;
         }
 
+        /**
+         * Updates the 'time ago' part of the data timestamp on the page.
+         * It calculates the difference between the current time and the data's timestamp
+         * and displays a human-readable relative time (e.g., "just now", "5 minutes ago").
+         */
         function updateTimeAgo() {
             const container = document.getElementById('data-timestamp-container');
-            
-            if (!container) {
-                return;
-            }
+            if (!container) return;
 
             const dataTimestampMs = parseInt(container.getAttribute('data-timestamp'), 10);
             if (isNaN(dataTimestampMs)) {
@@ -157,41 +165,31 @@ function createFooter(locale = 'en-GB', translations, includeIconAttribution = f
 
             const dataDate = new Date(dataTimestampMs);
             const now = new Date();
-            
             const millisecondsAgo = now.getTime() - dataDate.getTime();
-            
             const totalMinutes = Math.floor(millisecondsAgo / (1000 * 60));
             
             let timeAgoText;
-
             if (totalMinutes < 1) {
                 timeAgoText = translate('timeAgoJustNow');
             } else if (totalMinutes < 60) {
                 const minutes = totalMinutes;
-                // Use plural/singular keys with substitution
                 const key = minutes > 1 ? 'timeAgoMinutesPlural' : 'timeAgoMinute';
                 timeAgoText = translate(key, { '%n': minutes }); 
             } else {
                 const hours = Math.floor(totalMinutes / 60);
-                // Use plural/singular keys with substitution
                 const key = hours > 1 ? 'timeAgoHoursPlural' : 'timeAgoHour';
                 timeAgoText = translate(key, { '%n': hours }); 
             }
 
-            // Re-render the full string using the translated template
             const dataSourcedTemplate = translations['dataSourcedTemplate'] || 'Data sourced on %d at %t %z (%a)';
-
             container.innerHTML = dataSourcedTemplate
-                .replace('%d', '${formattedDate}')
-                .replace('%t', '${formattedTime}')
+                .replace('%d', clientFormattedDate)
+                .replace('%t', clientFormattedTime)
                 .replace('%z', 'UTC')
                 .replace('%a', timeAgoText); 
         }
 
-        // Run immediately when the script loads
         updateTimeAgo();
-
-        // Set an interval to run every 60 seconds (1 minute) to keep the time updated
         setInterval(updateTimeAgo, 60000);
     </script>
     `

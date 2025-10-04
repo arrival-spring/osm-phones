@@ -1,11 +1,13 @@
 const { OVERPASS_API_URL, PHONE_TAGS } = require('./constants');
 
 /**
- * Recursive unction to fetch admin_level=6 subdivisions from Overpass API.
- * @param {number} divisionId - The area ID for the subdivision.
+ * Fetches administrative subdivisions for a given parent area from the Overpass API.
+ * This function is recursive and will retry on certain API errors (429, 504).
+ * @param {number} divisionId - The OSM relation ID of the parent division.
  * @param {string} divisionName - The name of the division (for logging).
- * @param {number} retries - Number of retries left.
- * @returns {Promise<Array<{name: string, id: number}>>}
+ * @param {number} admin_level - The administrative level of the subdivisions to fetch.
+ * @param {number} [retries=3] - Number of retries left.
+ * @returns {Promise<Array<{name: string, id: number}>>} A promise that resolves to an array of subdivision objects.
  */
 async function fetchAdminLevels(divisionId, divisionName, admin_level, retries = 3) {
     console.log(`Fetching all subdivisions for ${divisionName} (ID: ${divisionId})...`);
@@ -58,10 +60,11 @@ async function fetchAdminLevels(divisionId, divisionName, admin_level, retries =
 }
 
 /**
- * Recursive function to fetch OSM elements with phone tags for a specific division.
- * @param {{name: string, id: number}} division - The division object.
- * @param {number} retries - Number of retries left.
- * @returns {Promise<Array<Object>>}
+ * Fetches all OSM elements that have one of the specified phone tags within a given division's area.
+ * This function is recursive and will retry on certain API errors (429, 504).
+ * @param {{name: string, id: number}} division - The division object, containing its name and OSM relation ID.
+ * @param {number} [retries=3] - Number of retries left.
+ * @returns {Promise<Array<Object>>} A promise that resolves to an array of OSM element objects.
  */
 async function fetchOsmDataForDivision(division, retries = 3) {
     console.log(`Fetching data for division: ${division.name} (ID: ${division.id})...`);

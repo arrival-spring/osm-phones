@@ -29,7 +29,7 @@ const translations = {};
 /**
  * Loads translation data for a given locale, falling back to language code and then 'en'.
  * The resulting translation object is cached.
- * * NOTE: This function's actual file access logic is often mocked in tests.
+ * Note: This function's actual file access logic is often mocked in tests.
  * @param {string} locale - The target locale string (e.g., 'en', 'en-US', 'fr').
  * @returns {object|null} The translation object for the locale, or null if loading fails.
  */
@@ -133,7 +133,6 @@ function getMatchScore(preset, tags, geometry) {
         }
     }
 
-    // matchScore is less than 1, if we got to here then we have found a match so would have more than 1 for the score
     if (preset.matchScore) {
         return preset.matchScore
     }
@@ -144,7 +143,7 @@ function getMatchScore(preset, tags, geometry) {
 /**
  * Finds the best matching preset for a given OSM item by iterating through all known presets
  * and maximizing the match score.
- * * @param {object} item - The OSM item object (must have .allTags and .type).
+ * @param {object} item - The OSM item object (must have .allTags and .type).
  * @param {string} [locale='en'] - The desired language locale for the preset name translation.
  * @returns {object|null} A copy of the best matching preset with its name translated, or null if no match is found.
  */
