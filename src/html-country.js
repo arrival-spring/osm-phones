@@ -325,7 +325,6 @@ function createRenderListScript(countrySlug, groupedDivisionStats, locale) {
  * @param {Object} translations
  */
 async function generateCountryIndexHtml(countryData, translations) {
-    console.log(`Creating report for ${countryData.name} using locale ${countryData.locale}`)
     const locale = countryData.locale;
     const htmlContent = `
     <!DOCTYPE html>
@@ -353,7 +352,7 @@ async function generateCountryIndexHtml(countryData, translations) {
                 <h1 class="page-title">${translate('osmPhoneNumberValidation', locale)}</h1>
                 <p class="report-subtitle">${translate('reportSubtitle', locale, [countryData.name])}</p>
             </header>
-            ${createStatsBox(countryData.totalTotalNumbers, countryData.totalInvalidCount, countryData.totalAutofixableCount, locale)}
+            ${createStatsBox(countryData.totalNumbers, countryData.invalidCount, countryData.autoFixableCount, locale)}
             <div class="card">
                 <div class="card-header">
                     <h2 class="card-title">${translate('divisionalReports', locale)}</h2>
