@@ -255,7 +255,7 @@ function createRenderListScript(countryName, groupedDivisionStats, locale) {
 
                     // --- LIST ITEM RENDERING (Common Logic) ---
                     sortedData.forEach(division => {
-                        const safeDivisionName = division.name.replace(/\\s+|\\//g, '-').toLowerCase();
+                        const safeDivisionName = division.name.toLowerCase().replace(/[^\p{L}\p{N}\s]+/gu, '-').replace(/[^a-z0-9\s\u00C0-\uFFFF]+/g, '-').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
                         const percentage = division.totalNumbers > 0 ? (division.invalidCount / division.totalNumbers) * 100 : 0;
                         const invalidPercentage = Math.max(0, Math.min(100, percentage));
 
