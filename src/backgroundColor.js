@@ -19,7 +19,7 @@ function getBackgroundColor(percent, isDark) {
 
 /**
  * Applies the calculated background colors to all elements with the 'color-indicator' class.
- * It reads the percentage from a 'data-percentage' attribute on each element.
+ * It reads the percentage from the 'data-percentage' attribute on each element.
  */
 function applyColors() {
     const isDark = document.documentElement.classList.contains('dark');

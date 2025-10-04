@@ -49,7 +49,7 @@ function safeName(name) {
 
 /**
  * Determines if an OSM feature should be considered disused.
- * It checks for various `disused:*` or `historic:*` prefixed tags.
+ * It checks for various prefixed tags.
  * An item is not considered disused if it has a primary feature tag (e.g. `amenity`).
  * @param {object} item - An OSM object including allTags.
  * @returns {boolean} True if the feature is considered disused.
@@ -241,10 +241,12 @@ function processSingleNumber(numberStr, countryCode, osmTags = {}) {
         if (phoneNumber) {
             const coreNumberE164 = phoneNumber.number;
             const coreFormatted = parsePhoneNumber(coreNumberE164).format('INTERNATIONAL');
+            // Append the extension in the standard format (' x{ext}').
             const extension = phoneNumber.ext ? ` x${phoneNumber.ext}` : '';
 
             suggestedFix = (() => {
                 if (countryCode === 'US') {
+                    // Use dashes as separator, but space after country code
                     const countryCodePrefix = `+${phoneNumber.countryCallingCode}`;
 
                     let nationalNumberFormatted = phoneNumber.format('NATIONAL');

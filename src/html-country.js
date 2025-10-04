@@ -3,7 +3,6 @@ const path = require('path');
 const { PUBLIC_DIR } = require('./constants');
 const { translate } = require('./i18n');
 const {favicon, themeButton, createFooter, createStatsBox} = require('./html-utils');
-const { safeName } = require('./data-processor');
 
 /**
  * Creates the renderListScript for the country index page.
@@ -11,7 +10,7 @@ const { safeName } = require('./data-processor');
  * @param {string} locale
  * @returns {string}
  */
-function createRenderListScript(countryName, groupedDivisionStats, locale) {
+function createRenderListScript(groupedDivisionStats, locale) {
 
     // --- Server-side translation of dynamic client script strings ---
     // These strings are translated on the server and embedded as literals in the script.
