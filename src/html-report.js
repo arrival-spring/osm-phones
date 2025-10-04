@@ -29,8 +29,15 @@ function addIconToSprite(iconName, svgContent, viewBox) {
 function generateSvgSprite() {
     let symbols = '';
     
-    // We set a default in case the viewBox is somehow missed
+    // Set a default in case the viewBox is somehow missed
     const defaultViewBox = '0 0 24 24';
+
+    // Remove hardcoded colours
+    const cleanContent = data.content
+            .replace(/ fill="#[^"]+"/g, '')
+            .replace(/ stroke="#[^"]+"/g, '')
+            .replace(/ fill='[^']+'/g, '')
+            .replace(/ stroke='[^']+'/g, '');
 
     for (const [iconName, data] of iconSvgData.entries()) {
         const viewBox = data.viewBox || defaultViewBox;
