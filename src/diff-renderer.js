@@ -149,7 +149,7 @@ function diffPhoneNumbers(original, suggested) {
                 suggestedDiff.push({ value: char, removed: false, added: false });
 
                 // Cut down until we get to a matching character
-                while (originalRemainderNew[0] != char && originalRemainderNew[0] != commonDigits[commonPointer]) {
+                while (originalRemainderNew[0] != char && originalRemainderNew[0] != commonDigits[commonPointerNew]) {
                     originalRemainderNew = originalRemainderNew.slice(1);
                 }
                 // Remove the current digit
@@ -172,7 +172,7 @@ function diffPhoneNumbers(original, suggested) {
                 // && suggestedRemainderNew.includes(originalRemainderNew[0])
                 && !(/[-+ \d]/.test(originalRemainderNew[0])) // Check that character is acceptable
             ) {
-                while (originalRemainderNew[0] != char && originalRemainderNew[0] != commonDigits[commonPointer]) {
+                while (originalRemainderNew[0] != char && originalRemainderNew[0] != commonDigits[commonPointerNew]) {
                     originalRemainderNew = originalRemainderNew.slice(1);
                 }
                 if (char === originalRemainder[0]) {
