@@ -231,6 +231,9 @@
     .page-header {
         @apply text-center space-y-2 relative;
     }
+    .index-header-container {
+        @apply flex justify-between items-start w-full;
+    }
     .subdivision-item-container {
         @apply flex flex-col items-start;
     }
