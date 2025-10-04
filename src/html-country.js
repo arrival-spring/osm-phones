@@ -7,12 +7,11 @@ const { safeName } = require('./data-processor');
 
 /**
  * Creates the renderListScript for the country index page.
- * @param {string} countrySlug
  * @param {Object} groupedDivisionStats
  * @param {string} locale
  * @returns {string}
  */
-function createRenderListScript(countrySlug, groupedDivisionStats, locale) {
+function createRenderListScript(groupedDivisionStats, locale) {
     // --- Server-side translation of dynamic client script strings ---
     // These strings are translated on the server and embedded as literals in the script.
     const T = {
@@ -30,7 +29,6 @@ function createRenderListScript(countrySlug, groupedDivisionStats, locale) {
     return `
     <script>
         const groupedDivisionStats = ${JSON.stringify(groupedDivisionStats)};
-        const safeCountryName = '${countrySlug}';
         const listContainer = document.getElementById('division-list');
         const sortButtons = document.querySelectorAll('.sort-btn');
         const hideEmptyCheckbox = document.getElementById('hide-empty');
@@ -275,7 +273,7 @@ function createRenderListScript(countrySlug, groupedDivisionStats, locale) {
                         li.className = 'report-list-item';
 
                         li.innerHTML = \`
-                            <a href="\${safeCountryName}/\${subdivisionSlug}.html" class="list-item-main-link">
+                            <a href="\${subdivision.divisionSlug}/\${subdivisionSlug}.html" class="list-item-main-link">
                                 <div class="color-indicator" data-percentage="\${invalidPercentage}"></div>
                                 <div class="list-item-content-wrapper">
                                     <h3 class="list-item-sub-title">\${subdivision.name}</h3>
@@ -334,8 +332,8 @@ async function generateCountryIndexHtml(countryData, translations) {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>${translate('countryReportTitle', locale, [countryData.name])}</title>
         ${favicon}
-        <link href="./styles.css" rel="stylesheet">
-        <script src="theme.js"></script>
+        <link href="../styles.css" rel="stylesheet">
+        <script src="../theme.js"></script>
     </head>
     <body class="body-styles">
         <div class="page-container">
@@ -376,7 +374,7 @@ async function generateCountryIndexHtml(countryData, translations) {
                 ${createFooter(locale, translations)}
             </div>
         </div>
-        ${createRenderListScript(countryData.slug, countryData.groupedDivisionStats, locale)}
+        ${createRenderListScript(countryData.groupedDivisionStats, locale)}
         <script src="./backgroundColor.js"></script>
     </body>
     </html>

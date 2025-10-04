@@ -358,9 +358,9 @@ async function generateHtmlReport(countryName, subdivisionStats, invalidNumbers,
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>${translate('countryReportTitle', locale, [countryName])}</title>
         ${favicon}
-        <link href="../styles.css" rel="stylesheet">
+        <link href="../../styles.css" rel="stylesheet">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-        <script src="../theme.js"></script>
+        <script src="../../theme.js"></script>
     </head>
     <body class="body-styles">
         ${svgSprite}
