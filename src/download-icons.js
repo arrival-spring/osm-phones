@@ -1,6 +1,6 @@
 const fs = require('fs/promises');
 const path = require('path');
-const { ICONS_DIR, ICON_PACKS, GITHUB_API_BASE_URL } = require('./constants.js')
+const { ICONS_DIR, GITHUB_ICON_PACKS, GITHUB_API_BASE_URL } = require('./constants.js')
 
 
 /**
@@ -81,7 +81,7 @@ async function downloadAllIcons() {
     console.log('== STARTING ICON DOWNLOAD FOR STATIC BUILD ==');
     console.log('==============================================');
 
-    const packPromises = Object.entries(ICON_PACKS).map(([name, details]) => {
+    const packPromises = Object.entries(GITHUB_ICON_PACKS).map(([name, details]) => {
         return downloadSinglePack(name, details);
     });
 

@@ -154,46 +154,51 @@ function getIconHtml(iconName) {
 
     let iconHtml = '';
 
-    // --- Font Awesome (Class-Based Icons) ---
-    if (library === 'fas' || library === 'far' || library === 'fab' || library === 'fa') {
-        const className = `${library} fa-${icon}`;
-        iconHtml = `<i class="icon ${className}"></i>`;
-    }
+    let iconPath = '';
+    let packageName = '';
+    let isFound = false;
 
-    // --- SVG Packs (Maki, Temaki, Roentgen, iD_presets) ---
-    else if (library === 'maki' || library === 'temaki' || library === 'roentgen' || library === 'iD') {
-        let iconPath = '';
-        let packageName = '';
-        let isFound = false;
-
-        // Determine icon path (logic remains the same)
-        if (library === 'maki' || library === 'temaki') {
-            packageName = library === 'maki' ? '@mapbox/maki' : '@rapideditor/temaki';
-            iconPath = path.resolve(__dirname, '..', `node_modules/${packageName}/icons/${icon}.svg`);
-        } else {
+    switch (library) {
+        case 'fas':
+            packageName = '@fortawesome/free-solid-svg-icons';
+            break;
+        case 'far':
+            packageName = '@fortawesome/free-regular-svg-icons';
+            break;
+        case 'maki':
+            packageName = '@mapbox/maki';
+            break;
+        case 'temaki':
+            packageName = '@rapideditor/temaki';
+            break;
+        default: // iD and Roentgen icons
             const basePath = path.resolve(ICONS_DIR, library);
             iconPath = path.join(basePath, `${icon}.svg`);
-        }
+            return; 
+    }
+    if (!iconPath) {
+        // This executes for 'fas', 'far', 'maki', and 'temaki'.
+        iconPath = path.resolve(__dirname, '..', `node_modules/${packageName}/icons/${icon}.svg`);
+    }
 
-        if (existsSync(iconPath)) {
-            // Get the inner content and viewBox
-            const { content, viewBox } = getSvgContent(iconPath);
+    if (existsSync(iconPath)) {
+        // Get the inner content and viewBox
+        const { content, viewBox } = getSvgContent(iconPath);
 
-            // 1. Collect the icon for the sprite
-            addIconToSprite(iconName, content, viewBox);
-            isFound = true;
+        // 1. Collect the icon for the sprite
+        addIconToSprite(iconName, content, viewBox);
+        isFound = true;
 
-            // 2. Return the minimal <svg> with <use> tag
-            // The class 'icon-svg' will be used to apply size/styles to the outer SVG container.
-            // Using `<svg><use>` is the standard for sprite usage.
-            iconHtml = `
-                <span class="icon-svg-container">
-                    <svg class="icon-svg"><use href="#${iconName}"></use></svg>
-                </span>
-            `;
-        } else {
-            console.log(`Icon not found: ${library}-${icon}`)
-        }
+        // 2. Return the minimal <svg> with <use> tag
+        // The class 'icon-svg' will be used to apply size/styles to the outer SVG container.
+        // Using `<svg><use>` is the standard for sprite usage.
+        iconHtml = `
+            <span class="icon-svg-container">
+                <svg class="icon-svg"><use href="#${iconName}"></use></svg>
+            </span>
+        `;
+    } else {
+        console.log(`Icon not found: ${library}-${icon}`)
     }
 
     // --- Ultimate Fallback: iD-icon-point ---
@@ -372,7 +377,6 @@ async function generateHtmlReport(countryName, subdivisionStats, invalidNumbers,
         <title>${translate('countryReportTitle', locale, [countryName])}</title>
         ${favicon}
         <link href="../../styles.css" rel="stylesheet">
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
         <script src="../../theme.js"></script>
     </head>
     <body class="body-styles">
