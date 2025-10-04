@@ -347,8 +347,7 @@ const UNIVERSAL_SPLIT_CAPTURE_REGEX = /(; ?)|(\s*,\s*)|(\s*\/\s*)|(\s+or\s+)|(\s
 const ICON_ATTRIBUTION = [
     {
         name: 'Font Awesome Icons',
-        attribution: 'Copyright (c) 2025 Fonticons, Inc.',
-        license: '(SIL OFL 1.1 License)',
+        license: '(CC BY 4.0)',
         license_link: 'https://github.com/FortAwesome/Font-Awesome/blob/7.x/LICENSE.txt',
         link: 'https://fontawesome.com'
     },
@@ -380,7 +379,7 @@ const ICON_ATTRIBUTION = [
     }
 ]
 
-const ICON_PACKS = {
+const GITHUB_ICON_PACKS = {
     'roentgen': {
         owner: 'enzet',
         repo: 'Roentgen',
@@ -423,6 +422,6 @@ module.exports = {
     UNIVERSAL_SPLIT_CAPTURE_REGEX,
     ICONS_DIR,
     GITHUB_API_BASE_URL,
-    ICON_PACKS,
+    GITHUB_ICON_PACKS,
     ICON_ATTRIBUTION
 };
