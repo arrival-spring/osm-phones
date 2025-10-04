@@ -123,6 +123,8 @@ async function main() {
 
                 const stats = {
                     name: escapeHTML(subdivision.name),
+                    divisionSlug: safeName(rawDivisionName),
+                    slug: safeName(subdivision.name),
                     invalidCount: invalidNumbers.length,
                     autoFixableCount: autoFixableCount,
                     totalNumbers: totalNumbers
@@ -134,7 +136,12 @@ async function main() {
                 totalAutofixableCount += autoFixableCount;
                 totalTotalNumbers += totalNumbers;
 
-                await generateHtmlReport(countryName, subdivision, invalidNumbers, totalNumbers, locale, clientTranslations);
+                const divisionDir = path.join(countryDir, stats.divisionSlug)
+                if (!fs.existsSync(divisionDir)) {
+                    fs.mkdirSync(divisionDir, { recursive: true });
+                }
+
+                await generateHtmlReport(countryName, stats, invalidNumbers, locale, clientTranslations);
 
                 // Do one subdivision for one division in one country in test mode
                 // count is here in case of needing to change it to test something
@@ -149,15 +156,19 @@ async function main() {
             }
         }
 
-        countryStats.push({
+        const stats = {
             name: countryName,
-            locale: countryData.locale,
+            slug: safeName(countryName),
+            locale: locale,
             invalidCount: totalInvalidCount,
             autoFixableCount: totalAutofixableCount,
-            totalNumbers: totalTotalNumbers
-        });
+            totalNumbers: totalTotalNumbers,
+            groupedDivisionStats: groupedDivisionStats
+        }
 
-        await generateCountryIndexHtml(countryName, groupedDivisionStats, totalInvalidCount, totalAutofixableCount, totalTotalNumbers, locale, clientTranslations);
+        countryStats.push(stats);
+
+        await generateCountryIndexHtml(stats, clientTranslations);
 
         if (testMode) {
             break;
