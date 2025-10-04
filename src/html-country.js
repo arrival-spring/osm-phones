@@ -275,7 +275,7 @@ function createRenderListScript(groupedDivisionStats, locale) {
                         li.innerHTML = \`
                             <a href="\${subdivision.divisionSlug}/\${subdivisionSlug}.html" class="list-item-main-link">
                                 <div class="color-indicator" data-percentage="\${invalidPercentage}"></div>
-                                <div class="list-item-content-wrapper">
+                                <div class="subdivision-item-container">
                                     <h3 class="list-item-sub-title">\${subdivision.name}</h3>
                                     <p class="country-description">\${itemStatsLine}</p>
                                 </div>
