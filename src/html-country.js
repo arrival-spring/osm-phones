@@ -375,7 +375,7 @@ async function generateCountryIndexHtml(countryData, translations) {
             </div>
         </div>
         ${createRenderListScript(countryData.groupedDivisionStats, locale)}
-        <script src="./backgroundColor.js"></script>
+        <script src="../backgroundColor.js"></script>
     </body>
     </html>
     `;
