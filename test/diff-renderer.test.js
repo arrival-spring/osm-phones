@@ -378,7 +378,7 @@ describe('mergeDiffs', () => {
 describe('getDiffHtml', () => {
 
     // Single number, adding country code
-    test('should correctly diff two semicolon-separated numbers', () => {
+    test('should correctly diff one number', () => {
         const original = '023 456 7890';
         const suggested = '+37 23 456 7890';
 

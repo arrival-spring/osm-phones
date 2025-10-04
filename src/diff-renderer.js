@@ -160,12 +160,16 @@ function diffPhoneNumbers(original, suggested) {
             suggestedDiff.push({ value: char, removed: false, added: false });
             originalRemainderNew = originalRemainderNew.slice(1);
         } else {
-            // Non-digit, non-common character, e.g. characters were removed from old string
+            // Non-digit, non-common character, happens when characters were removed from the old string
             if (originalRemainderNew.includes(char)) {
                 while (originalRemainderNew[0] != suggestedRemainderNew[0] && originalRemainderNew[0] != commonDigits[commonPointer]) {
                     originalRemainderNew = originalRemainderNew.slice(1);
                 }
-                suggestedDiff.push({ value: char, removed: false, added: false });
+                if (char === originalRemainder[0]) {
+                    suggestedDiff.push({ value: char, removed: false, added: false });
+                } else {
+                    suggestedDiff.push({ value: char, added: true });
+                }
             } else {
                 suggestedDiff.push({ value: char, added: true });
             }
@@ -181,7 +185,7 @@ function diffPhoneNumbers(original, suggested) {
  * Merges consecutive diff parts that have the same status (added/removed).
  * For example, `[{value: '1', removed: true}, {value: '2', removed: true}]`
  * becomes `[{value: '12', removed: true}]`.
- * @param {Array<Object>} diffResult - An array of diff objects from `diffChars`.
+ * @param {Array<Object>} diffResult - An array of diff objects from `diffPhoneNumbers`.
  * @returns {Array<Object>} The merged array of diff objects.
  */
 function mergeDiffs(diffResult) {
