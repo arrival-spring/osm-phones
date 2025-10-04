@@ -2,6 +2,12 @@ const { diffChars } = require('diff');
 const { UNIVERSAL_SPLIT_CAPTURE_REGEX } = require('./constants.js');
 const { escapeHTML } = require('./html-utils.js');
 
+// We need custom diff logic, because if diffChars is used alone then it marks characters as
+// being added or removed when, semantically, they are just being moved.
+// e.g. 0123 456 being changed to 012 34 56 would show the 3 as being deleted from the first
+// string and added to the second string. Instead, we want to show the digits as unchanging
+// and the formatting as the change.
+
 
 // Used for splitting the suggested fix (assuming standard semicolon separation)
 const NEW_SPLIT_CAPTURE_REGEX = /(; ?)/g;
@@ -56,7 +62,7 @@ function consolidatePlusSigns(parts) {
 function replaceInvisibleChars(text) {
     // The pattern targets the common zero-width, joiner, and directional marks.
     const invisibleCharPattern = /[\u200B-\u200F\u202A-\u202E\u2060-\u2064\uFEFF]/g;
-    return text.replace(invisibleCharPattern, '␣'); 
+    return text.replace(invisibleCharPattern, '␣');
 }
 
 
@@ -119,7 +125,7 @@ function diffPhoneNumbers(original, suggested) {
             originalDiff.push({ value: char, removed: false, added: false });
             suggestedRemainder = suggestedRemainder.slice(1)
         } else {
-            // Non-digit (formatting like ( ), etc.). Mark as removed.
+            // Non-digit, non-common character, (formatting like ( ), etc.). Mark as removed.
             originalDiff.push({ value: char, removed: true });
         }
         // Remove the current checked char
@@ -135,7 +141,6 @@ function diffPhoneNumbers(original, suggested) {
 
     for (let i = 0; i < suggested.length; i++) {
         const char = suggested[i];
-
         if (/\d/.test(char)) {
             // It's a digit. Check if it's the next digit in the common sequence.
             if (commonPointerNew < commonDigits.length && commonDigits[commonPointerNew] === char) {
@@ -143,7 +148,7 @@ function diffPhoneNumbers(original, suggested) {
                 suggestedDiff.push({ value: char, removed: false, added: false });
 
                 // Cut down until we get to a matching character
-                while (originalRemainderNew[0] != suggestedRemainderNew[0] && originalRemainderNew[0] != commonDigits[commonPointer]) {
+                while (originalRemainderNew[0] != char && originalRemainderNew[0] != commonDigits[commonPointerNew]) {
                     originalRemainderNew = originalRemainderNew.slice(1);
                 }
                 // Remove the current digit
@@ -160,8 +165,23 @@ function diffPhoneNumbers(original, suggested) {
             suggestedDiff.push({ value: char, removed: false, added: false });
             originalRemainderNew = originalRemainderNew.slice(1);
         } else {
-            // Non-digit, non-space. I don't know why we'd get here. ADDED formatting.
-            suggestedDiff.push({ value: char, added: true });
+            // Non-digit, non-common character, happens when characters were removed from the old string
+            if (
+                originalRemainderNew.includes(char)
+                && !(/[-+ \d]/.test(originalRemainderNew[0])) // Check that character is acceptable
+            ) {
+                while (originalRemainderNew[0] != char && originalRemainderNew[0] != commonDigits[commonPointerNew]) {
+                    originalRemainderNew = originalRemainderNew.slice(1);
+                }
+                if (char === originalRemainderNew[0]) {
+                    suggestedDiff.push({ value: char, removed: false, added: false });
+                    originalRemainderNew = originalRemainderNew.slice(1);
+                } else {
+                    suggestedDiff.push({ value: char, added: true });
+                }
+            } else {
+                suggestedDiff.push({ value: char, added: true });
+            }
         }
         // Remove the current checked char
         suggestedRemainderNew = suggestedRemainderNew.slice(1)
@@ -174,7 +194,7 @@ function diffPhoneNumbers(original, suggested) {
  * Merges consecutive diff parts that have the same status (added/removed).
  * For example, `[{value: '1', removed: true}, {value: '2', removed: true}]`
  * becomes `[{value: '12', removed: true}]`.
- * @param {Array<Object>} diffResult - An array of diff objects from `diffChars`.
+ * @param {Array<Object>} diffResult - An array of diff objects from `diffPhoneNumbers`.
  * @returns {Array<Object>} The merged array of diff objects.
  */
 function mergeDiffs(diffResult) {
