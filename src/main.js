@@ -123,7 +123,8 @@ async function main() {
 
                 const stats = {
                     name: escapeHTML(subdivision.name),
-                    slug: `${safeName(rawDivisionName)}/${safeName(subdivision.name)}`,
+                    divisionSlug: safeName(rawDivisionName),
+                    slug: safeName(subdivision.name),
                     invalidCount: invalidNumbers.length,
                     autoFixableCount: autoFixableCount,
                     totalNumbers: totalNumbers
@@ -134,6 +135,11 @@ async function main() {
                 totalInvalidCount += invalidNumbers.length;
                 totalAutofixableCount += autoFixableCount;
                 totalTotalNumbers += totalNumbers;
+
+                const divisionDir = path.join(countryDir, stats.divisionSlug)
+                if (!fs.existsSync(divisionDir)) {
+                    fs.mkdirSync(divisionDir, { recursive: true });
+                }
 
                 await generateHtmlReport(countryName, stats, invalidNumbers, locale, clientTranslations);
 

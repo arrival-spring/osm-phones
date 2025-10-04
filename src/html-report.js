@@ -305,7 +305,7 @@ async function generateHtmlReport(countryName, subdivisionStats, invalidNumbers,
     // Clear the map at the start of report generation for a new page.
     iconSvgData.clear(); 
 
-    const subdivisionSlug = subdivisionStats.slug;
+    const subdivisionSlug = path.join(subdivisionStats.divisionSlug, subdivisionStats.slug);
     const safeCountryName = safeName(countryName);
     const filePath = path.join(PUBLIC_DIR, safeCountryName, `${subdivisionSlug}.html`);
 
