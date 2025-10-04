@@ -60,10 +60,12 @@ async function generateMainIndexHtml(countryStats, locale, translations) {
     <body class="body-styles">
         <div class="page-container">
             <header class="page-header">
-                <div class="absolute top-0 right-0">
-                    ${themeButton}
+                <div class="flex flex-col">
+                    <div class="items-end>
+                        ${themeButton}
+                    </div>
+                    <h1 class="page-title">${translate('osmPhoneNumberValidation', locale)}</h1>
                 </div>
-                <h1 class="page-title">${translate('osmPhoneNumberValidation', locale)}</h1>
                 <p class="report-subtitle">${translate('reportSubtitle', locale)}</p>
             </header>
             <div class="card">
