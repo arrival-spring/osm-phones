@@ -56,7 +56,7 @@ function consolidatePlusSigns(parts) {
 function replaceInvisibleChars(text) {
     // The pattern targets the common zero-width, joiner, and directional marks.
     const invisibleCharPattern = /[\u200B-\u200F\u202A-\u202E\u2060-\u2064\uFEFF]/g;
-    return text.replace(invisibleCharPattern, '␣'); 
+    return text.replace(invisibleCharPattern, '␣');
 }
 
 
@@ -161,7 +161,11 @@ function diffPhoneNumbers(original, suggested) {
             originalRemainderNew = originalRemainderNew.slice(1);
         } else {
             // Non-digit, non-common character, happens when characters were removed from the old string
-            if (originalRemainderNew.includes(char) && suggestedRemainderNew.includes(originalRemainderNew[0])) {
+            if (
+                originalRemainderNew.includes(char)
+                && suggestedRemainderNew.includes(originalRemainderNew[0])
+                && !(/[- \d]/.test(originalRemainderNew[0])) // Check that character is acceptable
+            ) {
                 while (originalRemainderNew[0] != suggestedRemainderNew[0] && originalRemainderNew[0] != commonDigits[commonPointer]) {
                     originalRemainderNew = originalRemainderNew.slice(1);
                 }
