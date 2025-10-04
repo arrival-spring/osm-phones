@@ -259,6 +259,7 @@ describe('diffPhoneNumbers (Single Number Diff Logic)', () => {
             {value: 'i', removed: true},
             {value: 'l', removed: true},
             {value: 'e', removed: true},
+            {value: ':', removed: true},
             {value: ' ', removed: true},
             {value: '+', removed: false, added: false},
             {value: '4', removed: false, added: false},
