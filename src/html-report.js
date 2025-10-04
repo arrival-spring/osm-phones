@@ -28,24 +28,23 @@ function addIconToSprite(iconName, svgContent, viewBox) {
  */
 function generateSvgSprite() {
     let symbols = '';
-    
+
     // Set a default in case the viewBox is somehow missed
     const defaultViewBox = '0 0 15 15';
 
-    // Remove hardcoded colours
-    const cleanContent = data.content
+    for (const [iconName, data] of iconSvgData.entries()) {
+        const viewBox = data.viewBox || defaultViewBox;
+        // Remove hardcoded colours
+        const cleanContent = data.content
             .replace(/ fill="#[^"]+"/g, '')
             .replace(/ stroke="#[^"]+"/g, '')
             .replace(/ fill='[^']+'/g, '')
             .replace(/ stroke='[^']+'/g, '');
 
-    for (const [iconName, data] of iconSvgData.entries()) {
-        const viewBox = data.viewBox || defaultViewBox;
-        
         // Wrap the inner SVG content in a <symbol> with the correct ID and viewBox
         symbols += `
             <symbol id="${iconName}" viewBox="${viewBox}">
-                ${data.content}
+                ${cleanContent}
             </symbol>
         `;
     }
@@ -106,7 +105,7 @@ function createDetailsGrid(item, locale) {
  */
 function getSvgContent(iconPath) {
     let svgContent = readFileSync(iconPath, 'utf8');
-    
+
     // 1. Extract viewBox before removing the outer tag
     const viewBoxMatch = svgContent.match(/viewBox=["']([^"']+)["']/i);
     const viewBox = viewBoxMatch ? viewBoxMatch[1] : '0 0 24 24'; // Default fallback
@@ -114,7 +113,7 @@ function getSvgContent(iconPath) {
     // 2. Remove non-essential parts
     // Remove the outer <svg> tag and its closing tag
     svgContent = svgContent.replace(/<svg[^>]*>/i, '').replace(/<\/svg>\s*$/i, '');
-    
+
     // Remove XML declaration
     svgContent = svgContent.replace(/<\?xml[^>]*\?>/, '');
     // Remove comments
@@ -172,7 +171,7 @@ function getIconHtml(iconName) {
         if (existsSync(iconPath)) {
             // Get the inner content and viewBox
             const { content, viewBox } = getSvgContent(iconPath);
-            
+
             // 1. Collect the icon for the sprite
             addIconToSprite(iconName, content, viewBox);
             isFound = true;
@@ -310,7 +309,7 @@ function createListItem(item, locale) {
 async function generateHtmlReport(countryName, subdivisionStats, invalidNumbers, locale, translations) {
 
     // Clear the map at the start of report generation for a new page.
-    iconSvgData.clear(); 
+    iconSvgData.clear();
 
     const subdivisionSlug = path.join(subdivisionStats.divisionSlug, subdivisionStats.slug);
     const safeCountryName = safeName(countryName);
