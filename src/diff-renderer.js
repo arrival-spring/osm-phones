@@ -160,8 +160,15 @@ function diffPhoneNumbers(original, suggested) {
             suggestedDiff.push({ value: char, removed: false, added: false });
             originalRemainderNew = originalRemainderNew.slice(1);
         } else {
-            // Non-digit, non-space. I don't know why we'd get here. ADDED formatting.
-            suggestedDiff.push({ value: char, added: true });
+            // Non-digit, non-common character, e.g. characters were removed from old string
+            if (originalRemainderNew.includes(char)) {
+                while (originalRemainderNew[0] != suggestedRemainderNew[0] && originalRemainderNew[0] != commonDigits[commonPointer]) {
+                    originalRemainderNew = originalRemainderNew.slice(1);
+                }
+                suggestedDiff.push({ value: char, removed: false, added: false });
+            } else {
+                suggestedDiff.push({ value: char, added: true });
+            }
         }
         // Remove the current checked char
         suggestedRemainderNew = suggestedRemainderNew.slice(1)

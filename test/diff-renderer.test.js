@@ -244,6 +244,61 @@ describe('diffPhoneNumbers (Single Number Diff Logic)', () => {
         ]
         expect(result.suggestedDiff).toEqual(expectedSuggested)
     });
+
+    test('should not mark + as added when text is removed', () => {
+        const original = 'Mobile: +44 7767 407 561';
+        const suggested = '+44 7767 407561';
+
+        const result = diffPhoneNumbers(original, suggested);
+
+        // Check Original Diff: Text and extra space removed
+        const expectedOriginal = [
+            {value: 'M', removed: true},
+            {value: 'o', removed: true},
+            {value: 'b', removed: true},
+            {value: 'i', removed: true},
+            {value: 'l', removed: true},
+            {value: 'e', removed: true},
+            {value: ' ', removed: true},
+            {value: '+', removed: false, added: false},
+            {value: '4', removed: false, added: false},
+            {value: '4', removed: false, added: false},
+            {value: ' ', removed: false, added: false},
+            {value: '7', removed: false, added: false},
+            {value: '7', removed: false, added: false},
+            {value: '6', removed: false, added: false},
+            {value: '7', removed: false, added: false},
+            {value: ' ', removed: false, added: false},
+            {value: '4', removed: false, added: false},
+            {value: '0', removed: false, added: false},
+            {value: '7', removed: false, added: false},
+            {value: ' ', removed: true},
+            {value: '5', removed: false, added: false},
+            {value: '6', removed: false, added: false},
+            {value: '1', removed: false, added: false},
+        ]
+        expect(result.originalDiff).toEqual(expectedOriginal)
+        
+        // Check Suggested Diff: All unchanged
+        const expectedSuggested = [
+            {value: '+', removed: false, added: false},
+            {value: '4', removed: false, added: false},
+            {value: '4', removed: false, added: false},
+            {value: ' ', removed: false, added: false},
+            {value: '7', removed: false, added: false},
+            {value: '7', removed: false, added: false},
+            {value: '6', removed: false, added: false},
+            {value: '7', removed: false, added: false},
+            {value: ' ', removed: false, added: false},
+            {value: '4', removed: false, added: false},
+            {value: '0', removed: false, added: false},
+            {value: '7', removed: false, added: false},
+            {value: '5', removed: false, added: false},
+            {value: '6', removed: false, added: false},
+            {value: '1', removed: false, added: false},
+        ]
+        expect(result.suggestedDiff).toEqual(expectedSuggested)
+    });
 });
 
 
