@@ -170,7 +170,7 @@ function diffPhoneNumbers(original, suggested) {
             if (
                 originalRemainderNew.includes(char)
                 && suggestedRemainderNew.includes(originalRemainderNew[0])
-                && !(/[- \d]/.test(originalRemainderNew[0])) // Check that character is acceptable
+                && !(/[-+ \d]/.test(originalRemainderNew[0])) // Check that character is acceptable
             ) {
                 while (originalRemainderNew[0] != suggestedRemainderNew[0] && originalRemainderNew[0] != commonDigits[commonPointer]) {
                     originalRemainderNew = originalRemainderNew.slice(1);
