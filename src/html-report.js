@@ -302,20 +302,19 @@ function createListItem(item, locale) {
 /**
  * Generates the HTML report for a single subdivision.
  * @param {string} countryName
- * @param {Object} subdivision - The subdivision object.
+ * @param {Object} subdivisionStats - The subdivision statistics object.
  * @param {Array<Object>} invalidNumbers - List of invalid items.
- * @param {number} totalNumbers - Total number of phone tags checked.
  * @param {string} locale
  * @param {Object} translations
  */
-async function generateHtmlReport(countryName, subdivision, invalidNumbers, totalNumbers, locale, translations) {
+async function generateHtmlReport(countryName, subdivisionStats, invalidNumbers, locale, translations) {
 
     // Clear the map at the start of report generation for a new page.
     iconSvgData.clear(); 
 
-    const safeSubdivisionName = safeName(subdivision.name);
+    const subdivisionSlug = path.join(subdivisionStats.divisionSlug, subdivisionStats.slug);
     const safeCountryName = safeName(countryName);
-    const filePath = path.join(PUBLIC_DIR, safeCountryName, `${safeSubdivisionName}.html`);
+    const filePath = path.join(PUBLIC_DIR, safeCountryName, `${subdivisionSlug}.html`);
 
     const autofixableNumbers = invalidNumbers.filter(item => item.autoFixable);
     const manualFixNumbers = invalidNumbers.filter(item => !item.autoFixable);
@@ -366,9 +365,9 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>${translate('countryReportTitle', locale, [countryName])}</title>
         ${favicon}
-        <link href="../styles.css" rel="stylesheet">
+        <link href="../../styles.css" rel="stylesheet">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-        <script src="../theme.js"></script>
+        <script src="../../theme.js"></script>
     </head>
     <body class="body-styles">
         ${svgSprite}
@@ -384,16 +383,16 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
                     <div id="editor-settings-menu" class="settings-menu hidden">
                         </div>
                 </div>
-                <a href="../${safeCountryName}.html" class="back-link">
+                <a href="../" class="back-link">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline-block align-middle mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                     </svg>
                     <span class="align-middle">${translate('backToCountryPage', locale)}</span>
                 </a>
                 <h1 class="page-title">${translate('phoneNumberReport', locale)}</h1>
-                <h2 class="page-subtitle">${escapeHTML(subdivision.name)}</h2>
+                <h2 class="page-subtitle">${escapeHTML(subdivisionStats.name)}</h2>
             </header>
-            ${createStatsBox(totalNumbers, invalidNumbers.length, autofixableNumbers.length, locale)}
+            ${createStatsBox(subdivisionStats.totalNumbers, invalidNumbers.length, autofixableNumbers.length, locale)}
             ${fixableAndInvalidSectionContent}
             <div class="footer-container">
                 ${createFooter(locale, translations, true)}
@@ -580,7 +579,7 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
     </html>
     `;
     await fsPromises.writeFile(filePath, htmlContent);
-    console.log(`Generated report for ${subdivision.name} at ${filePath}`);
+    console.log(`Generated report for ${subdivisionStats.name} at ${filePath}`);
 }
 
 module.exports = {
