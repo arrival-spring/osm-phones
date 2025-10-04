@@ -119,7 +119,7 @@ function diffPhoneNumbers(original, suggested) {
             originalDiff.push({ value: char, removed: false, added: false });
             suggestedRemainder = suggestedRemainder.slice(1)
         } else {
-            // Non-digit (formatting like ( ), etc.). Mark as removed.
+            // Non-digit, non-common character, (formatting like ( ), etc.). Mark as removed.
             originalDiff.push({ value: char, removed: true });
         }
         // Remove the current checked char
@@ -135,7 +135,7 @@ function diffPhoneNumbers(original, suggested) {
 
     for (let i = 0; i < suggested.length; i++) {
         const char = suggested[i];
-
+        console.log(`O: ${originalRemainderNew}    S: ${suggestedRemainderNew}`)
         if (/\d/.test(char)) {
             // It's a digit. Check if it's the next digit in the common sequence.
             if (commonPointerNew < commonDigits.length && commonDigits[commonPointerNew] === char) {
