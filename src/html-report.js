@@ -295,18 +295,17 @@ function createListItem(item, locale) {
 /**
  * Generates the HTML report for a single subdivision.
  * @param {string} countryName
- * @param {Object} subdivision - The subdivision object.
+ * @param {Object} subdivisionStats - The subdivision statistics object.
  * @param {Array<Object>} invalidNumbers - List of invalid items.
- * @param {number} totalNumbers - Total number of phone tags checked.
  * @param {string} locale
  * @param {Object} translations
  */
-async function generateHtmlReport(countryName, subdivision, invalidNumbers, totalNumbers, locale, translations) {
+async function generateHtmlReport(countryName, subdivisionStats, invalidNumbers, locale, translations) {
 
     // Clear the map at the start of report generation for a new page.
     iconSvgData.clear(); 
 
-    const subdivisionSlug = subdivision.slug;
+    const subdivisionSlug = subdivisionStats.slug;
     const safeCountryName = safeName(countryName);
     const filePath = path.join(PUBLIC_DIR, safeCountryName, `${subdivisionSlug}.html`);
 
@@ -384,9 +383,9 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
                     <span class="align-middle">${translate('backToCountryPage', locale)}</span>
                 </a>
                 <h1 class="page-title">${translate('phoneNumberReport', locale)}</h1>
-                <h2 class="page-subtitle">${escapeHTML(subdivision.name)}</h2>
+                <h2 class="page-subtitle">${escapeHTML(subdivisionStats.name)}</h2>
             </header>
-            ${createStatsBox(totalNumbers, invalidNumbers.length, autofixableNumbers.length, locale)}
+            ${createStatsBox(subdivisionStats.totalNumbers, invalidNumbers.length, autofixableNumbers.length, locale)}
             ${fixableAndInvalidSectionContent}
             <div class="footer-container">
                 ${createFooter(locale, translations, true)}
@@ -543,7 +542,7 @@ async function generateHtmlReport(countryName, subdivision, invalidNumbers, tota
     </html>
     `;
     await fsPromises.writeFile(filePath, htmlContent);
-    console.log(`Generated report for ${subdivision.name} at ${filePath}`);
+    console.log(`Generated report for ${subdivisionStats.name} at ${filePath}`);
 }
 
 module.exports = {
