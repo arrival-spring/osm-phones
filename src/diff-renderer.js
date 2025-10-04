@@ -169,20 +169,19 @@ function diffPhoneNumbers(original, suggested) {
             // Non-digit, non-common character, happens when characters were removed from the old string
             if (
                 originalRemainderNew.includes(char)
-                // && suggestedRemainderNew.includes(originalRemainderNew[0])
                 && !(/[-+ \d]/.test(originalRemainderNew[0])) // Check that character is acceptable
             ) {
                 while (originalRemainderNew[0] != char && originalRemainderNew[0] != commonDigits[commonPointerNew]) {
                     originalRemainderNew = originalRemainderNew.slice(1);
                 }
-                if (char === originalRemainder[0]) {
+                if (char === originalRemainderNew[0]) {
                     suggestedDiff.push({ value: char, removed: false, added: false });
                     originalRemainderNew = originalRemainderNew.slice(1);
                 } else {
-                    suggestedDiff.push({ value: char, added: true, added_1: true });
+                    suggestedDiff.push({ value: char, added: true });
                 }
             } else {
-                suggestedDiff.push({ value: char, added: true, added_2: true });
+                suggestedDiff.push({ value: char, added: true });
             }
         }
         // Remove the current checked char
